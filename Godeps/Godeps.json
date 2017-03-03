@@ -1,0 +1,25 @@
+{
+	"ImportPath": "openstackcore-rdtagent",
+	"GoVersion": "go1.8",
+	"GodepVersion": "v79",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/emicklei/go-restful",
+			"Comment": "2.2.0",
+			"Rev": "cf834cf8da5b681af81bde6fa32304e6ce8eec71"
+		},
+		{
+			"ImportPath": "github.com/emicklei/go-restful-swagger12",
+			"Comment": "1.0.1",
+			"Rev": "dcef7f55730566d41eae5db10e7d6981829720f6"
+		},
+		{
+			"ImportPath": "github.com/emicklei/go-restful/log",
+			"Comment": "2.2.0",
+			"Rev": "cf834cf8da5b681af81bde6fa32304e6ce8eec71"
+		}
+	]
+}
