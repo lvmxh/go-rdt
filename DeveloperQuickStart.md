@@ -2,25 +2,31 @@
 
 ## Clone openstackcore-rdtagent code
 
-Make sure you have your $GOPATH setup correctly
+Make sure you have your $GOPATH, $PATH setup correctly
 
-``
-git clone https://${your_name}@git-ccr-1.devtools.intel.com/gerrit/p/openstackcore-rdtagent.git $GOPATH/src
+```
+$ cat ~/.bash_rc | grep GOP
+declare -x GOPATH=$HOME/go
+declare -x PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+
+$ cd $GOPATH/src
+$ git clone https://${your_name}@git-ccr-1.devtools.intel.com/gerrit/p/openstackcore-rdtagent.git
 ```
 
 ## Build & install openstackcore-rdtagent
 
 ```
-cd $GOPATH/src/openstackcore-rdtagent
 
-./install
+$ go get github.com/tools/godep
+$ cd $GOPATH/src/openstackcore-rdtagent
+$ ./install
 
 ```
 
 ## Run openstackcore-rdtagent
 
 ```
-$GOPATH/bin/openstackcore-rdtagent
+$ $GOPATH/bin/openstackcore-rdtagent
 ```
 
 
@@ -29,7 +35,7 @@ $GOPATH/bin/openstackcore-rdtagent
 In another terminal :
 
 ```
-curl -i localhost:8081/v1/cpuinfo
+$ curl -i localhost:8081/v1/cpuinfo
 
 ```
 
