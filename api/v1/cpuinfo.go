@@ -21,17 +21,17 @@ type CpuinfoResource struct {
 func (cpuinfo CpuinfoResource) Register(container *restful.Container) {
 	ws := new(restful.WebService)
 	ws.
-		Path("/v1").
+		Path("/v1/cpuinfo").
 		Doc("Show the cupinfo of a host.").
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON)
 
-	ws.Route(ws.GET("/cpuinfo").To(getCpuinfo).
+	ws.Route(ws.GET("/").To(getCpuinfo).
 		Doc("get cpuinfo").
 		Operation("getCpuinfo").
 		Writes(Cpuinfo{}))
 
-	ws.Route(ws.GET("/cpuinfo/{socket_id}").To(getSocketId).
+	ws.Route(ws.GET("/{socket_id}").To(getSocketId).
 		Doc("get cpuinfo per socket id").
 		Operation("getSocketId").
 		Writes(Cpuinfo{}))

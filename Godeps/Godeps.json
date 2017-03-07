@@ -7,19 +7,71 @@
 	],
 	"Deps": [
 		{
+			"ImportPath": "github.com/PuerkitoBio/purell",
+			"Comment": "v1.1.0",
+			"Rev": "0bcb03f4b4d0a9428594752bd2a3b9aa0a9d4bd4"
+		},
+		{
+			"ImportPath": "github.com/PuerkitoBio/urlesc",
+			"Rev": "5bd2802263f21d8788851d5305584c82a5c75d7e"
+		},
+		{
 			"ImportPath": "github.com/emicklei/go-restful",
 			"Comment": "2.2.0",
 			"Rev": "cf834cf8da5b681af81bde6fa32304e6ce8eec71"
 		},
 		{
-			"ImportPath": "github.com/emicklei/go-restful-swagger12",
-			"Comment": "1.0.1",
-			"Rev": "dcef7f55730566d41eae5db10e7d6981829720f6"
+			"ImportPath": "github.com/emicklei/go-restful-openapi",
+			"Rev": "3df0ad14579eb5d2ca558a3d0102bd478d9616b1"
 		},
 		{
 			"ImportPath": "github.com/emicklei/go-restful/log",
 			"Comment": "2.2.0",
 			"Rev": "cf834cf8da5b681af81bde6fa32304e6ce8eec71"
+		},
+		{
+			"ImportPath": "github.com/go-openapi/jsonpointer",
+			"Rev": "779f45308c19820f1a69e9a4cd965f496e0da10f"
+		},
+		{
+			"ImportPath": "github.com/go-openapi/jsonreference",
+			"Rev": "36d33bfe519efae5632669801b180bf1a245da3b"
+		},
+		{
+			"ImportPath": "github.com/go-openapi/spec",
+			"Rev": "02fb9cd3430ed0581e0ceb4804d5d4b3cc702694"
+		},
+		{
+			"ImportPath": "github.com/go-openapi/swag",
+			"Rev": "d5f8ebc3b1c55a4cf6489eeae7354f338cfe299e"
+		},
+		{
+			"ImportPath": "github.com/mailru/easyjson/buffer",
+			"Rev": "44f6bc771e3cad4b8ce3ca4e357f17c4121af6b8"
+		},
+		{
+			"ImportPath": "github.com/mailru/easyjson/jlexer",
+			"Rev": "44f6bc771e3cad4b8ce3ca4e357f17c4121af6b8"
+		},
+		{
+			"ImportPath": "github.com/mailru/easyjson/jwriter",
+			"Rev": "44f6bc771e3cad4b8ce3ca4e357f17c4121af6b8"
+		},
+		{
+			"ImportPath": "golang.org/x/net/idna",
+			"Rev": "d379faa25cbdc04d653984913a2ceb43b0bc46d7"
+		},
+		{
+			"ImportPath": "golang.org/x/text/transform",
+			"Rev": "f28f36722d5ef2f9655ad3de1f248e3e52ad5ebd"
+		},
+		{
+			"ImportPath": "golang.org/x/text/unicode/norm",
+			"Rev": "f28f36722d5ef2f9655ad3de1f248e3e52ad5ebd"
+		},
+		{
+			"ImportPath": "golang.org/x/text/width",
+			"Rev": "f28f36722d5ef2f9655ad3de1f248e3e52ad5ebd"
 		}
 	]
 }
