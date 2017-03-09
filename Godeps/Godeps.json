@@ -20,6 +20,14 @@
 			"ImportPath": "github.com/emicklei/go-restful/log",
 			"Comment": "2.2.0",
 			"Rev": "cf834cf8da5b681af81bde6fa32304e6ce8eec71"
+		},
+		{
+			"ImportPath": "github.com/golang/glog",
+			"Rev": "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
+		},
+		{
+			"ImportPath": "github.com/spf13/pflag",
+			"Rev": "9ff6c6923cfffbcd502984b8e0c80539a94968b7"
 		}
 	]
 }

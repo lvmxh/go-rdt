@@ -9,8 +9,8 @@ import (
 // GET http://localhost:8081/cpuinfo
 
 type Cpuinfo struct {
-	Id   string
-	Cpus string
+	Id   string `json:"socket_id,omitempty"`
+	Cpus string `json:"cpus,omitempty"`
 }
 
 type CpuinfoResource struct {
@@ -21,18 +21,19 @@ type CpuinfoResource struct {
 func (cpuinfo CpuinfoResource) Register(container *restful.Container) {
 	ws := new(restful.WebService)
 	ws.
-		Path("/v1").
-		Doc("Show the cupinfo of a host.").
+		Path("/v1/cpuinfo").
+		Doc("Show the cup information of a host.").
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON)
 
-	ws.Route(ws.GET("/cpuinfo").To(getCpuinfo).
+	ws.Route(ws.GET("/").To(cpuinfo.getCpuinfo).
 		Doc("get cpuinfo").
 		Operation("getCpuinfo").
 		Writes(Cpuinfo{}))
 
-	ws.Route(ws.GET("/cpuinfo/{socket_id}").To(getSocketId).
+	ws.Route(ws.GET("/{socket-id}").To(cpuinfo.getSocketId).
 		Doc("get cpuinfo per socket id").
+		Param(ws.PathParameter("socket-id", "indentifier for a CPU socket").DataType("string")).
 		Operation("getSocketId").
 		Writes(Cpuinfo{}))
 
@@ -40,7 +41,7 @@ func (cpuinfo CpuinfoResource) Register(container *restful.Container) {
 }
 
 // GET http://localhost:8081/cpuinfo/
-func getCpuinfo(request *restful.Request, response *restful.Response) {
+func (cpuinfo CpuinfoResource) getCpuinfo(request *restful.Request, response *restful.Response) {
 
 	log.Printf("Received Request: %s", request.PathParameter("socket_id"))
 
@@ -56,12 +57,21 @@ func getCpuinfo(request *restful.Request, response *restful.Response) {
 
 // GET http://localhost:8081/cpuinfo/{socket_id}
 
-func getSocketId(request *restful.Request, response *restful.Response) {
+func (cpuinfo CpuinfoResource) getSocketId(request *restful.Request, response *restful.Response) {
 
-	log.Printf("In get socket id, received Request: %s", request.PathParameter("socket_id"))
+	log.Printf("In get socket id, received Request: %s", request.PathParameter("socket-id"))
 
 	info := new(Cpuinfo)
 	info.Id = "1"
 
 	response.WriteEntity(info)
+}
+
+
+func (cpuinfo CpuinfoResource) SwaggerDoc() map[string]string {
+    return map[string]string{
+        "":		"Cpuinfo doc",
+        "socket_id":	"ID of physical CPU socket",
+        "cpus":		"Cpu list which sits on this socket",
+    }
 }
