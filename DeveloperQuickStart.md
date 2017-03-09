@@ -26,6 +26,7 @@ $ ./install
 ## Run openstackcore-rdtagent
 
 ```
+$ $GOPATH/bin/openstackcore-rdtagent --help
 $ $GOPATH/bin/openstackcore-rdtagent
 ```
 
