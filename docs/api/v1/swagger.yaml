@@ -1,0 +1,91 @@
+swagger: '2.0'
+info:
+  title: RDTagent API
+  description: RDTagent API specification
+  version: "0.0.1"
+  contact:
+    name: RDTagent API Support
+    url: http://www.openstack-core.team.org
+    email: opoenstack-core@intel.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+schemes:
+  - http
+basePath: /v1
+produces:
+  - application/json
+paths:
+  /cpuinfo/topology:
+    get:
+      summary: Host CPU topology
+      description: |
+        Get the CPU topology information of sockets, core and thread in each core on the host machine.
+      tags:
+        - cpuinfo
+      responses:
+        200:
+          description: An array of CPU topology object
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Cpuinfo'
+  /cpuinfo/capacity:
+    get:
+      summary: Get the capacities of host
+      description: |
+        Get the capacities of the cache, memory, cpu_pinning
+      tags:
+        - cpuinfo
+      responses:
+        200:
+          description: An array of CPU capacities object
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Capacity'
+definitions:
+  Cpu:
+    type: object
+    properties:
+      cpu_id:
+        type: string
+        description: Cpu id
+  Core:
+    type: object
+    properties:
+      core_id:
+        type: string
+        description: Cpu core id
+      cpus:
+        type: array
+        items:
+          $ref: '#/definitions/Cpu'
+  Cpuinfo:
+    type: object
+    properties:
+      socket_id:
+        type: string
+        description: Socket id of the physical CPU
+      cores:
+        type: array
+        description: Core list located on the physical CPU
+        items:
+          $ref: '#/definitions/Core'
+  Capacity:
+    type: object
+    properties:
+      id:
+        type: string
+        description: Id of the capacity
+      cache_level:
+        type: string
+        enum: ['l3', 'l2']
+        description: cache level, could be l3/l2
+      cache_size:
+        type: integer
+        format: int32
+        description: cache size in KiB
+      cache_way:
+        type: string
+        description: cache way

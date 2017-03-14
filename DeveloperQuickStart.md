@@ -51,3 +51,9 @@ TODO
 
 
 Happy hacking!
+
+## Swagger
+
+The API defination located under docs/v1/swagger.yaml
+
+Upload swagger.yaml to http://editor.swagger.io/#!/ , it will help to generate client.
