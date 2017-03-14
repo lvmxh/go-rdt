@@ -44,6 +44,183 @@ paths:
             type: array
             items:
               $ref: '#/definitions/Capacity'
+  /cache/l2/usage:
+    get:
+      summary: Get the l2 cache usage of specified processes
+      description: |
+        Get the l2 cache usage of specified processes
+      tags:
+        - cmt
+      parameters:
+        - name: process-list
+          in: query
+          description: process list of cache usage
+          required: false
+          type: string
+        - name: core-list
+          in: query
+          description: core list of cache usage
+          required: false
+          type: string
+      responses:
+        200:
+          description: l2 cache size usage in KiB
+          schema:
+            type: integer
+            format: int32
+        400:
+          description: Bad request
+        404:
+          description: Not found
+  /cache/l3/usage:
+    get:
+      summary: Get the l3 cache usage of specified processes
+      description: |
+        Get the l3 cache usage of specified processes
+      tags:
+        - cmt
+      parameters:
+        - name: process-list
+          in: query
+          description: process list of cache usage
+          required: false
+          type: string
+        - name: core-list
+          in: query
+          description: core list of cache usage
+          required: false
+          type: string
+      responses:
+        200:
+          description: l3 cache size usage in KiB
+          schema:
+            type: integer
+            format: int32
+        400:
+          description: Bad request
+        404:
+          description: Not found
+  /memory/usage:
+    get:
+      summary: Get Memory bandwidth specified processes or cores
+      description: |
+        Get the l3 cache usage of specified processes
+      tags:
+        - mbm
+      parameters:
+        - name: process-id
+          in: query
+          description: process list of memory bandwidth
+          required: false
+          type: string
+        - name: core-list
+          in: query
+          description: core list of memory bandwidth
+          required: false
+          type: string
+        - name: interval
+          in: query
+          description: query interval
+          type: integer
+          format: int32
+      responses:
+        200:
+          description: Memory bandwidth thought interval
+          schema:
+            type: integer
+            format: int32
+        400:
+          description: Bad request
+        404:
+          description: Not found
+  /cache/l3/alloc:
+    post:
+      summary: Create l3 cache allocation
+      description: |
+        create l3 cache allocation for specified process
+      tags:
+        - cat
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: string
+            example:
+              process-id: 1234
+              cache-size: 1024
+      responses:
+        202:
+          description: accepted
+        400:
+          description: bad request
+  /cache/cos/{socket_id}:
+    get:
+      summary: Get cos on specified socket id
+      description: |
+        Get Class of service on speicified socket id
+      tags:
+        - cat
+      parameters:
+      - name: socket_id
+        in: path
+        description: ID of Socket of clos to get
+        required: true
+        type: array
+        items:
+          type: string
+      responses:
+        200:
+          description: clos on specified socket
+          schema:
+            type: array
+            items:
+              type: string
+        400:
+          description: Bad request
+        404:
+          description: Not found
+  /cache/cos:
+    get:
+      summary: Get all clos of the host
+      description: |
+        Get Class of service on host
+      tags:
+        - cat
+      responses:
+        200:
+          description: clos on specified socket
+          schema:
+            type: array
+            items:
+              type: string
+        400:
+          description: Bad request
+        404:
+          description: Not found
+    post:
+      summary: Create cos
+      description: |
+        create cos on specificed socket
+      tags:
+        - cat
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: string
+            example:
+              cos_id: 0
+              cos_mask: '0xfffff'
+              socket_id: 0
+      responses:
+        200:
+          description: created
+        400:
+          description: bad request
+        404:
+          description: socket id not found on host
 definitions:
   Cpu:
     type: object
