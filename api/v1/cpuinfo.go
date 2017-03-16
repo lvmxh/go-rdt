@@ -68,7 +68,7 @@ func (cpuinfo CpuinfoResource) getSocketId(request *restful.Request, response *r
 }
 
 
-func (cpuinfo CpuinfoResource) SwaggerDoc() map[string]string {
+func (cpuinfo Cpuinfo) SwaggerDoc() map[string]string {
     return map[string]string{
         "":		"Cpuinfo doc",
         "socket_id":	"ID of physical CPU socket",
