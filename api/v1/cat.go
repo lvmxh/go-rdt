@@ -8,6 +8,7 @@ import (
 
 
 type COS struct {
+	Id   	uint32
 	Cos	uint64
 }
 
