@@ -1,7 +1,7 @@
 package cpuinfo
 
 /*
-#cgo CFLAGS: -I../../cmt-cat/lib -L../../cmt-cat/lib
+#cgo CFLAGS: -I../../src/cmt-cat/lib -L../../src/cmt-cat/lib
 #cgo CFLAGS: -I${SRCDIR}/cmt-cat/lib -L${SRCDIR}/cmt-cat/lib
 #cgo LDFLAGS: -lpqos -fPIE
 #cgo CFLAGS: -pthread -Wall -Winline -D_FILE_OFFSET_BITS=64 -g -O0

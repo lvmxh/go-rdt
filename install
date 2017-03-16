@@ -7,4 +7,5 @@ fi
 
 make lib
 sudo make install-lib
+go fmt
 godep go install openstackcore-rdtagent

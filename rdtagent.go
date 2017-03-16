@@ -2,16 +2,16 @@ package main
 
 import (
 	"openstackcore-rdtagent/api/v1"
-	"openstackcore-rdtagent/util/options"
 	"openstackcore-rdtagent/util/flag"
+	"openstackcore-rdtagent/util/options"
 
 	"fmt"
 	"log"
 	"net/http"
 
-	"github.com/spf13/pflag"
 	"github.com/emicklei/go-restful"
 	"github.com/emicklei/go-restful-swagger12"
+	"github.com/spf13/pflag"
 )
 
 func main() {
@@ -27,12 +27,10 @@ func main() {
 	l2cacheusage.Register(wsContainer)
 	cos.Register(wsContainer)
 
-
 	s := options.NewServerRunOptions()
 	s.AddFlags(pflag.CommandLine)
 
 	flag.InitFlags()
-
 
 	weburl := fmt.Sprintf("http://%s:%s", s.Addr, s.Port)
 
@@ -48,10 +46,8 @@ func main() {
 		SwaggerPath: "/apidocs/",
 		// FIXME (eliqiao): this depends on https://github.com/swagger-api/swagger-ui.git need to copy dist from it
 		SwaggerFilePath: "/usr/local/share/go/src/github.com/wordnik/swagger-ui/dist",
-		ApiVersion: "1.0"}
+		ApiVersion:      "1.0"}
 	swagger.RegisterSwaggerService(config, wsContainer)
-
-
 
 	log.Printf("start listening on %s:%s", s.Addr, s.Port)
 	server := &http.Server{Addr: s.Addr + ":" + s.Port, Handler: wsContainer}
