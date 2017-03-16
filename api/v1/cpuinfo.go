@@ -4,6 +4,8 @@ import (
 	"github.com/emicklei/go-restful"
 
 	"github.com/emicklei/go-restful/log"
+
+	"openstackcore-rdtagent/cgolib/cpuinfo"
 )
 
 // CPU Info
@@ -46,10 +48,12 @@ type CpuinfoResource struct {
 
 // Fake cpu info
 func MakeCpuInfo() CpuInfo {
+
+	ci := cpuinfo.GetCpuInfo()
 	var c CpuInfo
-	c.CpuNum = 4
-	c.L2Cache = Cacheinfo{"l2", 1024, 20}
-	c.L3Cache = Cacheinfo{"l3", 56320, 20}
+	c.CpuNum = ci.Num_cores
+	c.L2Cache = Cacheinfo{"l2", c.L2Cache.Total_size, c.L2Cache.CacheWay}
+	c.L3Cache = Cacheinfo{"l3", c.L3Cache.Total_size, c.L3Cache.CacheWay}
 	return c
 }
 
