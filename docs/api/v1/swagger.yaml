@@ -45,7 +45,7 @@ paths:
             type: array
             items:
               $ref: '#/definitions/CpuSocket'
-  /cpuinfo/capacity:
+  /cpuinfo/capabilities:
     get:
       summary: Get the capacities of host
       description: |
@@ -54,11 +54,12 @@ paths:
         - cpuinfo
       responses:
         200:
-          description: An array of CPU capacities object
+          description: CPU capacities object
           schema:
-            type: array
-            items:
-              $ref: '#/definitions/Cacheinfo'
+            type: object
+            properties:
+              caps:
+                $ref: '#/definitions/Caps'
   /cache/l3/usage:
     get:
       summary: Get the l3 cache usage of specified processes
@@ -155,7 +156,8 @@ paths:
         required: true
         type: array
         items:
-          type: string
+          type: integer
+          format: int32
       responses:
         200:
           description: clos on specified socket
@@ -163,6 +165,35 @@ paths:
             type: array
             items:
               type: string
+        400:
+          description: Bad request
+        404:
+          description: Not found
+  /cache/cos/{socket_id}/{cos_id}:
+    get:
+      summary: Get cos on specified socket id and cos_id
+      description: |
+        Get Class of service on speicified socket id
+      tags:
+        - cat
+      parameters:
+      - name: socket_id
+        in: path
+        description: ID of Socket of clos to get
+        required: true
+        type: integer
+        format: int32
+      - name: cos_id
+        in: path
+        description: ID of COS
+        required: true
+        type: integer
+        format: int32
+      responses:
+        200:
+          description: cos on specified socket and cos ID
+          schema:
+            type: string
         400:
           description: Bad request
         404:
@@ -261,3 +292,24 @@ definitions:
         description: Core list located on the physical CPU
         items:
           $ref: '#/definitions/Core'
+  Capability:
+    type: object
+    description: RDT capabilitiy
+    properties:
+      cap_type:
+        type: string
+        description: capablities type
+      meta:
+        description: This is a string, each type of capability may different, we will format it later
+        type: string
+  Caps:
+    type: object
+    properties:
+      num_cap:
+        description: how many capabilies can be discovered
+        type: integer
+        format: int32
+      capabilities:
+        type: array
+        items:
+          $ref: '#/definitions/Capability'
