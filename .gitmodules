@@ -1,0 +1,3 @@
+[submodule "src/cmt-cat"]
+	path = src/cmt-cat
+	url = https://github.com/01org/intel-cmt-cat.git
