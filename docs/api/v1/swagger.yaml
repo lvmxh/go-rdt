@@ -142,7 +142,7 @@ paths:
           description: accepted
         400:
           description: bad request
-  /cache/cos/{socket_id}:
+  /cache/cos/{socket-id}:
     get:
       summary: Get cos on specified socket id
       description: |
@@ -150,7 +150,7 @@ paths:
       tags:
         - cat
       parameters:
-      - name: socket_id
+      - name: socket-id
         in: path
         description: ID of Socket of clos to get
         required: true
@@ -169,21 +169,21 @@ paths:
           description: Bad request
         404:
           description: Not found
-  /cache/cos/{socket_id}/{cos_id}:
+  /cache/cos/{socket-id}/{cos-id}:
     get:
-      summary: Get cos on specified socket id and cos_id
+      summary: Get cos on specified socket id and cos id
       description: |
         Get Class of service on speicified socket id
       tags:
         - cat
       parameters:
-      - name: socket_id
+      - name: socket-id
         in: path
         description: ID of Socket of clos to get
         required: true
         type: integer
         format: int32
-      - name: cos_id
+      - name: cos-id
         in: path
         description: ID of COS
         required: true
@@ -198,31 +198,25 @@ paths:
           description: Bad request
         404:
           description: Not found
-  /cache/cos:
-    get:
-      summary: Get all clos of the host
-      description: |
-        Get Class of service on host
-      tags:
-        - cat
-      responses:
-        200:
-          description: clos on specified socket
-          schema:
-            type: array
-            items:
-              type: string
-        400:
-          description: Bad request
-        404:
-          description: Not found
-    post:
+    put:
       summary: Create cos
       description: |
         create cos on specificed socket
       tags:
         - cat
       parameters:
+        - name: socket-id
+          in: path
+          description: ID of Socket of clos to get
+          required: true
+          type: integer
+          format: int32
+        - name: cos-id
+          in: path
+          description: ID of COS
+          required: true
+          type: integer
+          format: int32
         - name: body
           in: body
           required: true
@@ -239,6 +233,25 @@ paths:
           description: bad request
         404:
           description: socket id not found on host
+  /cache/cos:
+    get:
+      summary: Get all cos of the host
+      description: |
+        Get Class of service on host
+      tags:
+        - cat
+      responses:
+        200:
+          description: clos on specified socket
+          schema:
+            type: array
+            items:
+              type: string
+        400:
+          description: Bad request
+        404:
+          description: Not found
+
 definitions:
   Cacheinfo:
     type: object

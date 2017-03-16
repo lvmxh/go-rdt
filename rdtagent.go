@@ -21,10 +21,11 @@ func main() {
 
 	cpuinfo := v1.CpuinfoResource{}
 	l2cacheusage := v1.L2CacheUsage{}
+	cos := v1.CosResource{}
 	// Register controller to container
 	cpuinfo.Register(wsContainer)
 	l2cacheusage.Register(wsContainer)
-
+	cos.Register(wsContainer)
 
 
 	s := options.NewServerRunOptions()
