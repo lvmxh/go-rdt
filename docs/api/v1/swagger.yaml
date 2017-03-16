@@ -16,6 +16,21 @@ basePath: /v1
 produces:
   - application/json
 paths:
+  /cpuinfo:
+     get:
+      summary: Host CPU information
+      description: |
+        Get the CPU information, include level 2, level 3 cache information
+      tags:
+        - cpuinfo
+      responses:
+        200:
+          description: CPU info
+          schema:
+            type: object
+            properties:
+              cpuinfo:
+                $ref: '#/definitions/CpuInfo'
   /cpuinfo/topology:
     get:
       summary: Host CPU topology
@@ -29,12 +44,12 @@ paths:
           schema:
             type: array
             items:
-              $ref: '#/definitions/Cpuinfo'
+              $ref: '#/definitions/CpuSocket'
   /cpuinfo/capacity:
     get:
       summary: Get the capacities of host
       description: |
-        Get the capacities of the cache, memory, cpu_pinning
+        Get the capacities of the cache, memory
       tags:
         - cpuinfo
       responses:
@@ -43,35 +58,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: '#/definitions/Capacity'
-  /cache/l2/usage:
-    get:
-      summary: Get the l2 cache usage of specified processes
-      description: |
-        Get the l2 cache usage of specified processes
-      tags:
-        - cmt
-      parameters:
-        - name: process-list
-          in: query
-          description: process list of cache usage
-          required: false
-          type: string
-        - name: core-list
-          in: query
-          description: core list of cache usage
-          required: false
-          type: string
-      responses:
-        200:
-          description: l2 cache size usage in KiB
-          schema:
-            type: integer
-            format: int32
-        400:
-          description: Bad request
-        404:
-          description: Not found
+              $ref: '#/definitions/Cacheinfo'
   /cache/l3/usage:
     get:
       summary: Get the l3 cache usage of specified processes
@@ -222,6 +209,31 @@ paths:
         404:
           description: socket id not found on host
 definitions:
+  Cacheinfo:
+    type: object
+    properties:
+      cache_level:
+        type: string
+        enum: ['l3', 'l2']
+        description: cache level, could be l3/l2
+      cache_size:
+        type: integer
+        format: int32
+        description: cache size in KiB
+      cache_way:
+        type: string
+        description: cache way
+  CpuInfo:
+    type: object
+    properties:
+      cpu_num:
+        description: How many cpu on the host
+        type: integer
+        format: int32
+      l2_cache:
+        $ref: '#/definitions/Cacheinfo'
+      l3_cache:
+        $ref: '#/definitions/Cacheinfo'
   Cpu:
     type: object
     properties:
@@ -238,7 +250,7 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/Cpu'
-  Cpuinfo:
+  CpuSocket:
     type: object
     properties:
       socket_id:
@@ -249,20 +261,3 @@ definitions:
         description: Core list located on the physical CPU
         items:
           $ref: '#/definitions/Core'
-  Capacity:
-    type: object
-    properties:
-      id:
-        type: string
-        description: Id of the capacity
-      cache_level:
-        type: string
-        enum: ['l3', 'l2']
-        description: cache level, could be l3/l2
-      cache_size:
-        type: integer
-        format: int32
-        description: cache size in KiB
-      cache_way:
-        type: string
-        description: cache way
