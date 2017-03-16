@@ -2,7 +2,7 @@ package main
 
 import (
 	"openstackcore-rdtagent/api/v1"
-	"openstackcore-rdtagent/options"
+	"openstackcore-rdtagent/util/options"
 	"openstackcore-rdtagent/util/flag"
 
 	"fmt"
