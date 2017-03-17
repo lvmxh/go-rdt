@@ -111,5 +111,6 @@ func RunServer(s *options.ServerRunOptions) {
 	config, _ := BuildServerConfig(s)
 
 	ser, _ := config.Complete().New()
+	fmt.Println("started")
 	log.Fatal(ser.Server.ListenAndServe())
 }

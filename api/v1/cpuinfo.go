@@ -24,12 +24,15 @@ type CpuInfo struct {
 
 // CPU topology
 type Cpu struct {
-	Id uint32 `json:"cpu_id"`
+	Id        uint32 `json:"cpu_id"`
+	Core_Id   uint32 `json:"core_id"`
+	Socket_Id uint32 `json:"socket_id"`
 }
 
 type Core struct {
-	Id   uint32 `json:"core_id"`
-	Cpus []Cpu  `json:"cpus"`
+	Id        uint32 `json:"core_id"`
+	Socket_Id uint32 `json:"socket_id"`
+	Cpus      []Cpu  `json:"cpus"`
 }
 
 type Socket struct {
@@ -42,7 +45,6 @@ type CpuTopo []Socket
 type CpuinfoResource struct {
 }
 
-// Fake cpu info
 func MakeCpuInfo() CpuInfo {
 
 	ci, _ := cgl_cpuinfo.GetCpuInfo()
@@ -53,29 +55,42 @@ func MakeCpuInfo() CpuInfo {
 	return c
 }
 
-// Fake cpu topology
+func GetTopo(cpuinfo *cgl_cpuinfo.PqosCpuInfo) (s, c, p int) {
+	s_map := make(map[uint32]int)
+	c_map := make(map[uint32]int)
+	p_map := make(map[uint32]int)
+	for _, i := range cpuinfo.Cores {
+		s_map[i.Socket] = 1
+		c_map[i.L2_id] = 1
+		p_map[i.Lcore] = 1
+	}
+	return len(s_map), len(c_map), len(p_map)
+}
+
 func MakeCpuTopo() CpuTopo {
-	// 1 sockets, 2 cores, 2 cpu per core
-	var t CpuTopo
+	ci, _ := cgl_cpuinfo.GetCpuInfo()
+	s, _, _ := GetTopo(ci)
+	cputopo := make([]Socket, s)
 
-	var s Socket
-	s.Cores = make([]Core, 2)
-
-	cpu0 := Cpu{Id: 0}
-	cpu1 := Cpu{Id: 1}
-	cpu2 := Cpu{Id: 2}
-	cpu3 := Cpu{Id: 3}
-
-	s.Cores[0].Cpus = make([]Cpu, 2)
-	s.Cores[1].Cpus = make([]Cpu, 2)
-
-	s.Cores[0].Cpus[0] = cpu0
-	s.Cores[0].Cpus[1] = cpu1
-	s.Cores[1].Cpus[0] = cpu2
-	s.Cores[1].Cpus[1] = cpu3
-
-	t = append(t, s)
-	return t
+	for _, cpu := range ci.Cores {
+		find_core := false
+		cputopo[cpu.Socket].Id = uint16(cpu.Socket)
+		for i, core := range cputopo[cpu.Socket].Cores {
+			if cpu.L2_id == core.Id {
+				new_cpu := Cpu{Id: cpu.Lcore, Core_Id: cpu.L2_id, Socket_Id: cpu.Socket}
+				cputopo[cpu.Socket].Cores[i].Cpus = append(cputopo[cpu.Socket].Cores[i].Cpus, new_cpu)
+				find_core = true
+				break
+			}
+		}
+		if !find_core {
+			new_core := Core{Id: cpu.L2_id, Socket_Id: cpu.Socket}
+			new_cpu := Cpu{Id: cpu.Lcore, Core_Id: cpu.L2_id, Socket_Id: cpu.Socket}
+			new_core.Cpus = append(new_core.Cpus, new_cpu)
+			cputopo[cpu.Socket].Cores = append(cputopo[cpu.Socket].Cores, new_core)
+		}
+	}
+	return cputopo
 }
 
 func (cpuinfo CpuinfoResource) Register(container *restful.Container) {
