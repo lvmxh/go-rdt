@@ -6,14 +6,12 @@ import (
 	"github.com/emicklei/go-restful/log"
 )
 
-
 type COS struct {
-	Id   	uint32
-	Cos	uint64
+	Id  uint32
+	Cos uint64
 }
 
 type CosResource struct {
-	size int64
 }
 
 func (l2 CosResource) Register(container *restful.Container) {
@@ -74,7 +72,6 @@ func (c CosResource) CacheCosSocketIdCosIdGet(request *restful.Request, response
 
 	response.WriteEntity(0)
 }
-
 
 func (c CosResource) CacheCosSocketIdCosIdPut(request *restful.Request, response *restful.Response) {
 

@@ -6,9 +6,7 @@ import (
 	"github.com/emicklei/go-restful/log"
 )
 
-
 type L2CacheUsage struct {
-	size int64
 }
 
 func (l2 L2CacheUsage) Register(container *restful.Container) {
@@ -34,7 +32,6 @@ func (l2 L2CacheUsage) getCacheUsage(request *restful.Request, response *restful
 	log.Printf("Received Request: %s", request.QueryParameter("process-list"))
 
 	res := L2CacheUsage{}
-	res.size = 100
 
 	response.WriteEntity(res)
 }

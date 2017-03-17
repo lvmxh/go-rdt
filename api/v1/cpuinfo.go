@@ -40,8 +40,6 @@ type Socket struct {
 type CpuTopo []Socket
 
 type CpuinfoResource struct {
-	// normally one would use DAO (data access object)
-	info map[string]CpuTopo
 }
 
 // Fake cpu info
