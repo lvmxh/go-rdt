@@ -1,10 +1,8 @@
 package v1
 
 import (
+	"fmt"
 	"github.com/emicklei/go-restful"
-
-	"github.com/emicklei/go-restful/log"
-
 	cgl_cpuinfo "openstackcore-rdtagent/cgolib/cpuinfo"
 )
 
@@ -42,17 +40,27 @@ type Socket struct {
 
 type CpuTopo []Socket
 
+type Capability struct {
+	Type string `json:"cap_type"`
+	Meta string `json:"meta"`
+}
+
+type Capabilities struct {
+	Num  uint32       `json:"num_cap"`
+	Caps []Capability `json:"capabilities"`
+}
+
 type CpuinfoResource struct {
 }
 
-func MakeCpuInfo() CpuInfo {
+func GetCpuInfo() *CpuInfo {
 
 	ci, _ := cgl_cpuinfo.GetCpuInfo()
 	var c CpuInfo
 	c.CpuNum = ci.Num_cores
 	c.L2Cache = Cacheinfo{"l2", ci.L2.Total_size, ci.L2.Num_ways}
 	c.L3Cache = Cacheinfo{"l3", ci.L3.Total_size, ci.L3.Num_ways}
-	return c
+	return &c
 }
 
 func GetTopo(cpuinfo *cgl_cpuinfo.PqosCpuInfo) (s, c, p int) {
@@ -67,7 +75,7 @@ func GetTopo(cpuinfo *cgl_cpuinfo.PqosCpuInfo) (s, c, p int) {
 	return len(s_map), len(c_map), len(p_map)
 }
 
-func MakeCpuTopo() CpuTopo {
+func GetCpuTopo() CpuTopo {
 	ci, _ := cgl_cpuinfo.GetCpuInfo()
 	s, _, _ := GetTopo(ci)
 	cputopo := make([]Socket, s)
@@ -93,6 +101,23 @@ func MakeCpuTopo() CpuTopo {
 	return cputopo
 }
 
+func GetCaps() *Capabilities {
+	fmt.Println("go")
+	var cap Capabilities
+	ci, _ := cgl_cpuinfo.GetCpuCaps()
+	cap.Num = ci.Num_cap
+	for _, c := range ci.Capabilities {
+		var new_cap Capability
+		if c.Type == 1 {
+			new_cap.Type = "L3"
+		} else {
+			new_cap.Type = "UnKnow"
+		}
+		cap.Caps = append(cap.Caps, new_cap)
+	}
+	return &cap
+}
+
 func (cpuinfo CpuinfoResource) Register(container *restful.Container) {
 	ws := new(restful.WebService)
 	ws.
@@ -110,38 +135,32 @@ func (cpuinfo CpuinfoResource) Register(container *restful.Container) {
 		Operation("CpuinfoTopologyGet").
 		Writes(CpuTopo{}))
 
-	ws.Route(ws.GET("/capacity").To(cpuinfo.CpuinfoCapacityGet).
+	ws.Route(ws.GET("/capabilities").To(cpuinfo.CpuinfoCapGet).
 		Doc("Get the capacities of the cache, memory").
-		Operation("CpuinfoCapacityGet").
-		Writes(Cpu{}))
+		Operation("CpuinfoCapGet").
+		Writes(Capabilities{}))
 
 	container.Add(ws)
 }
 
 // GET http://localhost:8081/cpuinfo
 func (cpuinfo CpuinfoResource) CpuinfoGet(request *restful.Request, response *restful.Response) {
-	c := MakeCpuInfo()
+	c := GetCpuInfo()
 	response.WriteEntity(c)
 }
 
 // GET http://localhost:8081/cpuinfo/topology
 func (cpuinfo CpuinfoResource) CpuinfoTopologyGet(request *restful.Request, response *restful.Response) {
-	t := MakeCpuTopo()
+	t := GetCpuTopo()
 	response.WriteEntity(t)
 }
 
 // GET http://localhost:8081/cpuinfo/capacity
 
-func (cpuinfo CpuinfoResource) CpuinfoCapacityGet(request *restful.Request, response *restful.Response) {
+func (cpuinfo CpuinfoResource) CpuinfoCapGet(request *restful.Request, response *restful.Response) {
 
-	log.Printf("In get socket id, received Request: %s", request.PathParameter("socket-id"))
-
-	// TODO
-
-	info := new(Cpu)
-	info.Id = 0
-
-	response.WriteEntity(info)
+	caps := GetCaps()
+	response.WriteEntity(caps)
 }
 
 func (c CpuInfo) SwaggerDoc() map[string]string {
