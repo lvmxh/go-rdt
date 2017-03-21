@@ -13,6 +13,11 @@ import (
 // ReadUvarint reads an encoded unsigned integer from r and returns it as a uint64.
 var overflow = errors.New("binary: varint overflows a X-bit integer")
 
+type CElement interface {
+	Len() uint32
+	Step(v reflect.Value) uint32
+}
+
 func readU8(r io.ByteReader) (uint8, error) {
 	b, err := r.ReadByte()
 	if err != nil {
@@ -71,7 +76,7 @@ func addptr(p unsafe.Pointer, x uintptr) unsafe.Pointer {
 	return unsafe.Pointer(uintptr(p) + x)
 }
 
-func NewStruct(dest interface{}, r io.ByteReader) error {
+func NewStruct(dest interface{}, r io.ByteReader, celem map[string]CElement) error {
 
 	value := reflect.ValueOf(dest).Elem()
 	typ := value.Type()
@@ -129,17 +134,28 @@ func NewStruct(dest interface{}, r io.ByteReader) error {
 
 			case reflect.Slice:
 				// FIXME need improve
-				if i < value.NumField()-1 {
+				slice := fl.Tag.Get("slice")
+				slices := strings.Split(slice, ",")
+				if fl.Tag == "" {
 					err = fmt.Errorf(
 						"Could not handle slice type in the middle of %s",
 						typ)
+				} else if slices[0] == "" || slices[0] == "-" {
+					fmt.Println("Skip slice parser for", typ,
+						". Let caller handle it")
+				} else if len(slices) > 1 {
+					iface := celem["capability"]
+					vstep := value.FieldByName(slices[0])
+					step := iface.Step(vstep)
+					len := iface.Len()
+					fmt.Println("parser", len*step, "bytes")
 				} else {
-					fmt.Println("This is harmless, for the slice is at the",
-						"end of", typ, ". Let caller handle it")
+					err = fmt.Errorf(
+						"Could not know how to handle slice type: %s", typ)
 				}
 
 			case reflect.Struct:
-				err = NewStruct(sfl.Addr().Interface(), r)
+				err = NewStruct(sfl.Addr().Interface(), r, celem)
 
 			default:
 				err = fmt.Errorf(

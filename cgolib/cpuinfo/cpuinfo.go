@@ -20,6 +20,7 @@ import "C"
 
 import (
 	"bytes"
+	"reflect"
 	"unsafe"
 
 	cgl_utils "openstackcore-rdtagent/cgolib/common"
@@ -98,7 +99,7 @@ func NewPqosCoreInfo(s *C.struct_pqos_coreinfo) (*PqosCoreInfo, error) {
 	r := bytes.NewReader(data[:])
 
 	var rr *PqosCoreInfo = &PqosCoreInfo{}
-	err := cgl_utils.NewStruct(rr, r)
+	err := cgl_utils.NewStruct(rr, r, CstructMap())
 	return rr, err
 }
 
@@ -108,7 +109,7 @@ func NewPqosCacheInfo(s *C.struct_pqos_cacheinfo) (*PqosCacheInfo, error) {
 	r := bytes.NewReader(data[:])
 
 	var rr *PqosCacheInfo = &PqosCacheInfo{}
-	err := cgl_utils.NewStruct(rr, r)
+	err := cgl_utils.NewStruct(rr, r, CstructMap())
 	return rr, err
 }
 
@@ -118,7 +119,7 @@ func NewPqosCpuInfo(s *C.struct_pqos_cpuinfo) (*PqosCpuInfo, error) {
 	r := bytes.NewReader(data[:])
 
 	var rr *PqosCpuInfo = &PqosCpuInfo{}
-	err := cgl_utils.NewStruct(rr, r)
+	err := cgl_utils.NewStruct(rr, r, CstructMap())
 	if err != nil {
 		return rr, err
 	}
@@ -222,7 +223,19 @@ type PqosCap struct {
 	Version      uint32
 	Num_cap      uint32
 	Os_enabled   uint32
-	Capabilities []*PqosCapability
+	Capabilities []*PqosCapability `slice:"Num_cap,capability"`
+}
+
+type CstructPqosCapablity struct {
+	Name string
+}
+
+func (cap CstructPqosCapablity) Len() uint32 {
+	return C.sizeof_struct_pqos_capability
+}
+
+func (cap CstructPqosCapablity) Step(v reflect.Value) uint32 {
+	return v.Interface().(uint32)
 }
 
 func NewPqosCapability(s *C.struct_pqos_capability) (*PqosCapability, error) {
@@ -232,7 +245,7 @@ func NewPqosCapability(s *C.struct_pqos_capability) (*PqosCapability, error) {
 	r := bytes.NewReader(data[:])
 
 	var rr *PqosCapability = &PqosCapability{}
-	err := cgl_utils.NewStruct(rr, r)
+	err := cgl_utils.NewStruct(rr, r, CstructMap())
 
 	/* struct pqos_capability {
 		    enum pqos_cap_type type;
@@ -273,7 +286,7 @@ func NewPqosCaps(c *C.struct_pqos_cap) (*PqosCap, error) {
 
 	r := bytes.NewReader(data[:])
 	var rr *PqosCap = &PqosCap{}
-	err := cgl_utils.NewStruct(rr, r)
+	err := cgl_utils.NewStruct(rr, r, CstructMap())
 	if err != nil {
 		return rr, err
 	}
@@ -295,4 +308,10 @@ func GetCpuCaps() (*PqosCap, error) {
 	defer C.pqos_fini()
 	caps, err := NewPqosCaps(C.cgo_cap_init())
 	return caps, err
+}
+
+func CstructMap() map[string]cgl_utils.CElement {
+	var cmap = make(map[string]cgl_utils.CElement)
+	cmap["capability"] = &CstructPqosCapablity{"capability"}
+	return cmap
 }
