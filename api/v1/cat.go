@@ -2,19 +2,29 @@ package v1
 
 import (
 	"github.com/emicklei/go-restful"
-
 	"github.com/emicklei/go-restful/log"
+	cgl_cat "openstackcore-rdtagent/cgolib/cat"
+	"strconv"
 )
 
 type COS struct {
-	Id  uint32
-	Cos uint64
+	Socket_id uint32
+	Cos_id    uint32
+	Mask      uint64
 }
+
+// COSs on same socket
+type COSs struct {
+	CosNum uint32
+	Coss   []*COS
+}
+
+type HostCOS []COSs
 
 type CosResource struct {
 }
 
-func (l2 CosResource) Register(container *restful.Container) {
+func (c CosResource) Register(container *restful.Container) {
 	ws := new(restful.WebService)
 	ws.
 		Path("/v1/cos").
@@ -22,61 +32,58 @@ func (l2 CosResource) Register(container *restful.Container) {
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON)
 
-	ws.Route(ws.GET("/").To(l2.CacheCosGet).
+	ws.Route(ws.GET("/").To(c.CacheCosGet).
 		Doc("Get all cos of the host").
 		Operation("CacheCosGet").
 		Writes([]COS{}))
 
-	ws.Route(ws.GET("/{socket-id}").To(l2.CacheCosSocketIdGet).
+	ws.Route(ws.GET("/{socket-id}").To(c.CacheCosSocketIdGet).
 		Doc("Get all cos of the specified socket id").
-		Param(ws.QueryParameter("socket-id", "cpu socket id").DataType("uint")).
+		Param(ws.PathParameter("socket-id", "cpu socket id").DataType("uint")).
 		Operation("CacheCosSocketIdGet").
 		Writes([]COS{}))
 
-	ws.Route(ws.GET("/{socket-id}/{cos-id}").To(l2.CacheCosSocketIdCosIdGet).
+	ws.Route(ws.GET("/{socket-id}/{cos-id}").To(c.CacheCosSocketIdCosIdGet).
 		Doc("Get all cos of the specified socket").
-		Param(ws.QueryParameter("socket-id", "cpu socket id").DataType("unit")).
-		Param(ws.QueryParameter("cos-id", "cos id").DataType("uint")).
-		Operation("CacheCosSocketIdGet").
+		Param(ws.PathParameter("socket-id", "cpu socket id").DataType("unit")).
+		Param(ws.PathParameter("cos-id", "cos id").DataType("uint")).
+		Operation("CacheCosSocketIdCosIdGet").
 		Writes(COS{}))
 
-	ws.Route(ws.PUT("/{socket-id}/{cos-id}").To(l2.CacheCosSocketIdCosIdPut).
+	ws.Route(ws.PUT("/{socket-id}/{cos-id}").To(c.CacheCosSocketIdCosIdPut).
 		Doc("Get all cos of the specified socket").
-		Param(ws.QueryParameter("socket-id", "cpu socket id").DataType("unit")).
-		Param(ws.QueryParameter("cos-id", "cos id").DataType("uint")).
-		Operation("CacheCosSocketIdGet").
+		Param(ws.PathParameter("socket-id", "cpu socket id").DataType("unit")).
+		Param(ws.PathParameter("cos-id", "cos id").DataType("uint")).
+		Operation("CacheCosSocketIdCosIdPut").
 		Writes(COS{}))
 
 	container.Add(ws)
 }
 
 func (c CosResource) CacheCosGet(request *restful.Request, response *restful.Response) {
-
-	log.Printf("Received Request")
-
-	cos := make([]COS, 0)
-	response.WriteEntity(cos)
+	response.WriteEntity(cgl_cat.GetCOS())
 }
 
 func (c CosResource) CacheCosSocketIdGet(request *restful.Request, response *restful.Response) {
 
-	log.Printf("Received Request: %s", request.QueryParameter("process-list"))
-
-	response.WriteEntity(0)
+	log.Printf("Received Request: %s", request.PathParameter("socket-id"))
+	ui, _ := strconv.ParseInt(request.PathParameter("socket-id"), 10, 32)
+	cos := cgl_cat.GetCOSBySocketId(uint16(ui))
+	response.WriteEntity(cos)
 }
 
 func (c CosResource) CacheCosSocketIdCosIdGet(request *restful.Request, response *restful.Response) {
 
-	log.Printf("Received Request: %s", request.QueryParameter("socket-id"))
-	log.Printf("Received Request: %s", request.QueryParameter("cos-id"))
+	log.Printf("Received Request: %s", request.PathParameter("socket-id"))
+	log.Printf("Received Request: %s", request.PathParameter("cos-id"))
 
 	response.WriteEntity(0)
 }
 
 func (c CosResource) CacheCosSocketIdCosIdPut(request *restful.Request, response *restful.Response) {
 
-	log.Printf("Received Request: %s", request.QueryParameter("socket-id"))
-	log.Printf("Received Request: %s", request.QueryParameter("cos-id"))
+	log.Printf("Received Request: %s", request.PathParameter("socket-id"))
+	log.Printf("Received Request: %s", request.PathParameter("cos-id"))
 
 	response.WriteEntity(0)
 }
