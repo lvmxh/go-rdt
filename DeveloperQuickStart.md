@@ -19,6 +19,8 @@ $ git clone https://${your_name}@git-ccr-1.devtools.intel.com/gerrit/p/openstack
 
 $ go get github.com/tools/godep
 $ cd $GOPATH/src/openstackcore-rdtagent
+$ git submodule init
+$ git submodule update
 $ ./install
 
 ```
@@ -56,4 +58,4 @@ Happy hacking!
 
 The API defination located under docs/v1/swagger.yaml
 
-Upload swagger.yaml to http://editor.swagger.io/#!/ , it will help to generate client.
+Upload docs/api/v1/swagger.yaml to http://editor.swagger.io/#!/ , it will help to generate client.
