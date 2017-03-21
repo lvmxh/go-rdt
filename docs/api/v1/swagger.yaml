@@ -263,9 +263,10 @@ definitions:
       cache_size:
         type: integer
         format: int32
-        description: cache size in KiB
+        description: cache size in B
       cache_way:
-        type: string
+        type: integer
+        format: int32
         description: cache way
   CpuInfo:
     type: object
@@ -282,14 +283,24 @@ definitions:
     type: object
     properties:
       cpu_id:
-        type: string
+        type: integer
+        format: uint32
         description: Cpu id
+      core_id:
+        type: integer
+        format: uint32
+        description: Core id
   Core:
     type: object
     properties:
       core_id:
-        type: string
-        description: Cpu core id
+        type: integer
+        format: uint32
+        description: Core id
+      socket_id:
+        type: integer
+        format: uint32
+        description: Socket id
       cpus:
         type: array
         items:
@@ -298,7 +309,8 @@ definitions:
     type: object
     properties:
       socket_id:
-        type: string
+        type: integer
+        format: uint16
         description: Socket id of the physical CPU
       cores:
         type: array
