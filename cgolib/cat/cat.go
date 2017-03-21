@@ -84,10 +84,24 @@ func GetCOSBySocketId(Sid uint16) *COSs {
 	var num C.unsigned
 	addr := C.cgo_cat_get_cos(C.uint(Sid), &num)
 	defer C.free(unsafe.Pointer(addr))
-	cos0 := (*C.struct_cgo_cos)(unsafe.Pointer(addr))
-	c, _ := NewCOS(cos0, num)
+	cos := (*C.struct_cgo_cos)(unsafe.Pointer(addr))
+	c, _ := NewCOS(cos, num)
 	return c
 }
 
-func GetCOSBySocketIDCosID(Sid, Cosid uint16) *CgoCos {
+// Get COS on specified socket and cos id
+func GetCOSBySocketIdCosId(Sid, Cosid uint16) *CgoCos {
+	return GetCOSBySocketId(Sid).Coss[Cosid]
+}
+
+// Get COS on specified socket and cos id
+func SetCOSBySocketIdCosId(Sid, Cosid uint16, mask uint64) *CgoCos {
+	defer C.pqos_fini()
+	var num C.unsigned
+	C.cgo_cat_init()
+	addr := C.cgo_cat_set_cos(C.uint(Sid), C.uint(Cosid), &num, C.ulonglong(mask))
+	defer C.free(unsafe.Pointer(addr))
+	cos := (*C.struct_cgo_cos)(unsafe.Pointer(addr))
+	c, _ := NewCOS(cos, num)
+	return c.Coss[Cosid]
 }

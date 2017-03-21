@@ -5,3 +5,4 @@ struct cgo_cos {
 };
 const struct pqos_cpuinfo *cgo_cat_init();
 const struct cgo_cos *cgo_cat_get_cos(unsigned, unsigned*);
+const struct cgo_cos *cgo_cat_set_cos(unsigned, unsigned, unsigned*, unsigned long long);

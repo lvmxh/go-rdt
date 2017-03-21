@@ -8,9 +8,7 @@ import (
 )
 
 type COS struct {
-	Socket_id uint32
-	Cos_id    uint32
-	Mask      uint64
+	Mask uint64
 }
 
 // COSs on same socket
@@ -55,7 +53,7 @@ func (c CosResource) Register(container *restful.Container) {
 		Param(ws.PathParameter("socket-id", "cpu socket id").DataType("unit")).
 		Param(ws.PathParameter("cos-id", "cos id").DataType("uint")).
 		Operation("CacheCosSocketIdCosIdPut").
-		Writes(COS{}))
+		Reads(COS{}))
 
 	container.Add(ws)
 }
@@ -76,8 +74,10 @@ func (c CosResource) CacheCosSocketIdCosIdGet(request *restful.Request, response
 
 	log.Printf("Received Request: %s", request.PathParameter("socket-id"))
 	log.Printf("Received Request: %s", request.PathParameter("cos-id"))
-
-	response.WriteEntity(0)
+	si, _ := strconv.ParseInt(request.PathParameter("socket-id"), 10, 32)
+	ci, _ := strconv.ParseInt(request.PathParameter("cos-id"), 10, 32)
+	cos := cgl_cat.GetCOSBySocketIdCosId(uint16(si), uint16(ci))
+	response.WriteEntity(cos)
 }
 
 func (c CosResource) CacheCosSocketIdCosIdPut(request *restful.Request, response *restful.Response) {
