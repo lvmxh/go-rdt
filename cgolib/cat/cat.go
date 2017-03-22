@@ -15,6 +15,7 @@ package cat
 import "C"
 import (
 	"bytes"
+	"fmt"
 	"unsafe"
 
 	cgl_utils "openstackcore-rdtagent/cgolib/common"
@@ -30,6 +31,16 @@ type COS struct {
 type COSs struct {
 	CosNum uint32
 	Coss   []*COS
+}
+
+type COSAssociation struct {
+	Cpu_id uint32
+	Cos_id uint32
+}
+
+type COSAssociations struct {
+	Socket_id uint32
+	CAs       []*COSAssociation
 }
 
 func NewCOS(s *C.struct_cgo_cos) (*COS, error) {
@@ -106,4 +117,80 @@ func SetCOSBySocketIdCosId(Sid, Cosid uint16, mask uint64) *COS {
 	cos := (*C.struct_cgo_cos)(unsafe.Pointer(addr))
 	c, _ := NewCOSs(cos, num)
 	return c.Coss[Cosid]
+}
+
+func GetCOSAssociations() []*COSAssociations {
+	defer C.pqos_fini()
+	//var num C.unsigned
+	var sock_count C.unsigned
+
+	cas := make([]*COSAssociations, 0)
+	cpuinfo := C.cgo_cat_init()
+	sockets := C.pqos_cpu_get_sockets(cpuinfo, &sock_count)
+	// Notes, golang doesn't support pointer arithmetic
+	// we create a large go array  1 << 8 = 64 is big enough
+	// to save cpu sockets
+	// https://groups.google.com/forum/#!topic/golang-nuts/sV_f0VkjZTA
+	sockets_go := (*[1 << 8]C.unsigned)(unsafe.Pointer(sockets))
+	for i := 0; i < int(sock_count); i++ {
+		var lcount C.unsigned
+		var cosa *COSAssociations = &COSAssociations{}
+		cosa.Socket_id = uint32(sockets_go[i])
+		lcores := C.pqos_cpu_get_cores(cpuinfo, sockets_go[i], &lcount)
+		lcores_go := (*[1 << 16]C.unsigned)(unsafe.Pointer(lcores))
+		for j := 0; j < int(lcount); j++ {
+			var cosid C.unsigned
+			var ca *COSAssociation = &COSAssociation{}
+			ret := C.pqos_alloc_assoc_get(C.unsigned(lcores_go[j]), &cosid)
+			if ret != C.PQOS_RETVAL_OK {
+				// TODO
+				fmt.Println("error :")
+				break
+			} else {
+				ca.Cpu_id = uint32(lcores_go[j])
+				ca.Cos_id = uint32(cosid)
+			}
+			cosa.CAs = append(cosa.CAs, ca)
+		}
+		cas = append(cas, cosa)
+	}
+	return cas
+}
+
+func GetCOSAssociation(Cpuid uint32) *COSAssociation {
+	defer C.pqos_fini()
+	C.cgo_cat_init()
+	var cosid C.unsigned
+	var ca *COSAssociation = &COSAssociation{}
+	ret := C.pqos_alloc_assoc_get(C.unsigned(Cpuid), &cosid)
+	if ret != C.PQOS_RETVAL_OK {
+		fmt.Println("Failed to get association for ", Cpuid)
+		return nil
+	} else {
+		ca.Cpu_id = Cpuid
+		ca.Cos_id = uint32(cosid)
+	}
+	return ca
+}
+
+func SetCOSAssociation(Cosid, Cpuid uint32) *COSAssociation {
+	defer C.pqos_fini()
+	C.cgo_cat_init()
+	var ca *COSAssociation = &COSAssociation{}
+	ret := C.pqos_alloc_assoc_set(C.unsigned(Cpuid), C.unsigned(Cosid))
+	if ret != C.PQOS_RETVAL_OK {
+		// TODO
+		fmt.Println("error :")
+		return nil
+	} else {
+		var cosid C.unsigned
+		ret := C.pqos_alloc_assoc_get(C.unsigned(Cpuid), &cosid)
+		if ret != C.PQOS_RETVAL_OK {
+			// TODO
+			return nil
+		}
+		ca.Cpu_id = Cpuid
+		ca.Cos_id = uint32(cosid)
+	}
+	return ca
 }

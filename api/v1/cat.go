@@ -15,6 +15,10 @@ type COS struct {
 	Mask      uint64
 }
 
+type COA struct {
+	Cos_id uint32
+}
+
 // COSs on same socket
 type COSs struct {
 	CosNum uint32
@@ -29,7 +33,7 @@ type CosResource struct {
 func (c CosResource) Register(container *restful.Container) {
 	ws := new(restful.WebService)
 	ws.
-		Path("/v1/cos").
+		Path("/v1/cache/cos").
 		Doc("Cos operation of the host").
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON)
@@ -64,6 +68,23 @@ func (c CosResource) Register(container *restful.Container) {
 		Param(ws.PathParameter("socket-id", "cpu socket id").DataType("unit")).
 		Param(ws.PathParameter("cos-id", "cos id").DataType("uint")).
 		Operation("CacheCosSocketIdCosIdDelete"))
+
+	ws.Route(ws.GET("/cpu").To(c.CacheCosCpuGet).
+		Doc("Get all cpu cos association of the host").
+		Operation("CacheCosCpuCpuIdGet").
+		Writes(COS{}))
+
+	ws.Route(ws.GET("/cpu/{cpu-id}").To(c.CacheCosCpuCpuIdGet).
+		Doc("Get cpu cos association of the specified cpu id").
+		Param(ws.PathParameter("cpu-id", "cpu socket id").DataType("unit")).
+		Operation("CacheCosCpuCpuIdGet").
+		Writes(COS{}))
+
+	ws.Route(ws.PUT("/cpu/{cpu-id}").To(c.CacheCosCpuCpuIdPut).
+		Doc("Update cos association for cpu id").
+		Param(ws.PathParameter("cpu-id", "cpu socket id").DataType("unit")).
+		Operation("CacheCosCpuCpuIdPut").
+		Reads(COA{}))
 
 	container.Add(ws)
 }
@@ -116,7 +137,27 @@ func (c CosResource) CacheCosSocketIdCosIdPut(request *restful.Request, response
 }
 
 func (c CosResource) CacheCosSocketIdCosIdDelete(request *restful.Request, response *restful.Response) {
-	log.Printf("Received Request: %s", request.PathParameter("socket-id"))
-	log.Printf("Received Request: %s", request.PathParameter("cos-id"))
+	// TODO
+	// reset cos to 0xfffff
+}
 
+func (c CosResource) CacheCosCpuGet(request *restful.Request, response *restful.Response) {
+	response.WriteEntity(cgl_cat.GetCOSAssociations())
+}
+
+func (c CosResource) CacheCosCpuCpuIdGet(request *restful.Request, response *restful.Response) {
+	log.Printf("Received Request: %s", request.PathParameter("cpu-id"))
+	ci, _ := strconv.ParseInt(request.PathParameter("cpu-id"), 10, 32)
+	response.WriteEntity(cgl_cat.GetCOSAssociation(uint32(ci)))
+}
+
+func (c CosResource) CacheCosCpuCpuIdPut(request *restful.Request, response *restful.Response) {
+	log.Printf("Received Request: %s", request.PathParameter("cpu-id"))
+	ci, _ := strconv.ParseInt(request.PathParameter("cpu-id"), 10, 32)
+	coa := new(COA)
+	err := request.ReadEntity(&coa)
+	if err != nil {
+		response.WriteError(http.StatusBadRequest, err)
+	}
+	response.WriteEntity(cgl_cat.SetCOSAssociation(uint32(coa.Cos_id), uint32(ci)))
 }
