@@ -1,14 +1,18 @@
 package v1
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/emicklei/go-restful"
 	"github.com/emicklei/go-restful/log"
 	cgl_cat "openstackcore-rdtagent/cgolib/cat"
-	"strconv"
 )
 
 type COS struct {
-	Mask uint64
+	Socket_id uint32
+	Cos_id    uint32
+	Mask      uint64
 }
 
 // COSs on same socket
@@ -42,18 +46,24 @@ func (c CosResource) Register(container *restful.Container) {
 		Writes([]COS{}))
 
 	ws.Route(ws.GET("/{socket-id}/{cos-id}").To(c.CacheCosSocketIdCosIdGet).
-		Doc("Get all cos of the specified socket").
+		Doc("Get cos of the specified socket and cos id").
 		Param(ws.PathParameter("socket-id", "cpu socket id").DataType("unit")).
 		Param(ws.PathParameter("cos-id", "cos id").DataType("uint")).
 		Operation("CacheCosSocketIdCosIdGet").
 		Writes(COS{}))
 
 	ws.Route(ws.PUT("/{socket-id}/{cos-id}").To(c.CacheCosSocketIdCosIdPut).
-		Doc("Get all cos of the specified socket").
+		Doc("Update mask of cos of the specified socket and cos id").
 		Param(ws.PathParameter("socket-id", "cpu socket id").DataType("unit")).
 		Param(ws.PathParameter("cos-id", "cos id").DataType("uint")).
 		Operation("CacheCosSocketIdCosIdPut").
 		Reads(COS{}))
+
+	ws.Route(ws.DELETE("/{socket-id}/{cos-id}").To(c.CacheCosSocketIdCosIdPut).
+		Doc("Reset mask to cos of the specified socket and id").
+		Param(ws.PathParameter("socket-id", "cpu socket id").DataType("unit")).
+		Param(ws.PathParameter("cos-id", "cos id").DataType("uint")).
+		Operation("CacheCosSocketIdCosIdDelete"))
 
 	container.Add(ws)
 }
@@ -84,6 +94,29 @@ func (c CosResource) CacheCosSocketIdCosIdPut(request *restful.Request, response
 
 	log.Printf("Received Request: %s", request.PathParameter("socket-id"))
 	log.Printf("Received Request: %s", request.PathParameter("cos-id"))
+	cos := new(COS)
+	err := request.ReadEntity(&cos)
 
-	response.WriteEntity(0)
+	if err == nil {
+		si, err := strconv.ParseInt(request.PathParameter("socket-id"), 10, 32)
+		if err != nil {
+			response.WriteError(http.StatusBadRequest, err)
+		}
+		ci, err := strconv.ParseInt(request.PathParameter("cos-id"), 10, 32)
+		if err != nil {
+			response.WriteError(http.StatusBadRequest, err)
+		}
+		cos.Socket_id = uint32(si)
+		cos.Cos_id = uint32(ci)
+		r := cgl_cat.SetCOSBySocketIdCosId(uint16(si), uint16(ci), cos.Mask)
+		response.WriteEntity(r)
+	} else {
+		response.WriteError(http.StatusInternalServerError, err)
+	}
+}
+
+func (c CosResource) CacheCosSocketIdCosIdDelete(request *restful.Request, response *restful.Response) {
+	log.Printf("Received Request: %s", request.PathParameter("socket-id"))
+	log.Printf("Received Request: %s", request.PathParameter("cos-id"))
+
 }
