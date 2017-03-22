@@ -223,9 +223,7 @@ paths:
           schema:
             type: string
             example:
-              cos_id: 0
-              cos_mask: '0xfffff'
-              socket_id: 0
+              mask: '0xfffff'
       responses:
         200:
           description: created
