@@ -60,88 +60,24 @@ paths:
             properties:
               caps:
                 $ref: '#/definitions/Caps'
-  /cache/l3/usage:
+  /cache/cos:
     get:
-      summary: Get the l3 cache usage of specified processes
+      summary: Get all cos of the host
       description: |
-        Get the l3 cache usage of specified processes
-      tags:
-        - cmt
-      parameters:
-        - name: process-list
-          in: query
-          description: process list of cache usage
-          required: false
-          type: string
-        - name: core-list
-          in: query
-          description: core list of cache usage
-          required: false
-          type: string
-      responses:
-        200:
-          description: l3 cache size usage in KiB
-          schema:
-            type: integer
-            format: int32
-        400:
-          description: Bad request
-        404:
-          description: Not found
-  /memory/usage:
-    get:
-      summary: Get Memory bandwidth specified processes or cores
-      description: |
-        Get the l3 cache usage of specified processes
-      tags:
-        - mbm
-      parameters:
-        - name: process-id
-          in: query
-          description: process list of memory bandwidth
-          required: false
-          type: string
-        - name: core-list
-          in: query
-          description: core list of memory bandwidth
-          required: false
-          type: string
-        - name: interval
-          in: query
-          description: query interval
-          type: integer
-          format: int32
-      responses:
-        200:
-          description: Memory bandwidth thought interval
-          schema:
-            type: integer
-            format: int32
-        400:
-          description: Bad request
-        404:
-          description: Not found
-  /cache/l3/alloc:
-    post:
-      summary: Create l3 cache allocation
-      description: |
-        create l3 cache allocation for specified process
+        Get Class of service on host
       tags:
         - cat
-      parameters:
-        - name: body
-          in: body
-          required: true
-          schema:
-            type: string
-            example:
-              process-id: 1234
-              cache-size: 1024
       responses:
-        202:
-          description: accepted
+        200:
+          description: clos on specified socket
+          schema:
+            type: array
+            items:
+              type: string
         400:
-          description: bad request
+          description: Bad request
+        404:
+          description: Not found
   /cache/cos/{socket-id}:
     get:
       summary: Get cos on specified socket id
@@ -231,25 +167,150 @@ paths:
           description: bad request
         404:
           description: socket id not found on host
-  /cache/cos:
+  /cache/cos/cpu:
     get:
-      summary: Get all cos of the host
+      summary: Get all cpu cos association of host
       description: |
-        Get Class of service on host
+        Get all cpu cos association of hos
       tags:
         - cat
       responses:
         200:
-          description: clos on specified socket
+          description: list of cpu cos association
           schema:
             type: array
             items:
               type: string
+  /cache/cos/cpu/{cpu-id}:
+    get:
+      summary: Get cpu cos association of host
+      description: |
+        Get cpu cos association of host by cpu-id
+      tags:
+        - cat
+      parameters:
+      - name: cpu-id
+        in: path
+        description: ID of CPU
+        required: true
+        type: integer
+        format: int32
+      responses:
+        200:
+          description: list of cpu cos association
+          schema:
+            type: array
+            items:
+              type: string
+    put:
+      summary: Update association of specified cpu
+      description: |
+        Update association of specified cpu
+      tags:
+        - cat
+      parameters:
+      - name: cpu-id
+        in: path
+        description: ID of CPU
+        required: true
+        type: integer
+        format: int32
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: string
+          example:
+            Cos_id: 0
+      responses:
+        200:
+          description: list of cpu cos association
+          schema:
+            type: array
+            items:
+              type: string
+  /cache/l3/usage:
+    get:
+      summary: Get the l3 cache usage of specified processes
+      description: |
+        Get the l3 cache usage of specified processes
+      tags:
+        - cmt
+      parameters:
+        - name: process-list
+          in: query
+          description: process list of cache usage
+          required: false
+          type: string
+        - name: core-list
+          in: query
+          description: core list of cache usage
+          required: false
+          type: string
+      responses:
+        200:
+          description: l3 cache size usage in KiB
+          schema:
+            type: integer
+            format: int32
         400:
           description: Bad request
         404:
           description: Not found
-
+  /memory/usage:
+    get:
+      summary: Get Memory bandwidth specified processes or cores
+      description: |
+        Get the l3 cache usage of specified processes
+      tags:
+        - mbm
+      parameters:
+        - name: process-id
+          in: query
+          description: process list of memory bandwidth
+          required: false
+          type: string
+        - name: core-list
+          in: query
+          description: core list of memory bandwidth
+          required: false
+          type: string
+        - name: interval
+          in: query
+          description: query interval
+          type: integer
+          format: int32
+      responses:
+        200:
+          description: Memory bandwidth thought interval
+          schema:
+            type: integer
+            format: int32
+        400:
+          description: Bad request
+        404:
+          description: Not found
+  /cache/l3/alloc:
+    post:
+      summary: Create l3 cache allocation
+      description: |
+        create l3 cache allocation for specified process
+      tags:
+        - cat
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: string
+            example:
+              process-id: 1234
+              cache-size: 1024
+      responses:
+        202:
+          description: accepted
+        400:
+          description: bad request
 definitions:
   Cacheinfo:
     type: object
