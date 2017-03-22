@@ -37,7 +37,8 @@ func NewCgoCos(s *C.struct_cgo_cos) (*CgoCos, error) {
 	r := bytes.NewReader(data[:])
 
 	var rr *CgoCos = &CgoCos{}
-	err := cgl_utils.NewStruct(rr, r)
+	// pass nil to ignore element parsing
+	err := cgl_utils.NewStruct(rr, r, nil)
 	return rr, err
 }
 
