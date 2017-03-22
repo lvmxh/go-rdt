@@ -20,6 +20,7 @@ import "C"
 
 import (
 	"bytes"
+	"fmt"
 	"reflect"
 	"unsafe"
 
@@ -121,7 +122,9 @@ func NewPqosCpuInfo(s *C.struct_pqos_cpuinfo) (*PqosCpuInfo, error) {
 	var rr *PqosCpuInfo = &PqosCpuInfo{}
 	err := cgl_utils.NewStruct(rr, r, CstructMap())
 	if err != nil {
-		return rr, err
+		fmt.Println(err)
+		//return rr, err
+		/* TODO FIXME we need to move all of fellowing logic to utils*/
 	}
 	// FIXME(Shaohe Feng) consider merge these code to NewStruct
 	core0 := uintptr(raw) + C.sizeof_struct_pqos_cpuinfo
