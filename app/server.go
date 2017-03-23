@@ -84,13 +84,10 @@ func (c completedConfig) New() (*APIServer, error) {
 	wsContainer := restful.NewContainer()
 	wsContainer.Router(restful.CurlyRouter{})
 
-	// FIXME need to move all these out of here
 	cpuinfo := v1.CpuinfoResource{}
-	l2cacheusage := v1.L2CacheUsage{}
 	cos := v1.CosResource{}
 	// Register controller to container
 	cpuinfo.Register(wsContainer)
-	l2cacheusage.Register(wsContainer)
 	cos.Register(wsContainer)
 
 	// Install adds the SgaggerUI webservices
@@ -100,8 +97,7 @@ func (c completedConfig) New() (*APIServer, error) {
 	// TODO error handle
 	return &APIServer{
 		HandlerContainer: wsContainer,
-		// FIXME remove hard code
-		Server: &http.Server{Addr: c.Config.GenericConfig.APIServerServiceIP + ":" + c.Config.GenericConfig.APIServerServicePort, Handler: wsContainer},
+		Server:           &http.Server{Addr: c.Config.GenericConfig.APIServerServiceIP + ":" + c.Config.GenericConfig.APIServerServicePort, Handler: wsContainer},
 	}, nil
 }
 
