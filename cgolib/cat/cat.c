@@ -40,7 +40,7 @@ const struct cgo_cos *cgo_cat_get_cos(unsigned socket, unsigned *num)
     struct pqos_l3ca tab[PQOS_MAX_L3CA_COS];
     unsigned n = 0;
     *num = 0;
-    struct cgo_cos *p_cos;
+    struct cgo_cos *p_cos = NULL;
 
     ret = pqos_l3ca_get(socket, PQOS_MAX_L3CA_COS, num, tab);
     if (ret == PQOS_RETVAL_OK) {

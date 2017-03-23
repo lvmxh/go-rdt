@@ -96,7 +96,14 @@ func GetCOSBySocketId(Sid uint16) *COSs {
 	C.cgo_cat_init()
 	var num C.unsigned
 	addr := C.cgo_cat_get_cos(C.uint(Sid), &num)
-	defer C.free(unsafe.Pointer(addr))
+	defer func() {
+		if addr != nil {
+			C.free(unsafe.Pointer(addr))
+		}
+	}()
+	if addr == nil {
+		return nil
+	}
 	cos := (*C.struct_cgo_cos)(unsafe.Pointer(addr))
 	c, _ := NewCOSs(cos, num)
 	return c
