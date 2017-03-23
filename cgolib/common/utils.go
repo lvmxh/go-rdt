@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -13,12 +14,43 @@ import (
 // ReadUvarint reads an encoded unsigned integer from r and returns it as a uint64.
 var overflow = errors.New("binary: varint overflows a X-bit integer")
 
-type CElement interface {
-	Len() uint32
-	Step(v reflect.Value) uint32
+// type Reader bytes.Reader
+type Reader struct {
+	bytes.Reader
+	S unsafe.Pointer
 }
 
-func readU8(r io.ByteReader) (uint8, error) {
+func (r *Reader) Addr() unsafe.Pointer {
+	return r.S
+}
+
+func NewReader(addr unsafe.Pointer, len int) *Reader {
+	ns := reflect.SliceHeader{uintptr(addr), len, len}
+	b := *(*[]byte)(unsafe.Pointer(&ns))
+	r := bytes.NewReader(b)
+	return &Reader{*r, addr}
+}
+
+type ByteReader interface {
+	io.ByteReader
+	Size() int64
+	Len() int
+	Addr() unsafe.Pointer
+}
+
+/* CMeta is used to describe the infomation of the data type
+in C Language.
+
+Copy C data in memory to Golang data in memory.
+By CMeta, the NewStruct can translate the C data type to
+Golang data type.
+*/
+type CMeta interface {
+	Len() uint32      // The bytes length of C data type in memory need copy once
+	New() interface{} // Gererate a new pointer of C data type
+}
+
+func readU8(r ByteReader) (uint8, error) {
 	b, err := r.ReadByte()
 	if err != nil {
 		return b, err
@@ -27,7 +59,7 @@ func readU8(r io.ByteReader) (uint8, error) {
 	return uint8(b & 0xff), nil
 }
 
-func readU16(r io.ByteReader) (uint16, error) {
+func readU16(r ByteReader) (uint16, error) {
 	var x uint16
 	var s uint
 	for i := 0; i < 2; i++ {
@@ -42,7 +74,7 @@ func readU16(r io.ByteReader) (uint16, error) {
 	return x, nil
 }
 
-func readU32(r io.ByteReader) (uint32, error) {
+func readU32(r ByteReader) (uint32, error) {
 	var x uint32
 	var s uint
 	for i := 0; i < 4; i++ {
@@ -57,7 +89,7 @@ func readU32(r io.ByteReader) (uint32, error) {
 	return x, nil
 }
 
-func readU64(r io.ByteReader) (uint64, error) {
+func readU64(r ByteReader) (uint64, error) {
 	var x uint64
 	var s uint
 	for i := 0; i < 8; i++ {
@@ -76,7 +108,7 @@ func addptr(p unsafe.Pointer, x uintptr) unsafe.Pointer {
 	return unsafe.Pointer(uintptr(p) + x)
 }
 
-func NewStruct(dest interface{}, r io.ByteReader, celem map[string]CElement) error {
+func NewStruct(dest interface{}, r ByteReader, cmeta map[string]CMeta) error {
 
 	value := reflect.ValueOf(dest).Elem()
 	typ := value.Type()
@@ -144,18 +176,26 @@ func NewStruct(dest interface{}, r io.ByteReader, celem map[string]CElement) err
 					fmt.Println("Skip slice parser for", typ,
 						". Let caller handle it")
 				} else if len(slices) > 1 {
-					iface := celem["capability"]
-					vstep := value.FieldByName(slices[0])
-					step := iface.Step(vstep)
+					var i_slice uint64 = 0
+					iface := cmeta[slices[1]]
+					num := value.FieldByName(slices[0]).Uint()
 					len := iface.Len()
-					fmt.Println("parser", len*step, "bytes")
+					readlen := r.Size() - int64(r.Len())
+					addr := addptr(r.Addr(), uintptr(readlen))
+					for ; i_slice < num; i_slice++ {
+						iv := iface.New()
+						nr := NewReader(addr, int(len))
+						err = NewStruct(iv, nr, cmeta)
+						sfl.Set(reflect.Append(sfl, reflect.ValueOf(iv)))
+						addr = addptr(addr, uintptr(len))
+					}
 				} else {
 					err = fmt.Errorf(
 						"Could not know how to handle slice type: %s", typ)
 				}
 
 			case reflect.Struct:
-				err = NewStruct(sfl.Addr().Interface(), r, celem)
+				err = NewStruct(sfl.Addr().Interface(), r, cmeta)
 
 			default:
 				err = fmt.Errorf(

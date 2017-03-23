@@ -19,9 +19,7 @@ const struct pqos_cap *cgo_cap_init();
 import "C"
 
 import (
-	"bytes"
 	"fmt"
-	"reflect"
 	"unsafe"
 
 	cgl_utils "openstackcore-rdtagent/cgolib/common"
@@ -91,50 +89,36 @@ type PqosCpuInfo struct {
 	L2        PqosCacheInfo
 	L3        PqosCacheInfo
 	Num_cores uint32
-	Cores     []*PqosCoreInfo
+	Cores     []*PqosCoreInfo `slice:"Num_cores,coreinfo"`
 }
 
 func NewPqosCoreInfo(s *C.struct_pqos_coreinfo) (*PqosCoreInfo, error) {
 	raw := unsafe.Pointer(s)
-	data := *(*[C.sizeof_struct_pqos_coreinfo]byte)(raw)
-	r := bytes.NewReader(data[:])
+	r := cgl_utils.NewReader(raw, C.sizeof_struct_pqos_coreinfo)
 
 	var rr *PqosCoreInfo = &PqosCoreInfo{}
-	err := cgl_utils.NewStruct(rr, r, CstructMap())
+	err := cgl_utils.NewStruct(rr, r, cmeta)
 	return rr, err
 }
 
 func NewPqosCacheInfo(s *C.struct_pqos_cacheinfo) (*PqosCacheInfo, error) {
 	raw := unsafe.Pointer(s)
-	data := *(*[C.sizeof_struct_pqos_cacheinfo]byte)(raw)
-	r := bytes.NewReader(data[:])
+	r := cgl_utils.NewReader(raw, C.sizeof_struct_pqos_cacheinfo)
 
 	var rr *PqosCacheInfo = &PqosCacheInfo{}
-	err := cgl_utils.NewStruct(rr, r, CstructMap())
+	err := cgl_utils.NewStruct(rr, r, cmeta)
 	return rr, err
 }
 
 func NewPqosCpuInfo(s *C.struct_pqos_cpuinfo) (*PqosCpuInfo, error) {
 	raw := unsafe.Pointer(s)
-	data := *(*[C.sizeof_struct_pqos_cpuinfo]byte)(raw)
-	r := bytes.NewReader(data[:])
+	r := cgl_utils.NewReader(raw, C.sizeof_struct_pqos_cpuinfo)
+	fmt.Println("the Top struct slice  addr is:", unsafe.Pointer(r.Addr()))
 
 	var rr *PqosCpuInfo = &PqosCpuInfo{}
-	err := cgl_utils.NewStruct(rr, r, CstructMap())
+	err := cgl_utils.NewStruct(rr, r, cmeta)
 	if err != nil {
 		fmt.Println(err)
-		//return rr, err
-		/* TODO FIXME we need to move all of fellowing logic to utils*/
-	}
-	// FIXME(Shaohe Feng) consider merge these code to NewStruct
-	core0 := uintptr(raw) + C.sizeof_struct_pqos_cpuinfo
-	core_size := uint32(C.sizeof_struct_pqos_coreinfo)
-	var i uint32 = 0
-	for ; i < rr.Num_cores; i++ {
-		addr := (*C.struct_pqos_coreinfo)(unsafe.Pointer(core0))
-		core_info, _ := NewPqosCoreInfo(addr)
-		rr.Cores = append(rr.Cores, core_info)
-		core0 = core0 + uintptr(core_size)
 	}
 	return rr, err
 }
@@ -233,22 +217,22 @@ type CstructPqosCapablity struct {
 	Name string
 }
 
-func (cap CstructPqosCapablity) Len() uint32 {
+func (c CstructPqosCapablity) Len() uint32 {
 	return C.sizeof_struct_pqos_capability
 }
 
-func (cap CstructPqosCapablity) Step(v reflect.Value) uint32 {
-	return v.Interface().(uint32)
+func (c CstructPqosCapablity) New() interface{} {
+	var rr *PqosCapability = &PqosCapability{}
+	return rr
 }
 
 func NewPqosCapability(s *C.struct_pqos_capability) (*PqosCapability, error) {
 	raw := unsafe.Pointer(s)
 
-	data := *(*[C.sizeof_struct_pqos_capability]byte)(raw)
-	r := bytes.NewReader(data[:])
+	r := cgl_utils.NewReader(raw, C.sizeof_struct_pqos_capability)
 
 	var rr *PqosCapability = &PqosCapability{}
-	err := cgl_utils.NewStruct(rr, r, CstructMap())
+	err := cgl_utils.NewStruct(rr, r, cmeta)
 
 	/* struct pqos_capability {
 		    enum pqos_cap_type type;
@@ -283,13 +267,13 @@ func NewPqosCapability(s *C.struct_pqos_capability) (*PqosCapability, error) {
 	}
 	return rr, err
 }
+
 func NewPqosCaps(c *C.struct_pqos_cap) (*PqosCap, error) {
 	raw := unsafe.Pointer(c)
-	data := *(*[C.sizeof_struct_pqos_capability]byte)(raw)
 
-	r := bytes.NewReader(data[:])
+	r := cgl_utils.NewReader(raw, C.sizeof_struct_pqos_capability)
 	var rr *PqosCap = &PqosCap{}
-	err := cgl_utils.NewStruct(rr, r, CstructMap())
+	err := cgl_utils.NewStruct(rr, r, cmeta)
 	if err != nil {
 		return rr, err
 	}
@@ -313,8 +297,16 @@ func GetCpuCaps() (*PqosCap, error) {
 	return caps, err
 }
 
-func CstructMap() map[string]cgl_utils.CElement {
-	var cmap = make(map[string]cgl_utils.CElement)
-	cmap["capability"] = &CstructPqosCapablity{"capability"}
-	return cmap
+// CMeta interface for describe C data type: pqos_coreinfo
+func (c PqosCoreInfo) Len() uint32 {
+	return C.sizeof_struct_pqos_coreinfo
+}
+
+func (c PqosCoreInfo) New() interface{} {
+	return &PqosCoreInfo{}
+}
+
+var cmeta = map[string]cgl_utils.CMeta{
+	"capability": &CstructPqosCapablity{"capability"},
+	"coreinfo":   &PqosCoreInfo{},
 }

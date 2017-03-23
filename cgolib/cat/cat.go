@@ -13,8 +13,8 @@ package cat
 #include "cat.h"
 */
 import "C"
+
 import (
-	"bytes"
 	"fmt"
 	"unsafe"
 
@@ -45,8 +45,7 @@ type COSAssociations struct {
 
 func NewCOS(s *C.struct_cgo_cos) (*COS, error) {
 	raw := unsafe.Pointer(s)
-	data := *(*[C.sizeof_struct_cgo_cos]byte)(raw)
-	r := bytes.NewReader(data[:])
+	r := cgl_utils.NewReader(raw, C.sizeof_struct_cgo_cos)
 
 	var rr *COS = &COS{}
 	// pass nil to ignore element parsing
