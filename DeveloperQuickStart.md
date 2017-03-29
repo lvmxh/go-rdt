@@ -1,28 +1,28 @@
 # Setup Develoment Environment
 
-## Clone openstackcore-rdtagent code
+## Prepare GO development environment
 
 Make sure you have your $GOPATH, $PATH setup correctly
 
 ```
-$ cat ~/.bash_rc | grep GOP
-declare -x GOPATH=$HOME/go
-declare -x PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
-
-$ cd $GOPATH/src
-$ git clone https://${your_name}@git-ccr-1.devtools.intel.com/gerrit/p/openstackcore-rdtagent.git
+e.g.
+export GOPATH=$HOME/go
+export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
 ```
+
+## Clone openstackcore-rdtagent code
+
+Clone the code into $GOPATH/src/openstackcore-rdtagent
 
 ## Build & install openstackcore-rdtagent
 
 ```
-
 $ go get github.com/tools/godep
-$ cd $GOPATH/src/openstackcore-rdtagent
+
+(goto source code topdir)
 $ git submodule init
 $ git submodule update
 $ ./install
-
 ```
 
 ## Run openstackcore-rdtagent
