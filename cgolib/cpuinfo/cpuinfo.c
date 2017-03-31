@@ -1,4 +1,3 @@
-#include <cpuinfo.h>
 #include <pqos.h>
 #include <stdio.h>
 #include <log.h>

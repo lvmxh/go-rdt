@@ -7,7 +7,6 @@ package cat
 #cgo CFLAGS: -pthread -Wall -Winline -D_FILE_OFFSET_BITS=64 -g -O0
 #cgo CFLAGS: -fstack-protector -D_FORTIFY_SOURCE=2 -fPIE
 #cgo CFLAGS: -D_GNU_SOURCE -DPQOS_NO_PID_API
-#include <allocation.h>
 #include <pqos.h>
 #include <stdlib.h>
 #include "cat.h"
