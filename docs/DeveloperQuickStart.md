@@ -22,7 +22,7 @@ $ go get github.com/tools/godep
 (goto source code topdir)
 $ git submodule init
 $ git submodule update
-$ ./install
+$ ./install-deps
 ```
 
 ## Run openstackcore-rdtagent

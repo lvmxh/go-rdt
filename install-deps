@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-if [ ! -f install ]; then
-	echo 'install must be run within its container folder' 1>&2
+if [ ! -f install-deps ]; then
+	echo 'This script must be run within its container folder' 1>&2
 	exit 1
 fi
 

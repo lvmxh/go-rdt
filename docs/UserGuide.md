@@ -1,6 +1,4 @@
-# RDTagent - the system agent for Intel RDT controlling
-
-COS usage examples:
+# COS usage examples:
 
 (e.g. starting the service on: http://127.0.0.1:8888)
 
