@@ -2,12 +2,17 @@
 #include <string.h>
 #include "pqos.h"
 
-const struct pqos_cpuinfo * cgo_cpuinfo_init()
+struct _pqos_infos {
+    const struct pqos_cpuinfo *p_cpu;
+    const struct pqos_cap *p_cap;
+};
+
+struct _pqos_infos _pqos_init_get()
 {
     struct pqos_config cfg;
     int ret;
-    const struct pqos_cpuinfo *p_cpu = NULL;
-    const struct pqos_cap *p_cap = NULL;
+    struct _pqos_infos infos = {NULL, NULL};
+
     memset(&cfg, 0, sizeof(cfg));
         cfg.fd_log = STDOUT_FILENO;
         cfg.verbose = 0;
@@ -15,41 +20,27 @@ const struct pqos_cpuinfo * cgo_cpuinfo_init()
     ret = pqos_init(&cfg);
     if (ret != PQOS_RETVAL_OK) {
         fprintf(stderr, "Error initializing PQos library!\n");
-        return NULL;
+        return infos; /* with NULL values */
     }
 
-    ret = pqos_cap_get(&p_cap, &p_cpu);
+    ret = pqos_cap_get(&infos.p_cap, &infos.p_cpu);
     if (ret != PQOS_RETVAL_OK) {
         fprintf(stderr, "Error retriveving PQoS cpuinfo!\n");
-        return NULL;
     }
 
-    printf("get cpuinfo successfully. Total %d cores.\n", p_cpu->num_cores);
-    return p_cpu;
+    return infos;
 }
 
-/* init cap */
-const struct pqos_cap *cgo_cap_init()
+/* get cpuinfo */
+const struct pqos_cpuinfo* cgo_get_cpuinfo()
 {
-    struct pqos_config cfg;
-    int ret;
-    const struct pqos_cpuinfo *p_cpu = NULL;
-    const struct pqos_cap *p_cap = NULL;
-    memset(&cfg, 0, sizeof(cfg));
-        cfg.fd_log = STDOUT_FILENO;
-        cfg.verbose = 0;
+    struct _pqos_infos infos = _pqos_init_get();
+    return infos.p_cpu;
+}
 
-    ret = pqos_init(&cfg);
-    if (ret != PQOS_RETVAL_OK) {
-        fprintf(stderr, "Error initializing PQos library!\n");
-        return NULL;
-    }
-
-    ret = pqos_cap_get(&p_cap, &p_cpu);
-    if (ret != PQOS_RETVAL_OK) {
-        fprintf(stderr, "Error retriveving PQoS capabilities!\n");
-        return NULL;
-    }
-    printf("caps = %u\n", p_cap->num_cap);
-    return p_cap;
+/* get cap */
+const struct pqos_cap* cgo_get_cap()
+{
+    struct _pqos_infos infos = _pqos_init_get();
+    return infos.p_cap;
 }

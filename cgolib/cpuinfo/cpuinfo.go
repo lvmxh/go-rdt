@@ -11,9 +11,9 @@ package cpuinfo
 #include <pqos.h>
 
 typedef struct pqos_cpuinfo *ppqos_cpuinfo;
-const struct pqos_cpuinfo * cgo_cpuinfo_init();
 
-const struct pqos_cap *cgo_cap_init();
+const struct pqos_cpuinfo * cgo_get_cpuinfo();
+const struct pqos_cap *     cgo_get_cap();
 */
 import "C"
 
@@ -134,7 +134,7 @@ type Cacheinfo struct {
 
 func GetCpuInfo() (*PqosCpuInfo, error) {
 	defer C.pqos_fini()
-	s := C.cgo_cpuinfo_init()
+	s := C.cgo_get_cpuinfo()
 	if s == nil {
 		// FIXME, we had better to get the libqpos error message,
 		// and report it to User.
@@ -299,7 +299,7 @@ func NewPqosCaps(c *C.struct_pqos_cap) (*PqosCap, error) {
 
 func GetCpuCaps() (*PqosCap, error) {
 	defer C.pqos_fini()
-	s := C.cgo_cap_init()
+	s := C.cgo_get_cap()
 	if s == nil {
 		// FIXME, we had better to get the libqpos error message,
 		// and report it to User.
