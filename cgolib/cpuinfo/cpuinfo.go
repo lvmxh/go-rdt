@@ -134,7 +134,14 @@ type Cacheinfo struct {
 
 func GetCpuInfo() (*PqosCpuInfo, error) {
 	defer C.pqos_fini()
-	cpuinfo, err := NewPqosCpuInfo(C.cgo_cpuinfo_init())
+	s := C.cgo_cpuinfo_init()
+	if s == nil {
+		// FIXME, we had better to get the libqpos error message,
+		// and report it to User.
+		err := fmt.Errorf("Error initializing cpuinfo. Could not get cpuinfo.")
+		return nil, err
+	}
+	cpuinfo, err := NewPqosCpuInfo(s)
 	return cpuinfo, err
 }
 
@@ -292,7 +299,15 @@ func NewPqosCaps(c *C.struct_pqos_cap) (*PqosCap, error) {
 
 func GetCpuCaps() (*PqosCap, error) {
 	defer C.pqos_fini()
-	caps, err := NewPqosCaps(C.cgo_cap_init())
+	s := C.cgo_cap_init()
+	if s == nil {
+		// FIXME, we had better to get the libqpos error message,
+		// and report it to User.
+		err := fmt.Errorf(
+			"Error initializing cpu capablity. Could not get cpu_cap.")
+		return nil, err
+	}
+	caps, err := NewPqosCaps(s)
 	return caps, err
 }
 
