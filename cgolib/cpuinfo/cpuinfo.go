@@ -7,9 +7,7 @@ package cpuinfo
 #cgo CFLAGS: -pthread -Wall -Winline -D_FILE_OFFSET_BITS=64 -g -O0
 #cgo CFLAGS: -fstack-protector -D_FORTIFY_SOURCE=2 -fPIE
 #cgo CFLAGS: -D_GNU_SOURCE -DPQOS_NO_PID_API
-#include <cpuinfo.h>
 #include <pqos.h>
-#include <stdlib.h>
 
 typedef struct pqos_cpuinfo *ppqos_cpuinfo;
 const struct pqos_cpuinfo * cgo_cpuinfo_init();
@@ -134,7 +132,7 @@ type Cacheinfo struct {
 }
 
 func GetCpuInfo() (*PqosCpuInfo, error) {
-	defer C.cpuinfo_fini()
+	defer C.pqos_fini()
 	cpuinfo, err := NewPqosCpuInfo(C.cgo_cpuinfo_init())
 	return cpuinfo, err
 }
