@@ -1,7 +1,6 @@
-#include <pqos.h>
 #include <stdio.h>
-#include <log.h>
 #include <string.h>
+#include "pqos.h"
 
 const struct pqos_cpuinfo * cgo_cpuinfo_init()
 {

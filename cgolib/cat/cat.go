@@ -1,12 +1,13 @@
 package cat
 
 /*
-#cgo CFLAGS: -I../../src/cmt-cat/lib -L../../src/cmt-cat/lib
-#cgo CFLAGS: -I${SRCDIR}/cmt-cat/lib -L${SRCDIR}/cmt-cat/lib
-#cgo LDFLAGS: -lpqos -fPIE
-#cgo CFLAGS: -pthread -Wall -Winline -D_FILE_OFFSET_BITS=64 -g -O0
-#cgo CFLAGS: -fstack-protector -D_FORTIFY_SOURCE=2 -fPIE
+#cgo CFLAGS: -I${SRCDIR}/../_c/libs/include
+#cgo CFLAGS: -pthread -Wall -Winline -g -O0
+#cgo CFLAGS: -fstack-protector -fPIE
 #cgo CFLAGS: -D_GNU_SOURCE -DPQOS_NO_PID_API
+#cgo CFLAGS: -D_FORTIFY_SOURCE=2 -D_FILE_OFFSET_BITS=64
+#cgo LDFLAGS: -L${SRCDIR}/../_c/libs/lib
+#cgo LDFLAGS: -lpqos
 #include <pqos.h>
 #include <stdlib.h>
 #include "cat.h"

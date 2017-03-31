@@ -1,8 +1,7 @@
-#include <pqos.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <log.h>
 #include <string.h>
+#include "pqos.h"
 #include "cat.h"
 
 /* init before doing allocation */
