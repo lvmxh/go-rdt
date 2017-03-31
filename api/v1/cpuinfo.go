@@ -1,7 +1,9 @@
 package v1
 
 import (
-	"fmt"
+	"log"
+	"net/http"
+
 	"github.com/emicklei/go-restful"
 	cgl_cpuinfo "openstackcore-rdtagent/cgolib/cpuinfo"
 )
@@ -53,31 +55,36 @@ type Capabilities struct {
 type CpuinfoResource struct {
 }
 
-func GetCpuInfo() *CpuInfo {
+func GetCpuInfo() (*CpuInfo, error) {
+	ci, err := cgl_cpuinfo.GetCpuInfo()
 
-	ci, _ := cgl_cpuinfo.GetCpuInfo()
+	if err != nil {
+		return nil, err
+	}
+
 	var c CpuInfo
 	c.CpuNum = ci.Num_cores
 	c.L2Cache = Cacheinfo{"l2", ci.L2.Total_size, ci.L2.Num_ways}
 	c.L3Cache = Cacheinfo{"l3", ci.L3.Total_size, ci.L3.Num_ways}
-	return &c
+	return &c, nil
 }
 
-func GetTopo(cpuinfo *cgl_cpuinfo.PqosCpuInfo) (s, c, p int) {
+func GetCacheIds(cpuinfo *cgl_cpuinfo.PqosCpuInfo) (s int) {
 	s_map := make(map[uint32]int)
-	c_map := make(map[uint32]int)
-	p_map := make(map[uint32]int)
 	for _, i := range cpuinfo.Cores {
 		s_map[i.Socket] = 1
-		c_map[i.L2_id] = 1
-		p_map[i.Lcore] = 1
 	}
-	return len(s_map), len(c_map), len(p_map)
+	return len(s_map)
 }
 
-func GetCpuTopo() CpuTopo {
-	ci, _ := cgl_cpuinfo.GetCpuInfo()
-	s, _, _ := GetTopo(ci)
+func GetCpuTopo() (CpuTopo, error) {
+
+	ci, err := cgl_cpuinfo.GetCpuInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	s := GetCacheIds(ci)
 	cputopo := make([]Socket, s)
 
 	for _, cpu := range ci.Cores {
@@ -98,13 +105,16 @@ func GetCpuTopo() CpuTopo {
 			cputopo[cpu.Socket].Cores = append(cputopo[cpu.Socket].Cores, new_core)
 		}
 	}
-	return cputopo
+	return cputopo, nil
 }
 
-func GetCaps() *Capabilities {
-	fmt.Println("go")
+func GetCaps() (*Capabilities, error) {
 	var cap Capabilities
-	ci, _ := cgl_cpuinfo.GetCpuCaps()
+	ci, err := cgl_cpuinfo.GetCpuCaps()
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	cap.Num = ci.Num_cap
 	for _, c := range ci.Capabilities {
 		var new_cap Capability
@@ -115,7 +125,7 @@ func GetCaps() *Capabilities {
 		}
 		cap.Caps = append(cap.Caps, new_cap)
 	}
-	return &cap
+	return &cap, nil
 }
 
 func (cpuinfo CpuinfoResource) Register(container *restful.Container) {
@@ -145,13 +155,21 @@ func (cpuinfo CpuinfoResource) Register(container *restful.Container) {
 
 // GET http://localhost:8081/cpuinfo
 func (cpuinfo CpuinfoResource) CpuinfoGet(request *restful.Request, response *restful.Response) {
-	c := GetCpuInfo()
+	c, err := GetCpuInfo()
+	if err != nil {
+		response.WriteError(http.StatusInternalServerError, err)
+		return
+	}
 	response.WriteEntity(c)
 }
 
 // GET http://localhost:8081/cpuinfo/topology
 func (cpuinfo CpuinfoResource) CpuinfoTopologyGet(request *restful.Request, response *restful.Response) {
-	t := GetCpuTopo()
+	t, err := GetCpuTopo()
+	if err != nil {
+		response.WriteError(http.StatusInternalServerError, err)
+		return
+	}
 	response.WriteEntity(t)
 }
 
@@ -159,7 +177,11 @@ func (cpuinfo CpuinfoResource) CpuinfoTopologyGet(request *restful.Request, resp
 
 func (cpuinfo CpuinfoResource) CpuinfoCapGet(request *restful.Request, response *restful.Response) {
 
-	caps := GetCaps()
+	caps, err := GetCaps()
+	if err != nil {
+		response.WriteError(http.StatusInternalServerError, err)
+		return
+	}
 	response.WriteEntity(caps)
 }
 
