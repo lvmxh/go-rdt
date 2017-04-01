@@ -281,20 +281,6 @@ func NewPqosCaps(c *C.struct_pqos_cap) (*PqosCap, error) {
 	r := cgl_utils.NewReader(raw, C.sizeof_struct_pqos_capability)
 	var rr *PqosCap = &PqosCap{}
 	err := cgl_utils.NewStruct(rr, r, cmeta)
-	if err != nil {
-		return rr, err
-	}
-	//fixme handle array
-	cap0 := uintptr(raw) + C.sizeof_struct_pqos_cap
-	cap_size := uint32(C.sizeof_struct_pqos_capability)
-	var i uint32 = 0
-	for ; i < rr.Num_cap; i++ {
-		addr := (*C.struct_pqos_capability)(unsafe.Pointer(cap0))
-
-		cap, _ := NewPqosCapability(addr)
-		rr.Capabilities = append(rr.Capabilities, cap)
-		cap0 = cap0 + uintptr(cap_size)
-	}
 	return rr, err
 }
 
