@@ -224,9 +224,6 @@ func NewStruct(dest interface{}, r ByteReader, cmeta map[string]CMeta) error {
 					fmt.Println("Skip union parser for", typ,
 						". Let caller handle it")
 				} else if len(slices) > 1 {
-					var a64 [8]byte              // 64bit system
-					a32 := [...]byte{0, 0, 0, 0} // 32bit system
-					var i int = 0
 					iface := cmeta[slices[1]]
 					typ := uint32(value.FieldByName(slices[0]).Uint())
 					iv := iface.New(typ)
@@ -238,17 +235,7 @@ func NewStruct(dest interface{}, r ByteReader, cmeta map[string]CMeta) error {
 						err = NewStruct(iv, nr, cmeta)
 						ua := reflect.ValueOf(iv).Elem().UnsafeAddr()
 						s := ((*[8]byte)(unsafe.Pointer(&ua)))[:size]
-						if size < 8 {
-							for i = 0; i < size; i++ {
-								a32[i] = s[i]
-							}
-							sfl.Set(reflect.ValueOf(a32))
-						} else {
-							for i = 0; i < size; i++ {
-								a64[i] = s[i]
-							}
-							sfl.Set(reflect.ValueOf(a64))
-						}
+						reflect.Copy(sfl, reflect.ValueOf(s))
 					}
 				} else {
 					err = fmt.Errorf(
