@@ -196,6 +196,15 @@ type PqosCapMon struct {
 	Max_rmid   uint32
 	L3_size    uint32
 	Num_events uint32
+	Events     []*PqosMontor `slice:"Num_events,monitor"`
+}
+
+func (c PqosMontor) Len(typ ...uint32) uint32 {
+	return C.sizeof_struct_pqos_monitor
+}
+
+func (c PqosMontor) New(typ ...uint32) interface{} {
+	return &PqosMontor{}
 }
 
 type PqosMontor struct {
@@ -208,7 +217,35 @@ type PqosMontor struct {
 type PqosCapability struct {
 	Type    uint32
 	Support int32
-	U       [8]byte
+	U       [8]byte `union:"Type,ucapability"`
+}
+
+// An empty struct for pqos_capability union
+type UCapability struct {
+}
+
+func (u UCapability) Len(typ ...uint32) uint32 {
+	size := [...]uint32{
+		C.sizeof_struct_pqos_cap_mon,
+		C.sizeof_struct_pqos_cap_l3ca,
+		C.sizeof_struct_pqos_cap_l2ca,
+		C.sizeof_struct_pqos_cap_mba}
+	return size[typ[0]]
+}
+
+func (u UCapability) New(typ ...uint32) interface{} {
+	switch typ[0] {
+	case 0:
+		return &PqosCapMon{}
+	case 1:
+		return &PqosCapL3Ca{}
+	case 2:
+		return &PqosCapL2Ca{}
+	case 3:
+		return &PqosCapMba{}
+	default:
+		return nil
+	}
 }
 
 type PqosCap struct {
@@ -219,17 +256,12 @@ type PqosCap struct {
 	Capabilities []*PqosCapability `slice:"Num_cap,capability"`
 }
 
-type CstructPqosCapablity struct {
-	Name string
-}
-
-func (c CstructPqosCapablity) Len() uint32 {
+func (c PqosCapability) Len(typ ...uint32) uint32 {
 	return C.sizeof_struct_pqos_capability
 }
 
-func (c CstructPqosCapablity) New() interface{} {
-	var rr *PqosCapability = &PqosCapability{}
-	return rr
+func (c PqosCapability) New(typ ...uint32) interface{} {
+	return &PqosCapability{}
 }
 
 func NewPqosCapability(s *C.struct_pqos_capability) (*PqosCapability, error) {
@@ -240,37 +272,6 @@ func NewPqosCapability(s *C.struct_pqos_capability) (*PqosCapability, error) {
 	var rr *PqosCapability = &PqosCapability{}
 	err := cgl_utils.NewStruct(rr, r, cmeta)
 
-	/* struct pqos_capability {
-		    enum pqos_cap_type type;
-		    int os_support;
-		     union {
-		                  struct pqos_cap_mon *mon;
-		                   struct pqos_cap_l3ca *l3ca;
-		                    struct pqos_cap_l2ca *l2ca;
-		                    struct pqos_cap_mba *mba;
-		                    void *generic_ptr;
-		            } u;
-		    };
-	    Get the addr of union
-	*/
-
-	// c := uintptr(raw) + C.sizeof_struct_pqos_capability - C.sizeof_intptr_t
-	switch t := rr.Type; t {
-	case 0:
-		// mon
-		//		addr := (*C.struct_pqos_cap_mon)(unsafe.Pointer(c))
-		//		fmt.Println(*addr)
-	case 1:
-		// l3 cat
-		//		addr := (*C.struct_pqos_cap_l3_ca)(unsafe.Pointer(c))
-		//		fmt.Println(*addr)
-	case 2:
-		// l2 cat
-		//  	addr := (*C.struct_pqos_cap_l2ca)(unsafe.Pointer(c))
-		//		fmt.Println(*addr)
-	default:
-		// error
-	}
 	return rr, err
 }
 
@@ -312,15 +313,17 @@ func GetCpuCaps() (*PqosCap, error) {
 }
 
 // CMeta interface for describe C data type: pqos_coreinfo
-func (c PqosCoreInfo) Len() uint32 {
+func (c PqosCoreInfo) Len(typ ...uint32) uint32 {
 	return C.sizeof_struct_pqos_coreinfo
 }
 
-func (c PqosCoreInfo) New() interface{} {
+func (c PqosCoreInfo) New(typ ...uint32) interface{} {
 	return &PqosCoreInfo{}
 }
 
 var cmeta = map[string]cgl_utils.CMeta{
-	"capability": &CstructPqosCapablity{"capability"},
-	"coreinfo":   &PqosCoreInfo{},
+	"monitor":     &PqosMontor{},
+	"capability":  &PqosCapability{},
+	"ucapability": &UCapability{},
+	"coreinfo":    &PqosCoreInfo{},
 }

@@ -46,8 +46,8 @@ By CMeta, the NewStruct can translate the C data type to
 Golang data type.
 */
 type CMeta interface {
-	Len() uint32      // The bytes length of C data type in memory need copy once
-	New() interface{} // Gererate a new pointer of C data type
+	Len(typ ...uint32) uint32      // The bytes length of C data type in memory need copy once
+	New(typ ...uint32) interface{} // Gererate a new pointer of C data type
 }
 
 func readU8(r ByteReader) (uint8, error) {
@@ -102,6 +102,24 @@ func readU64(r ByteReader) (uint64, error) {
 	}
 
 	return x, nil
+}
+
+// A pointer can be 32 bit  or 64 bit
+func readPointer(r ByteReader, n uint32) (unsafe.Pointer, error) {
+	var x uint64
+	var s uint
+	var i uint32
+	for i = 0; i < n; i++ {
+		b, err := r.ReadByte()
+		if err != nil {
+			return nil, err
+		}
+		x |= uint64(b&0xff) << s
+		s += 8
+	}
+	addr := unsafe.Pointer(uintptr(x))
+
+	return addr, nil
 }
 
 func addptr(p unsafe.Pointer, x uintptr) unsafe.Pointer {
@@ -194,6 +212,33 @@ func NewStruct(dest interface{}, r ByteReader, cmeta map[string]CMeta) error {
 						"Could not know how to handle slice type: %s", typ)
 				}
 
+			case reflect.Array:
+				slice := fl.Tag.Get("union")
+				slices := strings.Split(slice, ",")
+				if fl.Tag == "" {
+					err = fmt.Errorf(
+						"Could not handle Array type, if you just want ",
+						"to copy binary data from C memory to Go, please ",
+						"implement it. ")
+				} else if slices[0] == "" || slices[0] == "-" {
+					fmt.Println("Skip union parser for", typ,
+						". Let caller handle it")
+				} else if len(slices) > 1 {
+					iface := cmeta[slices[1]]
+					typ := uint32(value.FieldByName(slices[0]).Uint())
+					iv := iface.New(typ)
+					len := iface.Len(typ)
+					size := sfl.Len()
+					addr, err := readPointer(r, uint32(size))
+					if err == nil {
+						nr := NewReader(addr, int(len))
+						err = NewStruct(iv, nr, cmeta)
+						fmt.Println(iv)
+					}
+				} else {
+					err = fmt.Errorf(
+						"Could not know how to handle slice type: %s", typ)
+				}
 			case reflect.Struct:
 				err = NewStruct(sfl.Addr().Interface(), r, cmeta)
 
