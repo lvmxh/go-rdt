@@ -19,6 +19,7 @@ import "C"
 
 import (
 	"fmt"
+	"reflect"
 	"unsafe"
 
 	cgl_utils "openstackcore-rdtagent/cgolib/common"
@@ -220,6 +221,88 @@ type PqosCapability struct {
 	U       [8]byte `union:"Type,ucapability"`
 }
 
+func IsvalidCapName(cap string) bool {
+	switch cap {
+	case "Num_classes",
+		"Num_ways",
+		"Way_size",
+		"Way_contention",
+		"Cdp",
+		"Cdp_on",
+		"Throttle_max",
+		"Throttle_step",
+		"Is_linear",
+		"Max_rmid",
+		"Num_events":
+		return true
+	}
+	return false
+}
+
+func GetCapsMeta(r interface{}) string {
+	value := reflect.ValueOf(r).Elem()
+	typ := value.Type()
+	meta := ""
+	for i := 0; i < value.NumField(); i++ {
+		sfl := value.Field(i)
+		fl := typ.Field(i)
+		if sfl.IsValid() {
+			if fl.Type.Kind() != reflect.Slice &&
+				(fl.Type.Kind() == reflect.Uint32 || fl.Type.Kind() == reflect.Uint64) {
+				if IsvalidCapName(fl.Name) {
+					meta = fmt.Sprintf("%s%s=%d;", meta, fl.Name, sfl.Uint())
+				}
+			}
+		}
+	}
+	return meta
+}
+
+var CapEventsMap = map[uint32]string{
+	C.PQOS_MON_EVENT_L3_OCCUP:  "LLC",
+	C.PQOS_MON_EVENT_LMEM_BW:   "MBML",
+	C.PQOS_MON_EVENT_TMEM_BW:   "MBMT",
+	C.PQOS_MON_EVENT_RMEM_BW:   "MBMR",
+	C.PQOS_PERF_EVENT_LLC_MISS: "LLC_MISS",
+	C.PQOS_PERF_EVENT_IPC:      "IPC",
+}
+
+func (u PqosCapability) GetInfo() (string, string) {
+	addr := &u.U[0]
+	var t string
+	var m string
+	m = ""
+	element_addr := *((*uintptr)(unsafe.Pointer(addr)))
+	switch u.Type {
+	case C.PQOS_CAP_TYPE_MON:
+		cap := (*(*PqosCapMon)(unsafe.Pointer(element_addr)))
+		t = "Monitor"
+		m = GetCapsMeta(&cap)
+		m = fmt.Sprintf("%sEvents[", m)
+		for i := 0; i < int(cap.Num_events); i++ {
+			m = fmt.Sprintf("%s{Type=%s,Max_rmid=%d,Scale_factor=%d,Pid_support=%d}",
+				m,
+				CapEventsMap[cap.Events[i].Type],
+				cap.Events[i].Max_rmid,
+				cap.Events[i].Scale_factor,
+				cap.Events[i].Pid_support)
+		}
+	case C.PQOS_CAP_TYPE_L3CA:
+		cap := (*(*PqosCapL3Ca)(unsafe.Pointer(element_addr)))
+		t = "L3CAT"
+		m = GetCapsMeta(&cap)
+	case C.PQOS_CAP_TYPE_L2CA:
+		cap := (*(*PqosCapL2Ca)(unsafe.Pointer(element_addr)))
+		t = "L2CAT"
+		m = GetCapsMeta(&cap)
+	case C.PQOS_CAP_TYPE_MBA:
+		cap := (*(*PqosCapMba)(unsafe.Pointer(element_addr)))
+		t = "MBA"
+		m = GetCapsMeta(&cap)
+	}
+	return t, m
+}
+
 // An empty struct for pqos_capability union
 type UCapability struct {
 }
@@ -229,7 +312,8 @@ var LibpqosUnionCapabilitySize = [...]uint32{
 	C.sizeof_struct_pqos_cap_mon,
 	C.sizeof_struct_pqos_cap_l3ca,
 	C.sizeof_struct_pqos_cap_l2ca,
-	C.sizeof_struct_pqos_cap_mba}
+	C.sizeof_struct_pqos_cap_mba,
+}
 
 func (u UCapability) Len(typ ...uint32) uint32 {
 	return LibpqosUnionCapabilitySize[typ[0]]
@@ -237,13 +321,13 @@ func (u UCapability) Len(typ ...uint32) uint32 {
 
 func (u UCapability) New(typ ...uint32) interface{} {
 	switch typ[0] {
-	case 0:
+	case C.PQOS_CAP_TYPE_MON:
 		return &PqosCapMon{}
-	case 1:
+	case C.PQOS_CAP_TYPE_L3CA:
 		return &PqosCapL3Ca{}
-	case 2:
+	case C.PQOS_CAP_TYPE_L2CA:
 		return &PqosCapL2Ca{}
-	case 3:
+	case C.PQOS_CAP_TYPE_MBA:
 		return &PqosCapMba{}
 	default:
 		return nil

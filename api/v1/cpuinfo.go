@@ -118,11 +118,7 @@ func GetCaps() (*Capabilities, error) {
 	cap.Num = ci.Num_cap
 	for _, c := range ci.Capabilities {
 		var new_cap Capability
-		if c.Type == 1 {
-			new_cap.Type = "L3"
-		} else {
-			new_cap.Type = "UnKnow"
-		}
+		new_cap.Type, new_cap.Meta = c.GetInfo()
 		cap.Caps = append(cap.Caps, new_cap)
 	}
 	return &cap, nil
