@@ -239,7 +239,7 @@ func NewStruct(dest interface{}, r ByteReader, cmeta map[string]CMeta) error {
 					}
 				} else {
 					err = fmt.Errorf(
-						"Could not know how to handle slice type: %s", typ)
+						"Could not know how to handle array type: %s", typ)
 				}
 			case reflect.Struct:
 				err = NewStruct(sfl.Addr().Interface(), r, cmeta)
