@@ -224,13 +224,15 @@ type PqosCapability struct {
 type UCapability struct {
 }
 
+// Global variable to keep capabilities size
+var LibpqosUnionCapabilitySize = [...]uint32{
+	C.sizeof_struct_pqos_cap_mon,
+	C.sizeof_struct_pqos_cap_l3ca,
+	C.sizeof_struct_pqos_cap_l2ca,
+	C.sizeof_struct_pqos_cap_mba}
+
 func (u UCapability) Len(typ ...uint32) uint32 {
-	size := [...]uint32{
-		C.sizeof_struct_pqos_cap_mon,
-		C.sizeof_struct_pqos_cap_l3ca,
-		C.sizeof_struct_pqos_cap_l2ca,
-		C.sizeof_struct_pqos_cap_mba}
-	return size[typ[0]]
+	return LibpqosUnionCapabilitySize[typ[0]]
 }
 
 func (u UCapability) New(typ ...uint32) interface{} {
