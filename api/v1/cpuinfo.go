@@ -6,6 +6,8 @@ import (
 
 	"github.com/emicklei/go-restful"
 	cgl_cpuinfo "openstackcore-rdtagent/cgolib/cpuinfo"
+	"openstackcore-rdtagent/pkg/cache"
+	"openstackcore-rdtagent/pkg/capabilities"
 )
 
 // CPU Info
@@ -172,6 +174,13 @@ func (cpuinfo CpuinfoResource) CpuinfoTopologyGet(request *restful.Request, resp
 // GET http://localhost:8081/cpuinfo/capacity
 
 func (cpuinfo CpuinfoResource) CpuinfoCapGet(request *restful.Request, response *restful.Response) {
+	capp := capabilities.Get()
+	log.Println(*capp.L3Cat)
+
+	l3cache := cache.GetL3CacheInfo()
+	l2cache := cache.GetL2CacheInfo()
+	log.Println(l3cache)
+	log.Println(l2cache)
 
 	caps, err := GetCaps()
 	if err != nil {

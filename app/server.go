@@ -8,6 +8,8 @@ import (
 	"github.com/emicklei/go-restful"
 	"github.com/emicklei/go-restful-swagger12"
 	"openstackcore-rdtagent/api/v1"
+	"openstackcore-rdtagent/pkg/cache"
+	"openstackcore-rdtagent/pkg/capabilities"
 	"openstackcore-rdtagent/util/options"
 )
 
@@ -77,6 +79,22 @@ func BuildServerConfig(s *options.ServerRunOptions) (*Config, error) {
 
 func (c *Config) Complete() completedConfig {
 	// TODO to complete config in this function
+
+	// test init capabilities
+	l3cat := capabilities.L3CAT{
+		NumCLOS: 16,
+		NumWays: 20,
+		WaySize: 10000,
+	}
+
+	l3cacheinfo := cache.CacheInfo{
+		Num: 2}
+	l2cacheinfo := cache.CacheInfo{
+		Num: 44}
+
+	capabilities.Setup(nil, &l3cat, nil)
+	cache.Initialize(l3cacheinfo, l2cacheinfo)
+
 	return completedConfig{c}
 }
 
