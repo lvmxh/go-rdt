@@ -5,7 +5,5 @@ if [ ! -f install-deps ]; then
 	exit 1
 fi
 
-(cd cgolib/_c/src; make)
-
 go fmt
 godep go install openstackcore-rdtagent

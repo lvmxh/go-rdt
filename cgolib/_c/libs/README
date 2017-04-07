@@ -1,8 +1,0 @@
-All C libraries files should be here:
-
-* C header files -> ./include
-* C static library files(*.a) -> ./lib
-
-The files can be from distribution packages, and also can be from dynamic
-buildings. In latter case, the C lib source code tree should be put in ../src
-as git submodules.

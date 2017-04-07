@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/emicklei/go-restful"
-	cgl_cpuinfo "openstackcore-rdtagent/cgolib/cpuinfo"
 	"openstackcore-rdtagent/pkg/cache"
 	"openstackcore-rdtagent/pkg/capabilities"
 )
@@ -58,72 +57,15 @@ type CpuinfoResource struct {
 }
 
 func GetCpuInfo() (*CpuInfo, error) {
-	ci, err := cgl_cpuinfo.GetCpuInfo()
-
-	if err != nil {
-		return nil, err
-	}
-
-	var c CpuInfo
-	c.CpuNum = ci.Num_cores
-	c.L2Cache = Cacheinfo{"l2", ci.L2.Total_size, ci.L2.Num_ways}
-	c.L3Cache = Cacheinfo{"l3", ci.L3.Total_size, ci.L3.Num_ways}
-	return &c, nil
-}
-
-func GetCacheIds(cpuinfo *cgl_cpuinfo.PqosCpuInfo) (s int) {
-	s_map := make(map[uint32]int)
-	for _, i := range cpuinfo.Cores {
-		s_map[i.Socket] = 1
-	}
-	return len(s_map)
+	return nil, nil
 }
 
 func GetCpuTopo() (CpuTopo, error) {
-
-	ci, err := cgl_cpuinfo.GetCpuInfo()
-	if err != nil {
-		return nil, err
-	}
-
-	s := GetCacheIds(ci)
-	cputopo := make([]Socket, s)
-
-	for _, cpu := range ci.Cores {
-		find_core := false
-		cputopo[cpu.Socket].Id = uint16(cpu.Socket)
-		for i, core := range cputopo[cpu.Socket].Cores {
-			if cpu.L2_id == core.Id {
-				new_cpu := Cpu{Id: cpu.Lcore, Core_Id: cpu.L2_id, Socket_Id: cpu.Socket}
-				cputopo[cpu.Socket].Cores[i].Cpus = append(cputopo[cpu.Socket].Cores[i].Cpus, new_cpu)
-				find_core = true
-				break
-			}
-		}
-		if !find_core {
-			new_core := Core{Id: cpu.L2_id, Socket_Id: cpu.Socket}
-			new_cpu := Cpu{Id: cpu.Lcore, Core_Id: cpu.L2_id, Socket_Id: cpu.Socket}
-			new_core.Cpus = append(new_core.Cpus, new_cpu)
-			cputopo[cpu.Socket].Cores = append(cputopo[cpu.Socket].Cores, new_core)
-		}
-	}
-	return cputopo, nil
+	return nil, nil
 }
 
 func GetCaps() (*Capabilities, error) {
-	var cap Capabilities
-	ci, err := cgl_cpuinfo.GetCpuCaps()
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	cap.Num = ci.Num_cap
-	for _, c := range ci.Capabilities {
-		var new_cap Capability
-		new_cap.Type, new_cap.Meta = c.GetInfo()
-		cap.Caps = append(cap.Caps, new_cap)
-	}
-	return &cap, nil
+	return nil, nil
 }
 
 func (cpuinfo CpuinfoResource) Register(container *restful.Container) {
