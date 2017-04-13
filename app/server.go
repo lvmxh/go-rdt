@@ -106,6 +106,10 @@ func (c completedConfig) New() (*APIServer, error) {
 	// Register controller to container
 	cpuinfo.Register(wsContainer)
 
+	caches := v1.CachesResource{}
+	// Register controller to container
+	caches.Register(wsContainer)
+
 	// Install adds the SgaggerUI webservices
 	c.Config.SwaggerConfig.WebServices = wsContainer.RegisteredWebServices()
 	swagger.RegisterSwaggerService(*(c.Config.SwaggerConfig), wsContainer)
