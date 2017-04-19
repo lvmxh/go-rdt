@@ -1,3 +1,0 @@
-[submodule "intel-cmt-cat"]
-	path = cgolib/_c/src/intel-cmt-cat
-	url = https://github.com/01org/intel-cmt-cat.git
