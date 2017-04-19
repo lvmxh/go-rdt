@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/emicklei/go-restful"
-	"openstackcore-rdtagent/pkg/capabilities"
+	"openstackcore-rdtagent/pkg/model/capabilities"
 )
 
 // CPU Info

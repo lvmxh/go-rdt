@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/emicklei/go-restful"
-	m_cache "openstackcore-rdtagent/api/model/cache"
+	m_cache "openstackcore-rdtagent/pkg/model/cache"
 )
 
 // Cache Info
