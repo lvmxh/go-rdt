@@ -95,10 +95,10 @@ func (c completedConfig) New() (*APIServer, error) {
 	wsContainer := restful.NewContainer()
 	wsContainer.Router(restful.CurlyRouter{})
 
-	cpuinfo := v1.CpuinfoResource{}
+	cap := v1.CapabilitiesResource{}
 	caches := v1.CachesResource{}
 	// Register controller to container
-	cpuinfo.Register(wsContainer)
+	cap.Register(wsContainer)
 	caches.Register(wsContainer)
 
 	// Install adds the SgaggerUI webservices
