@@ -8,7 +8,6 @@ import (
 	"github.com/emicklei/go-restful"
 	"github.com/emicklei/go-restful-swagger12"
 	"openstackcore-rdtagent/api/v1"
-	"openstackcore-rdtagent/pkg/cache"
 	"openstackcore-rdtagent/pkg/capabilities"
 	"openstackcore-rdtagent/util/options"
 )
@@ -87,13 +86,7 @@ func (c *Config) Complete() completedConfig {
 		WaySize: 10000,
 	}
 
-	l3cacheinfo := cache.CacheInfo{
-		Num: 2}
-	l2cacheinfo := cache.CacheInfo{
-		Num: 44}
-
 	capabilities.Setup(nil, &l3cat, nil)
-	cache.Initialize(l3cacheinfo, l2cacheinfo)
 
 	return completedConfig{c}
 }
@@ -103,11 +96,9 @@ func (c completedConfig) New() (*APIServer, error) {
 	wsContainer.Router(restful.CurlyRouter{})
 
 	cpuinfo := v1.CpuinfoResource{}
-	// Register controller to container
-	cpuinfo.Register(wsContainer)
-
 	caches := v1.CachesResource{}
 	// Register controller to container
+	cpuinfo.Register(wsContainer)
 	caches.Register(wsContainer)
 
 	// Install adds the SgaggerUI webservices

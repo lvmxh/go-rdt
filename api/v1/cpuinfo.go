@@ -5,22 +5,12 @@ import (
 	"net/http"
 
 	"github.com/emicklei/go-restful"
-	"openstackcore-rdtagent/pkg/cache"
 	"openstackcore-rdtagent/pkg/capabilities"
 )
 
 // CPU Info
-
-type Cacheinfo struct {
-	CacheLevel string `json:"cache_level"`
-	CacheSize  uint32 `json:"cache_size"`
-	CacheWay   uint32 `json:"cache_way"`
-}
-
 type CpuInfo struct {
-	CpuNum  uint32    `json:"cpu_num"`
-	L2Cache Cacheinfo `json:"l2_cache"`
-	L3Cache Cacheinfo `json:"l3_cache"`
+	CpuNum uint32 `json:"cpu_num"`
 }
 
 // CPU topology
@@ -118,11 +108,6 @@ func (cpuinfo CpuinfoResource) CpuinfoTopologyGet(request *restful.Request, resp
 func (cpuinfo CpuinfoResource) CpuinfoCapGet(request *restful.Request, response *restful.Response) {
 	capp := capabilities.Get()
 	log.Println(*capp.L3Cat)
-
-	l3cache := cache.GetL3CacheInfo()
-	l2cache := cache.GetL2CacheInfo()
-	log.Println(l3cache)
-	log.Println(l2cache)
 
 	caps, err := GetCaps()
 	if err != nil {
