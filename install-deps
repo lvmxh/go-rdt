@@ -7,3 +7,4 @@ fi
 
 go fmt
 godep go install openstackcore-rdtagent
+cp etc/policy.yaml $GOPATH/bin/policy.yaml

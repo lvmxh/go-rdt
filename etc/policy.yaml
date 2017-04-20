@@ -1,0 +1,67 @@
+catpolicy:
+  broadwell:
+    gold:
+      size: 15
+      percentage: 20
+      rule:
+        dpdk: shared
+        other: isolated
+      pin_core: false
+    silver:
+      size: 10
+      percentage: 10
+      rule:
+        dpdk: shared
+        other: isolated
+      pin_core: false
+    copper:
+      size: 5
+      percentage: 5
+      rule:
+        dpdk: shared
+        other: isolated
+      pin_core: false
+  haswell:
+    gold:
+      size: 15
+      percentage: 20
+      rule:
+        dpdk: shared
+        other: isolated
+      pin_core: true
+    silver:
+      size: 10
+      percentage: 10
+      rule:
+        dpdk: shared
+        other: isolated
+      pin_core: true
+    copper:
+      size: 5
+      percentage: 5
+      rule:
+        dpdk: shared
+        other: isolated
+      pin_core: false
+  skylake:
+    gold:
+      size: 15
+      percentage: 20
+      rule:
+        dpdk: shared
+        other: isolated
+      pin_core: false
+    silver:
+      size: 10
+      percentage: 10
+      rule:
+        dpdk: shared
+        other: isolated
+      pin_core: false
+    copper:
+      size: 5
+      percentage: 5
+      rule:
+        dpdk: shared
+        other: isolated
+      pin_core: false
