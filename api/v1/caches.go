@@ -50,7 +50,7 @@ func (cache CachesResource) Register(container *restful.Container) {
 	container.Add(ws)
 }
 
-// GET http://localhost:8081/cache
+// GET /v1/cache
 func (cache CachesResource) CachesGet(request *restful.Request, response *restful.Response) {
 	c := &m_cache.CachesSummary{}
 	err := c.Get()
@@ -62,7 +62,7 @@ func (cache CachesResource) CachesGet(request *restful.Request, response *restfu
 	response.WriteEntity(c)
 }
 
-// GET http://localhost:8081/cache/l2
+// GET /v1/cache/l[2, 3]
 func (cache CachesResource) CachesLevelGet(request *restful.Request, response *restful.Response) {
 	c := &CachesResource{}
 
@@ -72,7 +72,7 @@ func (cache CachesResource) CachesLevelGet(request *restful.Request, response *r
 	response.WriteEntity(c)
 }
 
-// GET http://localhost:8081/cache/l2
+// GET /v1/cache/l[2, 3]/{id}
 func (cache CachesResource) CacheGet(request *restful.Request, response *restful.Response) {
 	c := &CachesResource{}
 

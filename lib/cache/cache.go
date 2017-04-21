@@ -57,9 +57,9 @@ func SetField(obj interface{}, name string, value interface{}) error {
 usage:
     ignore := []string{"uevent"}
     syscache := &SysCache{}
-	filepath.Walk(dir, GetSysCache(3, ignore, syscache))
+	filepath.Walk(dir, getSysCache(ignore, syscache))
 */
-func GetSysCache(level int, ignore []string, cache *SysCache) filepath.WalkFunc {
+func getSysCache(ignore []string, cache *SysCache) filepath.WalkFunc {
 
 	return func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -93,7 +93,7 @@ func GetSysCache(level int, ignore []string, cache *SysCache) filepath.WalkFunc 
 	}
 }
 
-// Traverse all sys cache file
+// Traverse all sys cache file for a specify level
 func GetSysCaches(level int) (map[string]SysCache, error) {
 	ignore := []string{"uevent", "power"}
 	caches := make(map[string]SysCache)
@@ -104,7 +104,7 @@ func GetSysCaches(level int) (map[string]SysCache, error) {
 
 	for _, f := range files {
 		cache := &SysCache{}
-		err := filepath.Walk(f, GetSysCache(level, ignore, cache))
+		err := filepath.Walk(f, getSysCache(ignore, cache))
 		if err != nil {
 			return caches, err
 		}
