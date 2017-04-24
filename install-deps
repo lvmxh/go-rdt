@@ -6,5 +6,5 @@ if [ ! -f install-deps ]; then
 fi
 
 go fmt
-godep go install openstackcore-rdtagent
+godep go install openstackcore-rdtagent && \
 cp etc/policy.yaml $GOPATH/bin/policy.yaml

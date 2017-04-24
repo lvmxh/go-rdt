@@ -64,28 +64,53 @@ func (cache CachesResource) CachesGet(request *restful.Request, response *restfu
 
 // GET /v1/cache/l[2, 3]
 func (cache CachesResource) CachesLevelGet(request *restful.Request, response *restful.Response) {
-	c := &CachesResource{}
+	c := &m_cache.CacheInfos{}
+	ilev, err := strconv.Atoi(strings.TrimLeft(request.PathParameter("cache-level"), "l"))
 
-	level := request.PathParameter("cache-level")
-	log.Println("Request Level" + strings.TrimLeft(level, "l"))
+	if err != nil {
+		response.WriteError(http.StatusBadRequest, err)
+		return
+	}
 
+	log.Printf("Request Level %d", ilev)
+
+	err = c.GetByLevel(uint32(ilev))
+	// FIXME (Shaohe): We should classify the error.
+	if err != nil {
+		response.WriteError(http.StatusInternalServerError, err)
+		return
+	}
 	response.WriteEntity(c)
 }
 
 // GET /v1/cache/l[2, 3]/{id}
 func (cache CachesResource) CacheGet(request *restful.Request, response *restful.Response) {
-	c := &CachesResource{}
+	c := &m_cache.CacheInfos{}
 
 	level := request.PathParameter("cache-level")
 
 	// FIXME (Shaohe): should use pattern, \d\{1,3\}
 	id, err := strconv.Atoi(request.PathParameter("id"))
 	if err != nil {
-		err := fmt.Errorf("Please input the right id, it shoudl be digital", id)
-		response.WriteError(http.StatusInternalServerError, err)
+		err := fmt.Errorf("Please input the correct id, it shoudl be digital", id)
+		response.WriteError(http.StatusBadRequest, err)
 		return
 	}
 	log.Printf("Request Level%s, id: %d\n", strings.TrimLeft(level, "l"), id)
 
-	response.WriteEntity(c)
+	ilev, _ := strconv.Atoi(strings.TrimLeft(level, "l"))
+
+	err = c.GetByLevel(uint32(ilev))
+	// FIXME (Shaohe): We should classify the error.
+	if err != nil {
+		response.WriteError(http.StatusInternalServerError, err)
+		return
+	}
+	ci, ok := c.Caches[uint32(id)]
+	if !ok {
+		err := fmt.Errorf("Cache id %d for level %d is not found", id, ilev)
+		response.WriteError(http.StatusNotFound, err)
+		return
+	}
+	response.WriteEntity(ci)
 }
