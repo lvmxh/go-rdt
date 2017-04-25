@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-var yaml_path = "./policy.yaml"
+var yaml_path = "/etc/rdtagent/policy.yaml"
 
 type PolicyRule struct {
 	Dpdk  string
