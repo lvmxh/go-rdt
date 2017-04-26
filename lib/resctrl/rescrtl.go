@@ -9,10 +9,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"reflect"
-	"strconv"
 	"strings"
 	"sync"
+
+	libutil "openstackcore-rdtagent/lib/util"
 )
 
 const (
@@ -45,35 +45,6 @@ func IsNotFound(err error) bool {
 	}
 	_, ok := err.(*NotFoundError)
 	return ok
-}
-
-func SetField(obj interface{}, name string, value interface{}) error {
-	structValue := reflect.ValueOf(obj).Elem()
-	structFieldValue := structValue.FieldByName(name)
-
-	if !structFieldValue.IsValid() {
-		return fmt.Errorf("No such field: %s in obj", name)
-	}
-
-	if !structFieldValue.CanSet() {
-		return fmt.Errorf("Cannot set %s field value", name)
-	}
-
-	val := reflect.ValueOf(value)
-	structFieldType := structFieldValue.Type()
-	switch structFieldType.Name() {
-	case "int":
-		v := value.(string)
-		v_int, err := strconv.Atoi(v)
-		if err != nil {
-			// add log
-			return err
-		}
-		val = reflect.ValueOf(v_int)
-	}
-
-	structFieldValue.Set(val)
-	return nil
 }
 
 //
@@ -120,7 +91,7 @@ func ParserResAssociation(basepath string, ignore []string, ps map[string]*ResAs
 		data, err := ioutil.ReadFile(path)
 		strs := strings.Split(string(data), "\n")
 		pl := ps[pkey]
-		SetField(pl, name, strs)
+		libutil.SetField(pl, name, strs)
 		return nil
 	}
 }
@@ -184,7 +155,7 @@ func ParserRdtCosInfo(basepath string, ignore []string, mres map[string]*RdtCosI
 		data, err := ioutil.ReadFile(path)
 		strs := strings.TrimSpace(string(data))
 		res := mres[pkey]
-		SetField(res, name, strs)
+		libutil.SetField(res, name, strs)
 		return nil
 	}
 }
@@ -292,7 +263,7 @@ func EnableCat() bool {
 }
 
 func EnableCdp() bool {
-	// mount -t resctrl resctrl /sys/fs/resctrl
+	// mount -t resctrl -o cdp resctrl /sys/fs/resctrl
 	if err := os.MkdirAll("/sys/fs/resctrl", 0755); err != nil {
 		return false
 	}

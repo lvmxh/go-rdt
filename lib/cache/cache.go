@@ -3,13 +3,13 @@
 package syscache
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strconv"
 	"strings"
+
+	libutil "openstackcore-rdtagent/lib/util"
 )
 
 const (
@@ -30,25 +30,6 @@ type SysCache struct {
 	WaysOfAssociativity   string
 	// Power              string
 	// Uevent             string
-}
-
-// Only support string At present.
-func SetField(obj interface{}, name string, value interface{}) error {
-	structValue := reflect.ValueOf(obj).Elem()
-	structFieldValue := structValue.FieldByName(name)
-
-	if !structFieldValue.IsValid() {
-		return fmt.Errorf("No such field: %s in obj", name)
-	}
-
-	if !structFieldValue.CanSet() {
-		return fmt.Errorf("Cannot set %s field value", name)
-	}
-
-	val := reflect.ValueOf(value)
-
-	structFieldValue.Set(val)
-	return nil
 }
 
 // /sys/devices/system/cpu/cpu*/cache/index*/*
@@ -89,7 +70,7 @@ func getSysCache(ignore []string, cache *SysCache) filepath.WalkFunc {
 			// add log
 			return err
 		}
-		return SetField(cache, name, strings.TrimSpace(string(data)))
+		return libutil.SetField(cache, name, strings.TrimSpace(string(data)))
 	}
 }
 
