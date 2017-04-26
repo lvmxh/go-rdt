@@ -41,5 +41,6 @@ func (c PolicyResource) PolicyGet(request *restful.Request, response *restful.Re
 
 func (c PolicyResource) PolicyUpdate(request *restful.Request, response *restful.Response) {
 	// TODO
-	response.WriteEntity({})
+	p := PolicyResource{}
+	response.WriteEntity(p)
 }
