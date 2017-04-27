@@ -47,17 +47,61 @@ func IsNotFound(err error) bool {
 	return ok
 }
 
+type CacheCos struct {
+	Id  string
+	cos string
+}
+
 //
 type ResAssociation struct {
 	Tasks    []string
-	Cpus     []string
-	Schemata []string
+	Cpus     string
+	Schemata map[string][]CacheCos
 }
 
 //Usage:
 //    policys := make(map[string]*ResAssociation)
 //	  filepath.Walk(SysResctrl, ParserResAssociation(SysResctrl, ignore, policys))
 func ParserResAssociation(basepath string, ignore []string, ps map[string]*ResAssociation) filepath.WalkFunc {
+	parser := func(res *ResAssociation, name string, val []byte) error {
+		switch name {
+		case "Cpus":
+			str := strings.TrimSpace(string(val))
+			libutil.SetField(res, name, str)
+			return nil
+		case "Schemata":
+			strs := strings.Split(string(val), "\n")
+			if len(strs) > 1 {
+				res.Schemata = make(map[string][]CacheCos)
+			}
+			for _, data := range strs {
+				datas := strings.SplitAfterN(data, ":", 2)
+				key := datas[0]
+				if key == "" {
+					return nil
+				}
+
+				if _, ok := res.Schemata[key]; !ok {
+					res.Schemata[key] = make([]CacheCos, 0, 10)
+				}
+
+				coses := strings.Split(datas[1], ";")
+				for _, cos := range coses {
+					infos := strings.SplitN(cos, "=", 2)
+					cacheCos := &CacheCos{infos[0], infos[1]}
+					res.Schemata[key] = append(res.Schemata[key], *cacheCos)
+				}
+
+			}
+			return nil
+		default:
+			strs := strings.Split(string(val), "\n")
+			libutil.SetField(res, name, strs)
+			return nil
+		}
+		return nil
+
+	}
 
 	return func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -89,9 +133,8 @@ func ParserResAssociation(basepath string, ignore []string, ps map[string]*ResAs
 
 		name := strings.Replace(strings.Title(strings.Replace(f, "_", " ", -1)), " ", "", -1)
 		data, err := ioutil.ReadFile(path)
-		strs := strings.Split(string(data), "\n")
 		pl := ps[pkey]
-		libutil.SetField(pl, name, strs)
+		parser(pl, name, data)
 		return nil
 	}
 }
