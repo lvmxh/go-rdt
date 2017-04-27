@@ -9,6 +9,7 @@ import (
 	"github.com/emicklei/go-restful-swagger12"
 	"openstackcore-rdtagent/api/v1"
 	"openstackcore-rdtagent/pkg/model/capabilities"
+	"openstackcore-rdtagent/pkg/model/workload"
 	"openstackcore-rdtagent/util/options"
 )
 
@@ -98,10 +99,12 @@ func (c completedConfig) New() (*APIServer, error) {
 	cap := v1.CapabilitiesResource{}
 	caches := v1.CachesResource{}
 	policy := v1.PolicyResource{}
+	wls := v1.WorkLoadResource{map[string]workload.RDTWorkLoad{}}
 	// Register controller to container
 	cap.Register(wsContainer)
 	caches.Register(wsContainer)
 	policy.Register(wsContainer)
+	wls.Register(wsContainer)
 
 	// Install adds the SgaggerUI webservices
 	c.Config.SwaggerConfig.WebServices = wsContainer.RegisteredWebServices()
