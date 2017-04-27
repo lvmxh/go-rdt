@@ -47,12 +47,29 @@ func IsNotFound(err error) bool {
 	return ok
 }
 
+func writeFile(dir, file, data string) error {
+	if dir == "" {
+		return fmt.Errorf("no such directory for %s", file)
+	}
+	if err := ioutil.WriteFile(filepath.Join(dir, file), []byte(data+"\n"), 0644); err != nil {
+		return fmt.Errorf("failed to write %v to %v: %v", data, file, err)
+	}
+	return nil
+}
+
+func DestroyResAssociation(group string) error {
+	path = filepath.Join(SysResctrl, group)
+	if err := os.RemoveAll(path); err != nil {
+		return err
+	}
+}
+
 type CacheCos struct {
 	Id  string
 	cos string
 }
 
-//
+// FIXME, should Tasks be int?
 type ResAssociation struct {
 	Tasks    []string
 	Cpus     string
@@ -75,7 +92,7 @@ func ParserResAssociation(basepath string, ignore []string, ps map[string]*ResAs
 				res.Schemata = make(map[string][]CacheCos)
 			}
 			for _, data := range strs {
-				datas := strings.SplitAfterN(data, ":", 2)
+				datas := strings.SplitN(data, ":", 2)
 				key := datas[0]
 				if key == "" {
 					return nil
@@ -151,6 +168,42 @@ func GetResAssociation() map[string]*ResAssociation {
 }
 
 func (r ResAssociation) Commit(group string) error {
+	if !isIntelRdtMounted() {
+		return fmt.Errorf("Can't apply this association, for resctrl is not mounted!")
+
+	}
+	path := SysResctrl
+	if strings.ToLower(group) != "default" && group != "." {
+		path = filepath.Join(SysResctrl, group)
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			if err := os.MkdirAll(path, 0755); err != nil {
+				return err
+			}
+		}
+	}
+	if r.Cpus != "" {
+		writeFile(path, "cpus", r.Cpus)
+	} else {
+		if _, err := os.Stat(path); os.IsExist(err) {
+			writeFile(path, "cpus", r.Cpus)
+		}
+	}
+	if len(r.Tasks) > 0 {
+		writeFile(path, "tasks", strings.Join(r.Tasks, "\n"))
+	}
+	if len(r.Schemata) > 0 {
+		schemata := make([]string, 0, 10)
+		for k, v := range r.Schemata {
+			str := make([]string, 0, 10)
+			for _, cos := range v {
+				str = append(str, strings.Join([]string{cos.Id, cos.cos}, "="))
+			}
+			schemata = append(schemata, strings.Join([]string{k, strings.Join(str, ";")}, ":"))
+		}
+		data := strings.Join(schemata, "\n")
+		writeFile(path, "schemata", data)
+	}
+
 	return nil
 }
 
