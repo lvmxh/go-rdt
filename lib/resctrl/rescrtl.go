@@ -207,7 +207,19 @@ func (r ResAssociation) Commit(group string) error {
 	return nil
 }
 
-func CommitAll(map[string]*ResAssociation) error {
+// FIXME need to catch error
+func CommitAll(m_res map[string]*ResAssociation) error {
+	ress := GetResAssociation()
+	for name, res := range m_res {
+		res.Commit(name)
+	}
+
+	// Golang does not support set difference
+	for name, res := range ress {
+		if _, ok := m_res[name]; !ok && name != "." {
+			DestroyResAssociation(name)
+		}
+	}
 	return nil
 }
 
