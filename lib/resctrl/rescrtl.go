@@ -150,6 +150,14 @@ func GetResAssociation() map[string]*ResAssociation {
 	return policys
 }
 
+func (r ResAssociation) Commit(group string) error {
+	return nil
+}
+
+func CommitAll(map[string]*ResAssociation) error {
+	return nil
+}
+
 type RdtCosInfo struct {
 	CbmMask    string
 	MinCbmBits int
