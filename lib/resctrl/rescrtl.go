@@ -58,10 +58,11 @@ func writeFile(dir, file, data string) error {
 }
 
 func DestroyResAssociation(group string) error {
-	path = filepath.Join(SysResctrl, group)
+	path := filepath.Join(SysResctrl, group)
 	if err := os.RemoveAll(path); err != nil {
 		return err
 	}
+	return nil
 }
 
 type CacheCos struct {
@@ -170,9 +171,10 @@ func GetResAssociation() map[string]*ResAssociation {
 func (r ResAssociation) Commit(group string) error {
 	if !isIntelRdtMounted() {
 		return fmt.Errorf("Can't apply this association, for resctrl is not mounted!")
-
 	}
+
 	path := SysResctrl
+
 	if strings.ToLower(group) != "default" && group != "." {
 		path = filepath.Join(SysResctrl, group)
 		if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -215,7 +217,7 @@ func CommitAll(m_res map[string]*ResAssociation) error {
 	}
 
 	// Golang does not support set difference
-	for name, res := range ress {
+	for name := range ress {
 		if _, ok := m_res[name]; !ok && name != "." {
 			DestroyResAssociation(name)
 		}
