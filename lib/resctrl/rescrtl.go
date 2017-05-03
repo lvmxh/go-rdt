@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -66,8 +67,8 @@ func DestroyResAssociation(group string) error {
 }
 
 type CacheCos struct {
-	Id  string
-	cos string
+	Id   uint8
+	Mask uint32
 }
 
 // FIXME, should Tasks be int?
@@ -106,7 +107,9 @@ func ParserResAssociation(basepath string, ignore []string, ps map[string]*ResAs
 				coses := strings.Split(datas[1], ";")
 				for _, cos := range coses {
 					infos := strings.SplitN(cos, "=", 2)
-					cacheCos := &CacheCos{infos[0], infos[1]}
+					id, _ := strconv.ParseUint(infos[0], 10, 8)
+					mask, _ := strconv.ParseUint(infos[1], 10, 32)
+					cacheCos := &CacheCos{uint8(id), uint32(mask)}
 					res.Schemata[key] = append(res.Schemata[key], *cacheCos)
 				}
 
@@ -198,7 +201,7 @@ func (r ResAssociation) Commit(group string) error {
 		for k, v := range r.Schemata {
 			str := make([]string, 0, 10)
 			for _, cos := range v {
-				str = append(str, strings.Join([]string{cos.Id, cos.cos}, "="))
+				str = append(str, fmt.Sprintf("%d=%d", cos.Id, cos.Mask))
 			}
 			schemata = append(schemata, strings.Join([]string{k, strings.Join(str, ";")}, ":"))
 		}
