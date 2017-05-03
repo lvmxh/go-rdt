@@ -79,8 +79,8 @@ type ResAssociation struct {
 }
 
 //Usage:
-//    policys := make(map[string]*ResAssociation)
-//	  filepath.Walk(SysResctrl, ParserResAssociation(SysResctrl, ignore, policys))
+//    ress := make(map[string]*ResAssociation)
+//	  filepath.Walk(SysResctrl, ParserResAssociation(SysResctrl, ignore, ress))
 func ParserResAssociation(basepath string, ignore []string, ps map[string]*ResAssociation) filepath.WalkFunc {
 	parser := func(res *ResAssociation, name string, val []byte) error {
 		switch name {
@@ -166,9 +166,9 @@ func ParserResAssociation(basepath string, ignore []string, ps map[string]*ResAs
 // https://gist.github.com/ericchiang/ce0fdcac5659d0a80b38
 func GetResAssociation() map[string]*ResAssociation {
 	ignore := []string{"info"}
-	policys := make(map[string]*ResAssociation)
-	filepath.Walk(SysResctrl, ParserResAssociation(SysResctrl, ignore, policys))
-	return policys
+	ress := make(map[string]*ResAssociation)
+	filepath.Walk(SysResctrl, ParserResAssociation(SysResctrl, ignore, ress))
+	return ress
 }
 
 func (r ResAssociation) Commit(group string) error {
