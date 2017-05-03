@@ -108,7 +108,7 @@ func ParserResAssociation(basepath string, ignore []string, ps map[string]*ResAs
 				for _, cos := range coses {
 					infos := strings.SplitN(cos, "=", 2)
 					id, _ := strconv.ParseUint(infos[0], 10, 8)
-					mask, _ := strconv.ParseUint(infos[1], 10, 32)
+					mask, _ := strconv.ParseUint(infos[1], 16, 32)
 					cacheCos := &CacheCos{uint8(id), uint32(mask)}
 					res.Schemata[key] = append(res.Schemata[key], *cacheCos)
 				}
