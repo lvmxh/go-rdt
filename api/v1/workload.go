@@ -66,5 +66,11 @@ func (w *WorkLoadResource) WorkLoadNew(request *restful.Request, response *restf
 	wl.ID = strconv.Itoa(len(w.WorkLoads) + 1)
 
 	w.WorkLoads[wl.ID] = *wl
+
+	err = wl.Enforce()
+
+	if err != nil {
+		response.WriteErrorString(http.StatusInternalServerError, err.Error())
+	}
 	response.WriteHeaderAndEntity(http.StatusCreated, wl)
 }

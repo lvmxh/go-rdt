@@ -193,7 +193,8 @@ func (r ResAssociation) Commit(group string) error {
 			writeFile(path, "cpus", r.Cpus)
 		}
 	}
-	if len(r.Tasks) > 0 {
+	// only commit a user deinfed group's task to sys fs
+	if group != "." && len(r.Tasks) > 0 {
 		writeFile(path, "tasks", strings.Join(r.Tasks, "\n"))
 	}
 	if len(r.Schemata) > 0 {
@@ -201,7 +202,7 @@ func (r ResAssociation) Commit(group string) error {
 		for k, v := range r.Schemata {
 			str := make([]string, 0, 10)
 			for _, cos := range v {
-				str = append(str, fmt.Sprintf("%d=%d", cos.Id, cos.Mask))
+				str = append(str, fmt.Sprintf("%d=%x", cos.Id, cos.Mask))
 			}
 			schemata = append(schemata, strings.Join([]string{k, strings.Join(str, ";")}, ":"))
 		}

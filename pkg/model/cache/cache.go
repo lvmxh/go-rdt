@@ -1,4 +1,4 @@
-package model
+package cache
 
 // This model is just for cache info
 // We can ref k8s

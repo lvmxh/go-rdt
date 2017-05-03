@@ -10,8 +10,11 @@ import (
 func TestGetResAssociation(t *testing.T) {
 	ress := GetResAssociation()
 	for name, res := range ress {
-		fmt.Println(name)
-		fmt.Println(res)
+		if name == "CG1" {
+			fmt.Println(name)
+			fmt.Println(res)
+			fmt.Println(res.Schemata["L3CODE"])
+		}
 	}
 }
 

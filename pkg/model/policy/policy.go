@@ -15,8 +15,8 @@ type PolicyRule struct {
 	Other string
 }
 type PolicyType struct {
-	Size       uint
-	Percentage uint
+	Size       uint32
+	Percentage uint32
 	Rule       PolicyRule
 	Pin_core   bool
 }
