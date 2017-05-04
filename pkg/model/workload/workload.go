@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"strings"
 
+	"openstackcore-rdtagent/lib/cpu"
+	"openstackcore-rdtagent/lib/proc"
 	"openstackcore-rdtagent/lib/resctrl"
+	libutil "openstackcore-rdtagent/lib/util"
 	"openstackcore-rdtagent/pkg/model/cache"
 	"openstackcore-rdtagent/pkg/model/policy"
 )
@@ -30,6 +33,25 @@ func (w *RDTWorkLoad) Enforce() error {
 
 	if len(w.TaskIDs) < 0 {
 		return fmt.Errorf("No task ids specified")
+	}
+
+	// Firstly verify the task.
+	ps := proc.ListProcesses()
+	for _, task := range w.TaskIDs {
+		if _, ok := ps[task]; !ok {
+			return fmt.Errorf("The workload: %s does not exit", task)
+		}
+	}
+
+	// FIXME cpunum can be global
+	cpunum, err := cpu.HostCpuNum()
+	if err != nil {
+		return err
+	}
+
+	cpubitmap, err := libutil.GenerateBitMap(w.CoreIDs, cpunum)
+	if err != nil {
+		return err
 	}
 
 	// TODO(eliqiao): if no group sepcify, isolated = true
@@ -84,6 +106,7 @@ func (w *RDTWorkLoad) Enforce() error {
 			return err
 		}
 		newResAss.Tasks = w.TaskIDs
+		newResAss.Cpus = cpubitmap
 		err = newResAss.Commit(gname)
 		if err != nil {
 			// log error

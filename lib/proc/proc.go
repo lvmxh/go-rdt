@@ -3,7 +3,10 @@ package proc
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -97,4 +100,27 @@ func IsEnableCat() bool {
 		return false
 	}
 	return !strings.Contains(mount, flag) && len(mount) > 0
+}
+
+type Process struct {
+	Pid     int
+	cmdline string
+}
+
+func ListProcesses() map[string]Process {
+	processes := make(map[string]Process)
+	files, _ := filepath.Glob("/proc/[0-9]*/cmdline")
+	for _, file := range files {
+
+		list_f := strings.Split(file, "/")
+		fmt.Println(list_f)
+		if pid, err := strconv.Atoi(list_f[2]); err == nil {
+
+			cmd, _ := ioutil.ReadFile(file)
+			cmdString := strings.Join(strings.Split(string(cmd), "\x00"), " ")
+			processes[list_f[2]] = Process{pid, cmdString}
+		}
+	}
+
+	return processes
 }
