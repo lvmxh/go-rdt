@@ -32,6 +32,12 @@ $ $GOPATH/bin/openstackcore-rdtagent --help
 $ $GOPATH/bin/openstackcore-rdtagent
 ```
 
+## Unit test
+
+Only few package has unit test case for now. But be sure run unit testing
+before submiting new patch.
+
+$ go test -v ./...
 
 ## Testing
 

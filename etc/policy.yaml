@@ -1,7 +1,7 @@
 catpolicy:
   broadwell:
     gold:
-      size: 14080
+      size: 15
       percentage: 20
       rule:
         dpdk: shared

@@ -1,6 +1,7 @@
 package policy
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -15,7 +16,8 @@ func TestGetPolicy(t *testing.T) {
 		t.Errorf("Failed to get policy for broadwell")
 	}
 
-	if policy.Gold.Size != 15 {
+	fmt.Println(policy.Gold.Size)
+	if policy.Gold.Size != 14080 {
 		t.Errorf("wrong policy for broadwell")
 	}
 }

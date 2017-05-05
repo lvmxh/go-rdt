@@ -27,6 +27,11 @@ type RDTWorkLoad struct {
 }
 
 func (w *RDTWorkLoad) Enforce() error {
+
+	if len(w.TaskIDs) < 0 {
+		return fmt.Errorf("No task ids specified")
+	}
+
 	// TODO(eliqiao): if no group sepcify, isolated = true
 	// please refine this in later version
 	isolated := true
@@ -142,6 +147,7 @@ func updateMask(basemask, size, unit uint32, consume bool) (newbasemask, newmask
 func createNewResAss(r *resctrl.ResAssociation, size uint32, consume bool) (t resctrl.ResAssociation, err error) {
 	rdtinfo := resctrl.GetRdtCosInfo()
 	cacheinfo := &cache.CacheInfos{}
+	// Fixme Upper layer should pass a cache level parameter
 	cacheinfo.GetByLevel(3)
 
 	// loop for each level 3 cache to construct new resassociation
@@ -158,14 +164,11 @@ func createNewResAss(r *resctrl.ResAssociation, size uint32, consume bool) (t re
 			newbasemask, newmask := updateMask(res[i].Mask, size, unit, consume)
 			res[i].Mask = newbasemask
 			if newmask == 0 {
-				// todo
-				fmt.Println("error!")
-				// return
+				return newResAss, fmt.Errorf("Not enough cache can be allocated")
 			}
 			newcos := resctrl.CacheCos{Id: uint8(i), Mask: newmask}
 			newResAss.Schemata[cattype] = append(newResAss.Schemata[cattype], newcos)
 		}
 	}
-
 	return newResAss, nil
 }
