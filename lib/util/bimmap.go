@@ -1,0 +1,233 @@
+package util
+
+import (
+	"fmt"
+	"regexp"
+	"sort"
+	"strconv"
+	"strings"
+)
+
+var BITMAP_BAD_EXPRESSION = regexp.MustCompile(`([^\^\d-,]+)|([^\d]+-.*(,|$))|` +
+	`([^,]*-[^\d]+)|(\^[^\d]+)|((\,\s)?\^$)`)
+var ALL_DATAS = regexp.MustCompile(`(\d+)`)
+
+func SliceString2Int(s []string) ([]int, error) {
+	// 2^32 -1 = 4294967295
+	// len("4294967295") = 10
+	si := make([]int, len(s), len(s))
+	for i, v := range s {
+		ni, err := strconv.ParseInt(v, 10, 32)
+		si[i] = int(ni)
+		if err != nil {
+			return si, err
+		}
+	}
+	return si, nil
+}
+
+func genBitMaps(num int, platform ...int) []int {
+	p := 32
+	if len(platform) > 0 {
+		p = platform[0]
+	}
+	n := (num + p) / p
+	return make([]int, n, n)
+}
+
+// "2-6,^3-4,^5"
+func fillBitMap(bits int, scope string, platform ...int) (int, error) {
+	// "2-6"
+	hyphen_span := func(scope string, platform ...int) (int, error) {
+		p := 32
+		if len(platform) > 0 {
+			p = platform[0]
+		}
+		scopes := strings.SplitN(scope, "-", 2)
+		low, err := strconv.Atoi(scopes[0])
+		if err != nil {
+			return 0, err
+		}
+		high, err := strconv.Atoi(scopes[1])
+		if err != nil {
+			return 0, err
+		}
+		low = low % p
+		high = high % p
+		// overflow
+		sv := ((1 << uint(high-low+1)) - 1) << uint(low)
+		return sv, nil
+	}
+
+	// "5"
+	single_bit := func(bit int) int {
+		// bit should less than than the platform bits
+		return 1 << uint(bit)
+	}
+
+	p := 32
+	if len(platform) > 0 {
+		p = platform[0]
+	}
+	scopes := strings.Split(scope, ",")
+	for i, v := range scopes {
+		// negative false, positive ture
+		sign := true
+		var err error = nil
+		sv := 0
+		if strings.Contains(v, "^") {
+			sign = false
+			v = strings.TrimSpace(v)
+			v = strings.TrimLeft(v, "^")
+		}
+
+		if strings.Contains(v, "-") {
+			sv, err = hyphen_span(v)
+			if err != nil {
+				// change it to log
+				fmt.Printf("the %d element is %s, can not be parser", i, scopes[i])
+				return bits, err
+			}
+		} else {
+			vi, err := strconv.Atoi(v)
+			if err != nil {
+				// change it to log
+				fmt.Printf("the %d element is %s, can not be parser", i, scopes[i])
+				return bits, err
+			}
+			vi = vi % p
+			sv = single_bit(vi)
+		}
+		switch sign {
+		case true:
+			bits = bits | sv
+		case false:
+			bits = bits &^ sv
+		}
+	}
+	return bits, nil
+}
+
+//{"2-8,^3-4,^7,9", "56-87,^86"}
+func GenCpuResString(map_list []string, bit_len int) (string, error) {
+	bitmaps := genBitMaps(bit_len)
+	is_span := func(span string) bool {
+		return strings.Contains(span, "-")
+	}
+
+	locate := func(pos int, platform ...int) int {
+		p := 32
+		if len(platform) > 0 {
+			p = platform[0]
+		}
+		return pos / p
+	}
+
+	span_phypen2int := func(span string) (int, int, error) {
+		scopes := strings.SplitN(span, "-", 2)
+		low, err := strconv.Atoi(scopes[0])
+		if err != nil {
+			return 0, 0, err
+		}
+		high, err := strconv.Atoi(scopes[1])
+		if err != nil {
+			return low, 0, err
+		}
+		return low, high, nil
+	}
+
+	// a span maybe a cross span, need to split them into small span.
+	// but we must set the max length of span(step).
+	silit_span := func(span string, steps ...int) ([]string, error) {
+		step := 32
+		if len(steps) > 0 {
+			step = steps[0]
+		}
+		sign := true
+		var err error = nil
+		v := span
+		spans := []string{}
+		if !is_span(span) {
+			return spans, nil
+		}
+		if strings.Contains(span, "^") {
+			sign = false
+			span = strings.TrimSpace(span)
+			v = strings.TrimLeft(span, "^")
+		}
+		low, high, err := span_phypen2int(v)
+		if err != nil {
+			return spans, err
+		}
+		if high/step == low/step {
+			return append(spans, span), nil
+		}
+		for i := low / step; i <= high/step; i++ {
+			begin := low
+			end := high
+			if ((i+1)*step - 1) < high {
+				end = (i+1)*step - 1
+			}
+			if i > low/step {
+				begin = i * step
+			}
+			s := fmt.Sprintf("%d-%d", begin, end)
+			if !sign {
+				s = "^" + s
+			}
+			spans = append(spans, s)
+		}
+		return spans, err
+	}
+
+	m := ALL_DATAS.FindAllString(strings.Join(map_list, ","), -1)
+	si, err := SliceString2Int(m)
+	if err != nil {
+		return "", err
+	}
+	sort.Ints(si)
+	if si[len(si)-1] >= bit_len {
+		return "", fmt.Errorf("The biggest index %d is not less than the bit map length %d",
+			si[len(si)-1], bit_len)
+	}
+
+	for _, v := range map_list {
+		// FIXME, remove to before ALL_DATAS?
+		m := BITMAP_BAD_EXPRESSION.FindAllString(v, -1)
+		if len(m) > 0 {
+			return "", fmt.Errorf("wrong expression : %s", v)
+		}
+		scopes := strings.Split(v, ",")
+		for _, v := range scopes {
+			// negative false, positive ture
+			if is_span(v) {
+				spans, err := silit_span(v)
+				if err != nil {
+					return "", err
+				}
+				for _, span := range spans {
+					span = strings.TrimSpace(span)
+					low, _, _ := span_phypen2int(strings.TrimLeft(span, "^"))
+					pos := locate(low)
+					bitmaps[pos], _ = fillBitMap(bitmaps[pos], span)
+				}
+			} else {
+				i, err := strconv.Atoi(strings.TrimLeft(v, "^"))
+				if err != nil {
+					return "", err
+				}
+				pos := locate(i)
+				bitmaps[pos], _ = fillBitMap(bitmaps[pos], v)
+			}
+		}
+	}
+	str := ""
+	for i, v := range bitmaps {
+		if i == 0 {
+			str = fmt.Sprintf("%x", v)
+		} else {
+			str = fmt.Sprintf("%x", v) + "," + str
+		}
+	}
+	return str, nil
+}
