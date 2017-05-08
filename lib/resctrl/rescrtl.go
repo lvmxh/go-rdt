@@ -52,7 +52,10 @@ func writeFile(dir, file, data string) error {
 	if dir == "" {
 		return fmt.Errorf("no such directory for %s", file)
 	}
-	if err := ioutil.WriteFile(filepath.Join(dir, file), []byte(data+"\n"), 0644); err != nil {
+	if !strings.HasSuffix(data, "\n") {
+		data = data + "\n"
+	}
+	if err := ioutil.WriteFile(filepath.Join(dir, file), []byte(data), 0644); err != nil {
 		return fmt.Errorf("failed to write %v to %v: %v", data, file, err)
 	}
 	return nil
@@ -195,8 +198,15 @@ func (r ResAssociation) Commit(group string) error {
 	}
 	// only commit a user deinfed group's task to sys fs
 	if group != "." && len(r.Tasks) > 0 {
-		writeFile(path, "tasks", strings.Join(r.Tasks, "\n"))
+		// write one task one time, or write will fail
+		for _, t := range r.Tasks {
+			err := writeFile(path, "tasks", t)
+			if err != nil {
+				return err
+			}
+		}
 	}
+
 	if len(r.Schemata) > 0 {
 		schemata := make([]string, 0, 10)
 		for k, v := range r.Schemata {

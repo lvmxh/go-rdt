@@ -71,6 +71,7 @@ func (w *WorkLoadResource) WorkLoadNew(request *restful.Request, response *restf
 
 	if err != nil {
 		response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		return
 	}
 	response.WriteHeaderAndEntity(http.StatusCreated, wl)
 }

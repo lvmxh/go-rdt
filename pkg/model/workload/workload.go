@@ -30,7 +30,7 @@ type RDTWorkLoad struct {
 }
 
 func (w *RDTWorkLoad) Enforce() error {
-
+	// First check CAT is enabled
 	if len(w.TaskIDs) < 0 {
 		return fmt.Errorf("No task ids specified")
 	}
