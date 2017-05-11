@@ -27,12 +27,14 @@ type RDTWorkLoad struct {
 	Status string
 	// Group
 	Group []string `json:"group"`
+	// CosName
+	CosName string
 }
 
 func (w *RDTWorkLoad) Enforce() error {
 	// FIXME First check CAT is enabled
 
-	if len(w.TaskIDs) <= 0 || len(w.CoreIDs) <= 0 {
+	if len(w.TaskIDs) <= 0 && len(w.CoreIDs) <= 0 {
 		return fmt.Errorf("No task or core id specified")
 	}
 
@@ -57,14 +59,12 @@ func (w *RDTWorkLoad) Enforce() error {
 
 	// TODO(eliqiao): if no group sepcify, isolated = true
 	// please refine this in later version
-	isolated := true
 	p, err := policy.GetPolicy("haswell")
 	if err != nil {
 		return err
 	}
 
 	var pt policy.PolicyType
-	var gname string
 
 	switch w.Policy {
 	case "gold":
@@ -75,54 +75,121 @@ func (w *RDTWorkLoad) Enforce() error {
 		pt = p.Copper
 	}
 
-	fmt.Println(pt.Size)
-
 	resaall := resctrl.GetResAssociation()
 
-	if len(w.Group) > 0 {
-		// TODO (eliqiao):
-		// in this branch we may need to create overlap COS
-		// or add tasks to an existed COS
-		for _, g := range w.Group {
-			fmt.Println(g)
-			for osg, _ := range resaall {
-				fmt.Println(osg)
-				if g == osg {
-					break
-				}
-			}
-		}
-	} else {
-		// create a new group with the first task id
-		// TODO(eliqiao): verify task id is valid
-		gname = w.TaskIDs[0]
+	if len(w.Group) > 2 {
+		// FIXME what if more than 3 groups
+		return fmt.Errorf("Can not specified more then 2 group list name")
 	}
 
-	if gname != "" {
-		// in this branch we convert the size to a cos base on default
-		// schemata then commit it to sysfs
-		newResAss, err := createNewResAss(resaall["."], pt.Size*1024, isolated)
-		if err != nil {
-			// log
-			return err
-		}
-		newResAss.Tasks = w.TaskIDs
-		newResAss.Cpus = cpubitmap
-		err = newResAss.Commit(gname)
-		if err != nil {
-			// log error
-			return err
-		}
-		if isolated == true {
-			if err = resaall["."].Commit("."); err != nil {
-				// log error
-				return err
-			}
-		}
-		w.Group = append(w.Group, gname)
+	base_grp, new_grp, sub_grp := getGroupNames(w, resaall)
+
+	if base_grp == "" {
+		// log group information
+		return fmt.Errorf("Faild to find a suitable group")
 	}
+
+	targetResAss, err := createOrGetResAss(resaall, base_grp, new_grp, sub_grp, pt.Size*1024)
+	if err != nil {
+		// log
+		return err
+	}
+
+	targetResAss.Tasks = append(targetResAss.Tasks, w.TaskIDs...)
+	// FIXME need to check if we need to change cpubitmap
+	targetResAss.Cpus = cpubitmap
+
+	if base_grp != new_grp && base_grp != "." {
+		new_grp = base_grp + "-" + new_grp
+	}
+
+	targetResAss.Commit(new_grp)
+	if err != nil {
+		// log error
+		return err
+	}
+
+	if base_grp == "." {
+		if err = resaall["."].Commit("."); err != nil {
+			return err
+		}
+	}
+
+	//foo(resaall["."], 1, true)
+	if len(w.Group) == 0 {
+		w.Group = append(w.Group, new_grp)
+	}
+
+	w.CosName = new_grp
 
 	return nil
+}
+
+// return base group name, new group name, sub group name list.
+// e.g.
+// CG1 L3:0=ffff;1=ffff
+// CG1-SUB1 L3:0=f;1=f
+// CG2 L3:0=f0000;1=f0000
+//
+// if w.Group is ["CG1", "SUB2"]
+// getGroupNames will return CG1, SUB2, [CG1-SUB1]
+func getGroupNames(w *RDTWorkLoad, m map[string]*resctrl.ResAssociation) (b, n string, s []string) {
+	var new_grp string
+	var base_grp string
+	sub_grp := []string{}
+	// no group specify
+	if len(w.Group) == 0 {
+		if len(w.TaskIDs) > 0 {
+			// use the first task id as gname
+			new_grp = w.TaskIDs[0]
+		} else {
+			// FIXME generate a better group name
+			new_grp = "FIXME"
+		}
+		return ".", new_grp, []string{}
+	}
+
+	if len(w.Group) == 1 {
+		_, ok := m[w.Group[0]]
+		if ok {
+			// find existed group
+			// new group and base group are same
+			return w.Group[0], w.Group[0], []string{}
+		} else {
+			// doesn't find one, create a new one
+			return ".", w.Group[0], []string{}
+		}
+	}
+
+	if len(w.Group) == 2 {
+		_, ok1 := m[w.Group[0]]
+		_, ok2 := m[w.Group[1]]
+		if ok1 && ok2 {
+			// FIXME error
+			return "", "", []string{}
+		}
+		if !ok1 && !ok2 {
+			// FIXME error
+			return "", "", []string{}
+		}
+
+		if ok1 {
+			base_grp = w.Group[0]
+			new_grp = w.Group[1]
+		} else {
+			base_grp = w.Group[1]
+			new_grp = w.Group[2]
+		}
+		for g, _ := range m {
+			// sub group names like base-sub
+			if strings.HasPrefix(g, base_grp+"-") {
+				sub_grp = append(sub_grp, g)
+			}
+		}
+		return base_grp, new_grp, sub_grp
+	}
+	// error
+	return "", "", []string{}
 }
 
 // calculate the mask based on the size
@@ -143,13 +210,15 @@ func getMaskBySize(size, unit uint32) (ret uint32) {
 
 // update the mask based on base mask, and consume it
 // return net base mask and new mask, if error the new mask is 0
-func updateMask(basemask, size, unit uint32, consume bool) (newbasemask, newmask uint32) {
+func updateMask(basemask, size, unit, offset uint32, consume bool) (newbasemask, newmask uint32) {
 
 	newmask = getMaskBySize(size, unit)
 	if newmask >= basemask {
 		// todo log
 		return basemask, 0
 	}
+
+	newmask = newmask << offset
 
 	// start from the most right place
 	for newmask < basemask {
@@ -167,8 +236,23 @@ func updateMask(basemask, size, unit uint32, consume bool) (newbasemask, newmask
 }
 
 // size is in B
+// return a Resassociation with proper mask set
+func createOrGetResAss(r map[string]*resctrl.ResAssociation, base_grp, new_grp string, sub_grp []string, size uint32) (t resctrl.ResAssociation, err error) {
+	if base_grp == new_grp {
+		return *r[base_grp], nil
+	}
+	// consider move consume checking to createNewResassociation
+	if base_grp == "." {
+		// sub_grp should be empty if the base group is "."
+		// or that should be an internal error.
+		return createNewResassociation(r, ".", size, true, []string{})
+	}
+	return createNewResassociation(r, base_grp, size, false, sub_grp)
+}
+
+// size is in B
 // return a new Resassociation based on the given resctrl.ResAssociation
-func createNewResAss(r *resctrl.ResAssociation, size uint32, consume bool) (t resctrl.ResAssociation, err error) {
+func createNewResassociation(r map[string]*resctrl.ResAssociation, base string, size uint32, consume bool, sub_grp []string) (t resctrl.ResAssociation, err error) {
 	rdtinfo := resctrl.GetRdtCosInfo()
 	cacheinfo := &cache.CacheInfos{}
 	// Fixme Upper layer should pass a cache level parameter
@@ -178,14 +262,16 @@ func createNewResAss(r *resctrl.ResAssociation, size uint32, consume bool) (t re
 	newResAss := resctrl.ResAssociation{}
 	newResAss.Schemata = make(map[string][]resctrl.CacheCos)
 
-	for cattype, res := range r.Schemata {
+	for cattype, res := range r[base].Schemata {
 		catinfo := rdtinfo[strings.ToLower(cattype)]
 		// CbmMask is in hex
 		cbmlen := len(catinfo.CbmMask) * 4
 		// construct ResAssociation for each cache id
 		for i, c := range cacheinfo.Caches {
+			// compute sub_grp's offset for the i(th) 'cattype'
+			offset := calculateOffset(r, sub_grp, cattype, i)
 			unit := c.TotalSize / uint32(cbmlen)
-			newbasemask, newmask := updateMask(res[i].Mask, size, unit, consume)
+			newbasemask, newmask := updateMask(res[i].Mask, size, unit, offset, consume)
 			res[i].Mask = newbasemask
 			if newmask == 0 {
 				return newResAss, fmt.Errorf("Not enough cache can be allocated")
@@ -195,4 +281,16 @@ func createNewResAss(r *resctrl.ResAssociation, size uint32, consume bool) (t re
 		}
 	}
 	return newResAss, nil
+}
+
+func calculateOffset(r map[string]*resctrl.ResAssociation, sub_grp []string, cattype string, pos uint32) uint32 {
+	// FIXME remove these after calculateOffset is fully implemented
+	fmt.Println(r)
+	fmt.Println(cattype)
+	fmt.Println(pos)
+	if len(sub_grp) == 0 {
+		return 0
+	}
+	// TODO
+	return 0
 }
