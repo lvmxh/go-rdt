@@ -22,7 +22,7 @@ type RDTWorkLoad struct {
 	// task ids, the work load's task ids
 	TaskIDs []string `json:"task_ids"`
 	// policy the workload want to apply
-	Policy string `json:"policy'`
+	Policy string `json:"policy"`
 	// Status
 	Status string
 	// Group
