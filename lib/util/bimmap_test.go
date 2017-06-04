@@ -64,3 +64,27 @@ func TestGenCpuResStringWithWrongExpression(t *testing.T) {
 		}
 	}
 }
+
+func TestString2data(t *testing.T) {
+	hex_datas := []uint{0xffffff0f, 0xf1, 0xff2fff}
+	datas, _ := string2data("ff2fff,f1,ffffff0f")
+	for i, v := range datas {
+		if v != hex_datas[i] {
+			t.Errorf("Parser error, the %d element should be: 0x%x, but get: 0x%x. \n",
+				i, hex_datas[i], v)
+		} else {
+			fmt.Printf("Parser %d element, get: 0x%x. \n", i, v)
+		}
+	}
+	fmt.Println("*****************************************")
+	hex_datas = []uint{0x00ffafff, 0xdf00cfff, 0x3}
+	datas, _ = string2data("3df00cfff00ffafff")
+	for i, v := range datas {
+		if v != hex_datas[i] {
+			t.Errorf("Parser error, the %d element should be: 0x%x, but get: 0x%x.\n",
+				i, hex_datas[i], v)
+		} else {
+			fmt.Printf("Parser %d element, get: 0x%x. \n", i, v)
+		}
+	}
+}

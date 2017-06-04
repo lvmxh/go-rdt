@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	. "unsafe"
 )
 
 var BITMAP_BAD_EXPRESSION = regexp.MustCompile(`([^\^\d-,]+)|([^\d]+-.*(,|$))|` +
@@ -230,4 +231,46 @@ func GenCpuResString(map_list []string, bit_len int) (string, error) {
 		}
 	}
 	return str, nil
+}
+
+func string2data(s string) ([]uint, error) {
+	var dummy uint
+	int_len := int(Sizeof(dummy))
+	s = strings.TrimPrefix(strings.TrimPrefix(s, "0x"), "0X")
+	// a string with comma, such as "ff2fff,f1,ffffff0f"
+	if strings.Contains(s, ",") {
+		ss := strings.Split(s, ",")
+		var l int = len(ss)
+		datas := make([]uint, l)
+		for i, v := range ss {
+			if len(v) > int_len {
+				return datas, fmt.Errorf(
+					"string lenth > %d. I'm not so smart to guest the data type.", int_len)
+			}
+			if ui, err := strconv.ParseUint(v, 16, 32); err == nil {
+				datas[l-1-i] = uint(ui)
+			} else {
+				return datas, fmt.Errorf("Can not parser %s in  %s.", v, s)
+			}
+		}
+		return datas, nil
+	} else { // a string without comma, such as "3df00cfff00ffafff"
+		var l int = len(s)
+		n := (l - 1 + int_len) / int_len
+		datas := make([]uint, n)
+		for i := 0; i < n; i++ {
+			start := l - (i+1)*int_len
+			end := l - i*int_len
+			var ns string = s[:end]
+			if start > 0 {
+				ns = s[start:end]
+			}
+			if ui, err := strconv.ParseUint(ns, 16, 32); err == nil {
+				datas[i] = uint(ui)
+			} else {
+				return datas, fmt.Errorf("Can not parser %s in  %s.", ns, s)
+			}
+		}
+		return datas, nil
+	}
 }
