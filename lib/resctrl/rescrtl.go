@@ -167,6 +167,7 @@ func ParserResAssociation(basepath string, ignore []string, ps map[string]*ResAs
 // Go does not support flock lib.
 // That need cgo, please ref:
 // https://gist.github.com/ericchiang/ce0fdcac5659d0a80b38
+// now we can use lib/flock/flock.go
 func GetResAssociation() map[string]*ResAssociation {
 	ignore := []string{"info"}
 	ress := make(map[string]*ResAssociation)
@@ -296,6 +297,7 @@ func ParserRdtCosInfo(basepath string, ignore []string, mres map[string]*RdtCosI
 // Go does not support flock lib.
 // That need cgo, please ref:
 // https://gist.github.com/ericchiang/ce0fdcac5659d0a80b38
+// now we can use lib/flock/flock.go
 func GetRdtCosInfo() map[string]*RdtCosInfo {
 	ignore := []string{"info"} // ignore the toppath
 	info := make(map[string]*RdtCosInfo)
