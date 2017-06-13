@@ -76,3 +76,18 @@ func TestGetGroupNamesWithGroupNameAndSub(t *testing.T) {
 
 	testGetGroupNames(&w, m, base_grp, new_grp, sub_grps, t)
 }
+
+func TestCalculateOffset(t *testing.T) {
+	cos1 := resctrl.CacheCos{0, 0xf}
+	cos2 := resctrl.CacheCos{0, 0x10}
+
+	r := map[string]*resctrl.ResAssociation{
+		"sub1": &resctrl.ResAssociation{Schemata: map[string][]resctrl.CacheCos{"L3": []resctrl.CacheCos{cos1}}},
+		"sub2": &resctrl.ResAssociation{Schemata: map[string][]resctrl.CacheCos{"L3": []resctrl.CacheCos{cos2}}},
+	}
+
+	sub_grp := []string{"sub2", "sub1"}
+	if (calculateOffset(r, sub_grp, "L3", 0)) != 5 {
+		t.Errorf("wrong offset")
+	}
+}

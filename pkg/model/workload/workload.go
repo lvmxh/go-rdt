@@ -284,14 +284,24 @@ func createNewResassociation(r map[string]*resctrl.ResAssociation, base string, 
 	return newResAss, nil
 }
 
+// Calculate offset for the pos'th cache of cattype based on sub_grp
+// e.g.
+// sub_grp = [base-sub1]
+// base-sub1: L3:0=f;1=1
+// calculateOffset(r, sub_grp, L3, 0) = 4
+// calculateOffset(r, sub_grp, L3, 1) = 1
 func calculateOffset(r map[string]*resctrl.ResAssociation, sub_grp []string, cattype string, pos uint32) uint32 {
-	// FIXME remove these after calculateOffset is fully implemented
-	fmt.Println(r)
-	fmt.Println(cattype)
-	fmt.Println(pos)
-	if len(sub_grp) == 0 {
-		return 0
+	var biggestMask, offset uint32
+	biggestMask = 0
+
+	for _, g := range sub_grp {
+		if biggestMask < r[g].Schemata[cattype][pos].Mask {
+			biggestMask = r[g].Schemata[cattype][pos].Mask
+		}
 	}
-	// TODO
-	return 0
+
+	for offset = 0; biggestMask > 0; biggestMask = biggestMask >> 1 {
+		offset += 1
+	}
+	return offset
 }
