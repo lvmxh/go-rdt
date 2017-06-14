@@ -1,67 +1,14 @@
 catpolicy:
-  broadwell:
-    gold:
-      size: 14080
-      percentage: 20
-      rule:
-        dpdk: shared
-        other: isolated
-      pin_core: false
-    silver:
-      size: 8430
-      percentage: 10
-      rule:
-        dpdk: shared
-        other: isolated
-      pin_core: false
-    copper:
-      size: 5620
-      percentage: 5
-      rule:
-        dpdk: shared
-        other: isolated
-      pin_core: false
-  haswell:
-    gold:
-      size: 14080
-      percentage: 20
-      rule:
-        dpdk: shared
-        other: isolated
-      pin_core: true
-    silver:
-      size: 8430
-      percentage: 10
-      rule:
-        dpdk: shared
-        other: isolated
-      pin_core: true
-    copper:
-      size: 5620
-      percentage: 5
-      rule:
-        dpdk: shared
-        other: isolated
-      pin_core: false
-  skylake:
-    gold:
-      size: 14080
-      percentage: 20
-      rule:
-        dpdk: shared
-        other: isolated
-      pin_core: false
-    silver:
-      size: 8430
-      percentage: 10
-      rule:
-        dpdk: shared
-        other: isolated
-      pin_core: false
-    copper:
-      size: 5620
-      percentage: 5
-      rule:
-        dpdk: shared
-        other: isolated
-      pin_core: false
+    broadwell:
+        - gold:
+            - peakusage: 14080
+            - variance: 10
+            - overcommit: false
+        - silver:
+            - peakusage: 8430
+            - variance: 10
+            - overcommit: false
+        - copper:
+            - peakusage: 5620
+            - variance: 20
+            - overcommit: true

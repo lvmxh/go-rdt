@@ -9,44 +9,19 @@ func TestGetPolicy(t *testing.T) {
 
 	SetPolicyFilePath("../../../etc/policy.yaml")
 
-	policy, err := GetPolicy("broadwell")
+	policy, err := GetPolicy("broadwell", "gold")
 
 	if err != nil {
-		t.Errorf("Failed to get policy for broadwell")
+		t.Errorf("Failed to get gold policy for broadwell")
 	}
 
-	if policy.Gold.Size != 14080 {
-		t.Errorf("wrong policy for broadwell")
-	}
-}
-
-func TestUpdatePolicy(t *testing.T) {
-	t.Log("Testing update policy for broadwell cpu ... ")
-	SetPolicyFilePath("../../../etc/policy.yaml")
-
-	policy, err := GetPolicy("broadwell")
-
-	if err != nil {
-		t.Errorf("Failed to get policy for broadwell")
+	if policy["peakusage"] != "14080" {
+		t.Errorf("Error peakusage in gold policy for broadwell")
 	}
 
-	policy.Gold.Size = 1
+	policy, err = GetPolicy("broadwell", "foo")
 
-	err = UpdatePolicy("broadwell", &policy)
-
-	if err != nil {
-		t.Errorf("Failed to Update policy for broadwell")
+	if err == nil {
+		t.Errorf("Error should be return as no foo policy")
 	}
-	new_policy, err := GetPolicy("broadwell")
-
-	if err != nil {
-		t.Errorf("Failed to get policy for broadwell")
-	}
-	if new_policy.Gold.Size != 1 {
-		t.Errorf("Failed to update policy")
-	}
-
-	// Write the origin value back
-	new_policy.Gold.Size = 14080
-	UpdatePolicy("broadwell", &new_policy)
 }

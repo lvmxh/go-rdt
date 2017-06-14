@@ -31,7 +31,7 @@ func (c PolicyResource) Register(container *restful.Container) {
 // GET /v1/policy
 func (c PolicyResource) PolicyGet(request *restful.Request, response *restful.Response) {
 	// TODO get host's platform
-	p, err := policy.GetPolicy("broadwell")
+	p, err := policy.GetPlatformPolicy("broadwell")
 	if err != nil {
 		response.WriteError(http.StatusNotFound, err)
 		return

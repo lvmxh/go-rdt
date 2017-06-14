@@ -1,34 +1,22 @@
 package policy
 
 import (
-	"errors"
+	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"sync"
 )
 
+// FIXME move this to configure file
 var yaml_path = "/etc/rdtagent/policy.yaml"
 
-type PolicyRule struct {
-	Dpdk  string
-	Other string
-}
-type PolicyType struct {
-	Size       uint32
-	Percentage uint32
-	Rule       PolicyRule
-	Pin_core   bool
-}
+type Attr map[string]string
 
-type Policy struct {
-	Gold   PolicyType
-	Silver PolicyType
-	Copper PolicyType
-}
+type Policy map[string][]Attr
 
 type CATConfig struct {
-	Catpolicy map[string]*Policy `yaml:"catpolicy"`
+	Catpolicy map[string][]Policy `yaml:"catpolicy"`
 }
 
 var config *CATConfig
@@ -55,8 +43,8 @@ func LoadPolicy() (*CATConfig, error) {
 	return &c, err
 }
 
-// return a copy of policy, not a pointer
-func GetPolicy(cpu string) (Policy, error) {
+func GetPlatformPolicy(cpu string) ([]Policy, error) {
+
 	lock.Lock()
 	defer lock.Unlock()
 	var err error
@@ -64,37 +52,46 @@ func GetPolicy(cpu string) (Policy, error) {
 	if config == nil {
 		config, err = LoadPolicy()
 		if err != nil {
-			return Policy{}, err
+			return []Policy{}, err
 		}
 	}
 
 	p, ok := config.Catpolicy[cpu]
-	if ok != true {
-		return Policy{}, errors.New("cpu doen't supported")
+
+	if !ok {
+		return []Policy{}, fmt.Errorf("Error while get platform policy: %s", cpu)
 	}
 
-	return *p, nil
+	return p, nil
 }
 
-// Write back policy to yaml file
-func UpdatePolicy(cpu string, p *Policy) error {
-	lock.Lock()
-	defer lock.Unlock()
-	if config == nil {
-		return errors.New("empty config file")
-	}
+// return a map of the policy has
+func GetPolicy(cpu, policy string) (map[string]string, error) {
+	m := make(map[string]string)
 
-	_, ok := config.Catpolicy[cpu]
-	if ok != true {
-		return errors.New("cpu doen't supported")
-	}
+	platform, err := GetPlatformPolicy(cpu)
 
-	config.Catpolicy[cpu] = p
-
-	d, err := yaml.Marshal(config)
 	if err != nil {
-		log.Fatalf("error: %v", err)
-		return err
+		return m, fmt.Errorf("Can not find specified platform policy.")
 	}
-	return ioutil.WriteFile(yaml_path, d, 0644)
+
+	var policyCandidate []Policy
+
+	for _, p := range platform {
+		_, ok := p[policy]
+		if ok {
+			policyCandidate = append(policyCandidate, p)
+		}
+	}
+	if len(policyCandidate) == 1 {
+		for _, item := range policyCandidate[0][policy] {
+			// merge to one map
+			for k, v := range item {
+				m[k] = v
+			}
+		}
+		return m, nil
+	} else {
+		return m, fmt.Errorf("Can not find specified policy %s", policy)
+	}
 }
