@@ -4,6 +4,7 @@ package workload
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"openstackcore-rdtagent/lib/cpu"
@@ -60,20 +61,9 @@ func (w *RDTWorkLoad) Enforce() error {
 
 	// TODO(eliqiao): if no group sepcify, isolated = true
 	// please refine this in later version
-	p, err := policy.GetPolicy("haswell")
+	p, err := policy.GetPolicy("broadwell", w.Policy)
 	if err != nil {
 		return err
-	}
-
-	var pt policy.PolicyType
-
-	switch w.Policy {
-	case "gold":
-		pt = p.Gold
-	case "silver":
-		pt = p.Silver
-	case "copper":
-		pt = p.Copper
 	}
 
 	resaall := resctrl.GetResAssociation()
@@ -90,7 +80,13 @@ func (w *RDTWorkLoad) Enforce() error {
 		return fmt.Errorf("Faild to find a suitable group")
 	}
 
-	targetResAss, err := createOrGetResAss(resaall, base_grp, new_grp, sub_grp, pt.Size*1024)
+	peakusage, err := strconv.Atoi(p["peakusage"])
+
+	if err != nil {
+		return err
+	}
+
+	targetResAss, err := createOrGetResAss(resaall, base_grp, new_grp, sub_grp, uint32(peakusage*1024))
 	if err != nil {
 		// log
 		return err
