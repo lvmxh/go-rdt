@@ -15,7 +15,7 @@
 The backend for policy is a yaml file: /etc/rdtagent/policy.yaml, it pre-defines
 some `policy` on specific intel platform. This file can be changed.
 
-P.S. Now, only the size is used.
+P.S. Now, only the peakusage is used, it is the cache we allocated, unit is KiB.
 
 ## Create a workload
 
@@ -23,7 +23,7 @@ A workload could be a running task(s) or some cpus which want to allocate
 cache for them.
 
 The task(s)/cpus should be valided, RDTAgent will fail your request they
-are invalide.
+are invalid.
 
 Besides you need to specify what policy of the workload will be usage.
 

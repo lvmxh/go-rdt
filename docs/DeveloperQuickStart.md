@@ -44,7 +44,7 @@ $ go test -v ./...
 In another terminal :
 
 ```
-$ curl -i localhost:8081/v1/cpuinfo
+$ curl -i localhost:8081/v1/cache
 
 ```
 
