@@ -11,8 +11,8 @@ import (
 	"github.com/emicklei/go-restful"
 	"github.com/emicklei/go-restful-swagger12"
 	"openstackcore-rdtagent/api/v1"
+	"openstackcore-rdtagent/pkg/db"
 	"openstackcore-rdtagent/pkg/model/capabilities"
-	"openstackcore-rdtagent/pkg/model/workload"
 	"openstackcore-rdtagent/util/options"
 )
 
@@ -106,7 +106,11 @@ func (c completedConfig) New() (*APIServer, error) {
 	cap := v1.CapabilitiesResource{}
 	caches := v1.CachesResource{}
 	policy := v1.PolicyResource{}
-	wls := v1.WorkLoadResource{map[string]workload.RDTWorkLoad{}}
+
+	// FIXME Add config support
+	var db db.DB = new(db.BoltDB)
+	db.Initialize("bolt.db")
+	wls := v1.WorkLoadResource{Db: db}
 	// Register controller to container
 	cap.Register(wsContainer)
 	caches.Register(wsContainer)

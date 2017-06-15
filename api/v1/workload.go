@@ -2,14 +2,14 @@ package v1
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/emicklei/go-restful"
+	"openstackcore-rdtagent/pkg/db"
 	"openstackcore-rdtagent/pkg/model/workload"
 )
 
 type WorkLoadResource struct {
-	WorkLoads map[string]workload.RDTWorkLoad
+	Db db.DB
 }
 
 func (w WorkLoadResource) Register(container *restful.Container) {
@@ -37,23 +37,33 @@ func (w WorkLoadResource) Register(container *restful.Container) {
 
 // GET /v1/workloads
 func (w WorkLoadResource) WorkLoadGet(request *restful.Request, response *restful.Response) {
-	response.WriteEntity(w)
+	ws, err := w.Db.GetAllWorkload()
+	if err != nil {
+		response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.WriteEntity(ws)
 }
 
 // GET /v1/workloads/{id}
 func (w WorkLoadResource) WorkLoadGetById(request *restful.Request, response *restful.Response) {
+
 	id := request.PathParameter("id")
-	wl := w.WorkLoads[id]
+	wl, err := w.Db.GetWorkloadById(id)
 	if len(wl.ID) == 0 {
 		response.AddHeader("Content-Type", "text/plain")
 		response.WriteErrorString(http.StatusNotFound, "404: Could not found workload")
+		return
+	}
+	if err != nil {
+		response.WriteErrorString(http.StatusInternalServerError, err.Error())
 		return
 	}
 	response.WriteEntity(wl)
 }
 
 // POST /v1/workloads
-// body : '{"core_ids":["1","2"], "task_ids":["123","456"], "policys": ["foo"], "algorithms": ["bar"]}'
+// body : '{"core_ids":["1","2"], "task_ids":["123","456"], "policys": ["foo"], "algorithms": ["bar"], "group": ["infra"]}'
 func (w *WorkLoadResource) WorkLoadNew(request *restful.Request, response *restful.Response) {
 	wl := new(workload.RDTWorkLoad)
 	err := request.ReadEntity(&wl)
@@ -63,9 +73,12 @@ func (w *WorkLoadResource) WorkLoadNew(request *restful.Request, response *restf
 		return
 	}
 
-	wl.ID = strconv.Itoa(len(w.WorkLoads) + 1)
+	err = w.Db.CreateWorkload(wl)
 
-	w.WorkLoads[wl.ID] = *wl
+	if err != nil {
+		response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		return
+	}
 
 	err = wl.Enforce()
 
