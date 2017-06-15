@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 
+	appConf "openstackcore-rdtagent/app/config"
+
 	"github.com/emicklei/go-restful"
 	"github.com/emicklei/go-restful-swagger12"
 	"openstackcore-rdtagent/api/v1"
@@ -52,6 +54,9 @@ func NewAPIConfig() *GenericAPIConfig {
 func BuildServerConfig(s *options.ServerRunOptions) (*Config, error) {
 	apiconfig := NewAPIConfig()
 
+	// FIXME (cmd line options does not override the config file options)
+	def := appConf.NewDefault()
+	fmt.Println(def)
 	if s.Addr != "" {
 		apiconfig.APIServerServiceIP = s.Addr
 	}
