@@ -113,7 +113,6 @@ func ListProcesses() map[string]Process {
 	for _, file := range files {
 
 		list_f := strings.Split(file, "/")
-		fmt.Println(list_f)
 		if pid, err := strconv.Atoi(list_f[2]); err == nil {
 
 			cmd, _ := ioutil.ReadFile(file)
