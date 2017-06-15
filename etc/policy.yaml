@@ -1,14 +1,14 @@
 catpolicy:
     broadwell:
         - gold:
-            - peakusage: 14080
+            - peakusage: 28160
             - variance: 10
             - overcommit: false
         - silver:
-            - peakusage: 8430
+            - peakusage: 11264
             - variance: 10
             - overcommit: false
         - copper:
-            - peakusage: 5620
+            - peakusage: 5632
             - variance: 20
             - overcommit: true
