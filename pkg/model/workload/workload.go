@@ -238,6 +238,12 @@ func createOrGetResAss(r map[string]*resctrl.ResAssociation, base_grp, new_grp s
 	if base_grp == new_grp {
 		return *r[base_grp], nil
 	}
+	for _, sg := range sub_grp {
+		if base_grp+"-"+new_grp == sg {
+			// new_grp has existed
+			return *r[sg], nil
+		}
+	}
 	// consider move consume checking to createNewResassociation
 	if base_grp == "." {
 		// sub_grp should be empty if the base group is "."
