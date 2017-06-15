@@ -212,13 +212,24 @@ func (r ResAssociation) Commit(group string) error {
 		schemata := make([]string, 0, 10)
 		for k, v := range r.Schemata {
 			str := make([]string, 0, 10)
-			for _, cos := range v {
-				str = append(str, fmt.Sprintf("%d=%x", cos.Id, cos.Mask))
+			// resctrl require we have strict cache id order
+			for cacheid := 0; cacheid < len(v); cacheid++ {
+				for _, cos := range v {
+					if uint8(cacheid) == cos.Id {
+						str = append(str, fmt.Sprintf("%d=%x", cos.Id, cos.Mask))
+						break
+					}
+				}
 			}
 			schemata = append(schemata, strings.Join([]string{k, strings.Join(str, ";")}, ":"))
 		}
 		data := strings.Join(schemata, "\n")
-		writeFile(path, "schemata", data)
+		err := writeFile(path, "schemata", data)
+		if err != nil {
+			path := filepath.Join(SysResctrl, group)
+			os.Remove(path)
+		}
+		return err
 	}
 
 	return nil

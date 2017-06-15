@@ -100,7 +100,7 @@ func (w *RDTWorkLoad) Enforce() error {
 		new_grp = base_grp + "-" + new_grp
 	}
 
-	targetResAss.Commit(new_grp)
+	err = targetResAss.Commit(new_grp)
 	if err != nil {
 		// log error
 		return err
