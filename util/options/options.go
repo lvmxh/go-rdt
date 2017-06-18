@@ -12,19 +12,15 @@ type ServerRunOptions struct {
 
 // NewServerRunOptions creates a new ServerRunOptions object with default parameters
 func NewServerRunOptions() *ServerRunOptions {
-	s := ServerRunOptions{
-		Port:	"8081",
-		Addr:	"localhost",
-	}
-	return &s
+	return new(ServerRunOptions)
 }
 
 // Add options from cmdline
 func (s *ServerRunOptions) AddFlags(fs *pflag.FlagSet) {
 
 	fs.StringVar(&s.Addr, "address", s.Addr,
-	"listen address")
+		"listen address")
 
 	fs.StringVar(&s.Port, "port", s.Port,
-	"listen port")
+		"listen port")
 }

@@ -12,7 +12,7 @@ type Default struct {
 }
 
 var configOnce sync.Once
-var def = new(Default)
+var def = &Default{"localhost", 8081}
 
 func readDefault() {
 	viper.UnmarshalKey("default", &def)

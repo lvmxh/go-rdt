@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	appConf "openstackcore-rdtagent/app/config"
 
@@ -56,13 +57,14 @@ func BuildServerConfig(s *options.ServerRunOptions) (*Config, error) {
 
 	// FIXME (cmd line options does not override the config file options)
 	def := appConf.NewDefault()
-	fmt.Println(def)
-	if s.Addr != "" {
-		apiconfig.APIServerServiceIP = s.Addr
+	if s.Addr == "" {
+		s.Addr = def.Address
 	}
-	if s.Port != "" {
-		apiconfig.APIServerServicePort = s.Port
+	apiconfig.APIServerServiceIP = s.Addr
+	if s.Port == "" {
+		s.Port = strconv.FormatUint(uint64(def.Port), 10)
 	}
+	apiconfig.APIServerServicePort = s.Port
 
 	weburl := fmt.Sprintf("http://%s:%s", s.Addr, s.Port)
 	swaggerconfig := swagger.Config{
