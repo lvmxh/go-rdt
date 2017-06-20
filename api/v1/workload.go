@@ -24,14 +24,20 @@ func (w WorkLoadResource) Register(container *restful.Container) {
 		Doc("Get all work loads").
 		Operation("WorkLoadGet"))
 
-	ws.Route(ws.GET("/{id:[0-9]*}").To(w.WorkLoadGetById).
-		Doc("Get work load by id").
-		Param(ws.PathParameter("id", "id").DataType("string")).
-		Operation("WorkLoadGetById"))
-
 	ws.Route(ws.POST("/").To(w.WorkLoadNew).
 		Doc("Create new work load").
 		Operation("WorkLoadNew"))
+
+	ws.Route(ws.GET("/{id:[0-9]*}").To(w.WorkLoadGetById).
+		Doc("Get workload by id").
+		Param(ws.PathParameter("id", "id").DataType("string")).
+		Operation("WorkLoadGetById"))
+
+	ws.Route(ws.DELETE("/{id:[0-9]*}").To(w.WorkLoadDeleteById).
+		Doc("Delete workload by id").
+		Param(ws.PathParameter("id", "id").DataType("string")).
+		Operation("WorkLoadDeleteById"))
+
 	container.Add(ws)
 }
 
@@ -87,4 +93,16 @@ func (w *WorkLoadResource) WorkLoadNew(request *restful.Request, response *restf
 		return
 	}
 	response.WriteHeaderAndEntity(http.StatusCreated, wl)
+}
+
+// DELETE /v1/workloads/{id}
+func (w WorkLoadResource) WorkLoadDeleteById(request *restful.Request, response *restful.Response) {
+
+	id := request.PathParameter("id")
+	wl := workload.RDTWorkLoad{ID: id}
+	// TODO (eliqiao): We need to first remove Cos from the resctrl
+	err := w.Db.DeleteWorkload(&wl)
+	if err != nil {
+		response.WriteErrorString(http.StatusInternalServerError, err.Error())
+	}
 }
