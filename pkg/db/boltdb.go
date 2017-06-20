@@ -48,11 +48,21 @@ func (b *BoltDB) Initialize(dbname string) {
 }
 
 func (b *BoltDB) CreateWorkload(w *workload.RDTWorkLoad) error {
-	lock.Lock()
-	defer lock.Unlock()
-
 	/* When create a new workload we need to verify that the new PIDs
 	   we the workload specified should not existed */
+
+	ws, err := b.GetAllWorkload()
+	if err != nil {
+		return err
+	}
+
+	err = validateTasks(*w, ws)
+	if err != nil {
+		return err
+	}
+
+	lock.Lock()
+	defer lock.Unlock()
 
 	return db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(WorkloadBucket))
