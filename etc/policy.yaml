@@ -8,7 +8,7 @@ catpolicy:
             - peakusage: 11264
             - variance: 10
             - overcommit: false
-        - copper:
+        - bronze:
             - peakusage: 5632
             - variance: 20
             - overcommit: true
