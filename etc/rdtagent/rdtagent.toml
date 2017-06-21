@@ -11,4 +11,4 @@ path = "/var/log/redagent.log"
 level = "debug"
 
 [database]
-transport = "./etc/data/rdtagent.db" # will change it to /etc path.
+transport = "/var/run/rdtagent.db"

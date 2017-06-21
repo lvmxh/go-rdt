@@ -22,6 +22,7 @@ type GenericAPIConfig struct {
 	APIServerServiceIP   string
 	APIServerServicePort string
 	EnableUISupport      bool
+	Transport            string
 }
 
 // TODO move this out of app server
@@ -56,15 +57,16 @@ func BuildServerConfig(s *options.ServerRunOptions) (*Config, error) {
 	apiconfig := NewAPIConfig()
 
 	// FIXME (cmd line options does not override the config file options)
-	def := appConf.NewDefault()
+	appconfig := appConf.NewConfig()
 	if s.Addr == "" {
-		s.Addr = def.Address
+		s.Addr = appconfig.Def.Address
 	}
 	apiconfig.APIServerServiceIP = s.Addr
 	if s.Port == "" {
-		s.Port = strconv.FormatUint(uint64(def.Port), 10)
+		s.Port = strconv.FormatUint(uint64(appconfig.Def.Port), 10)
 	}
 	apiconfig.APIServerServicePort = s.Port
+	apiconfig.Transport = appconfig.Db.Transport
 
 	weburl := fmt.Sprintf("http://%s:%s", s.Addr, s.Port)
 	swaggerconfig := swagger.Config{
@@ -109,7 +111,7 @@ func (c completedConfig) New() (*APIServer, error) {
 
 	// FIXME Add config support
 	var db db.DB = new(db.BoltDB)
-	db.Initialize("bolt.db")
+	db.Initialize(c.Config.GenericConfig.Transport)
 	wls := v1.WorkLoadResource{Db: db}
 	// Register controller to container
 	cap.Register(wsContainer)
