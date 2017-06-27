@@ -11,4 +11,6 @@ path = "/var/log/redagent.log"
 level = "debug"
 
 [database]
-transport = "/var/run/rdtagent.db"
+backend = "bolt" # mgo
+transport = "/var/run/rdtagent.db" # mongodb://localhost
+dbname = "bolt" # RDTPolicy

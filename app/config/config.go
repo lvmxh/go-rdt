@@ -12,7 +12,9 @@ type Default struct {
 }
 
 type Database struct {
+	Backend   string `toml:"backend"`
 	Transport string `toml:"transport"`
+	DBName    string `toml:"dbname"`
 }
 
 type Config struct {
@@ -30,7 +32,9 @@ func NewConfig() Config {
 	configOnce.Do(func() {
 		viper.BindPFlag("address", pflag.Lookup("address"))
 		viper.BindPFlag("port", pflag.Lookup("port"))
+		viper.BindPFlag("backend", pflag.Lookup("backend"))
 		viper.BindPFlag("transport", pflag.Lookup("transport"))
+		viper.BindPFlag("dbname", pflag.Lookup("dbname"))
 		viper.UnmarshalKey("default", config.Def)
 		viper.UnmarshalKey("database", config.Db)
 	})
