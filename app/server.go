@@ -23,6 +23,7 @@ type GenericAPIConfig struct {
 	APIServerServicePort string
 	EnableUISupport      bool
 	Transport            string
+	DbName               string
 }
 
 // TODO move this out of app server
@@ -102,17 +103,21 @@ func (c *Config) Complete() completedConfig {
 }
 
 func (c completedConfig) New() (*APIServer, error) {
+	// FIXME Add config support
+	var db db.DB = new(db.BoltDB)
+	err := db.Initialize(c.Config.GenericConfig.Transport, c.Config.GenericConfig.DbName)
+	if err != nil {
+		return nil, err
+	}
+
 	wsContainer := restful.NewContainer()
 	wsContainer.Router(restful.CurlyRouter{})
 
 	cap := v1.CapabilitiesResource{}
 	caches := v1.CachesResource{}
 	policy := v1.PolicyResource{}
-
-	// FIXME Add config support
-	var db db.DB = new(db.BoltDB)
-	db.Initialize(c.Config.GenericConfig.Transport)
 	wls := v1.WorkLoadResource{Db: db}
+
 	// Register controller to container
 	cap.Register(wsContainer)
 	caches.Register(wsContainer)

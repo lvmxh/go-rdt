@@ -7,8 +7,11 @@ import (
 	"openstackcore-rdtagent/pkg/model/workload"
 )
 
+// workload table name
+const WorkloadTableName = "workload"
+
 type DB interface {
-	Initialize(dbname string)
+	Initialize(transport, dbname string) error
 	CreateWorkload(w *workload.RDTWorkLoad) error
 	DeleteWorkload(w *workload.RDTWorkLoad) error
 	GetAllWorkload() ([]workload.RDTWorkLoad, error)
