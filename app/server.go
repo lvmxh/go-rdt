@@ -22,8 +22,9 @@ type GenericAPIConfig struct {
 	APIServerServiceIP   string
 	APIServerServicePort string
 	EnableUISupport      bool
+	DBBackend            string
 	Transport            string
-	DbName               string
+	DBName               string
 }
 
 // TODO move this out of app server
@@ -67,7 +68,9 @@ func BuildServerConfig(s *options.ServerRunOptions) (*Config, error) {
 		s.Port = strconv.FormatUint(uint64(appconfig.Def.Port), 10)
 	}
 	apiconfig.APIServerServicePort = s.Port
+	apiconfig.DBBackend = appconfig.Db.Backend
 	apiconfig.Transport = appconfig.Db.Transport
+	apiconfig.DBName = appconfig.Db.DBName
 
 	weburl := fmt.Sprintf("http://%s:%s", s.Addr, s.Port)
 	swaggerconfig := swagger.Config{
@@ -102,10 +105,27 @@ func (c *Config) Complete() completedConfig {
 	return completedConfig{c}
 }
 
+func InitializeDB(c completedConfig) (db.DB, error) {
+	var d db.DB
+
+	if c.Config.GenericConfig.DBBackend == "bolt" {
+		d = new(db.BoltDB)
+	} else if c.Config.GenericConfig.DBBackend == "mgo" {
+		d = new(db.MgoDB)
+	} else {
+		return nil, fmt.Errorf("Unsupported DB backend %s", c.Config.GenericConfig.DBBackend)
+	}
+
+	err := d.Initialize(c.Config.GenericConfig.Transport, c.Config.GenericConfig.DBName)
+
+	if err != nil {
+		return nil, err
+	}
+	return d, nil
+}
+
 func (c completedConfig) New() (*APIServer, error) {
-	// FIXME Add config support
-	var db db.DB = new(db.BoltDB)
-	err := db.Initialize(c.Config.GenericConfig.Transport, c.Config.GenericConfig.DbName)
+	db, err := InitializeDB(c)
 	if err != nil {
 		return nil, err
 	}
