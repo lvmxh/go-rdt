@@ -11,9 +11,9 @@ import (
 	"openstackcore-rdtagent/lib/proc"
 	"openstackcore-rdtagent/lib/resctrl"
 	libutil "openstackcore-rdtagent/lib/util"
-	"openstackcore-rdtagent/pkg/model/cache"
-	"openstackcore-rdtagent/pkg/model/policy"
-	pkgutil "openstackcore-rdtagent/pkg/model/util"
+	"openstackcore-rdtagent/model/cache"
+	"openstackcore-rdtagent/model/policy"
+	modelutil "openstackcore-rdtagent/model/util"
 )
 
 type RDTWorkLoad struct {
@@ -268,7 +268,7 @@ func createNewResassociation(r map[string]*resctrl.ResAssociation, base string, 
 	for cattype, res := range r[base].Schemata {
 		catinfo := rdtinfo[strings.ToLower(cattype)]
 		// CbmMask is in hex
-		cbmlen := pkgutil.CbmLen(catinfo.CbmMask)
+		cbmlen := modelutil.CbmLen(catinfo.CbmMask)
 		// construct ResAssociation for each cache id
 		for i, c := range cacheinfo.Caches {
 			// compute sub_grp's offset for the i(th) 'cattype'

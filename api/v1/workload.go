@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/emicklei/go-restful"
-	"openstackcore-rdtagent/pkg/db"
-	"openstackcore-rdtagent/pkg/model/workload"
+	"openstackcore-rdtagent/db"
+	"openstackcore-rdtagent/model/workload"
 )
 
 type WorkLoadResource struct {

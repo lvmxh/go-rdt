@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"openstackcore-rdtagent/pkg/model/workload"
+	"openstackcore-rdtagent/model/workload"
 )
 
 // workload table name

@@ -11,8 +11,8 @@ import (
 	"github.com/emicklei/go-restful"
 	"github.com/emicklei/go-restful-swagger12"
 	"openstackcore-rdtagent/api/v1"
-	"openstackcore-rdtagent/pkg/db"
-	"openstackcore-rdtagent/pkg/model/capabilities"
+	"openstackcore-rdtagent/db"
+	"openstackcore-rdtagent/model/capabilities"
 	"openstackcore-rdtagent/util/options"
 )
 

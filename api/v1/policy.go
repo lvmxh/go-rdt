@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/emicklei/go-restful"
-	"openstackcore-rdtagent/pkg/model/policy"
+	"openstackcore-rdtagent/model/policy"
 )
 
 type PolicyResource struct {

@@ -5,7 +5,7 @@ import (
 	"github.com/boltdb/bolt"
 	"strconv"
 
-	"openstackcore-rdtagent/pkg/model/workload"
+	"openstackcore-rdtagent/model/workload"
 )
 
 var db *bolt.DB

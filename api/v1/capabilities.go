@@ -2,7 +2,7 @@ package v1
 
 import (
 	"github.com/emicklei/go-restful"
-	"openstackcore-rdtagent/pkg/model/capabilities"
+	"openstackcore-rdtagent/model/capabilities"
 )
 
 type CapabilitiesResource struct {
