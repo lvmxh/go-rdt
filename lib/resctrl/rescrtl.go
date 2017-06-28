@@ -119,8 +119,10 @@ func ParserResAssociation(basepath string, ignore []string, ps map[string]*ResAs
 			}
 			return nil
 		default:
-			strs := strings.Split(string(val), "\r\n")
-			libutil.SetField(res, name, strs)
+			strs := strings.Split(string(val), "\n")
+			// FIXME, remove the last element, it's a empty string
+			// It will cause error while write back tasks to resctrl
+			libutil.SetField(res, name, strs[:len(strs)-1])
 			return nil
 		}
 		return nil
