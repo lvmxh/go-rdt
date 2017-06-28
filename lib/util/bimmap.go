@@ -9,6 +9,8 @@ import (
 	. "unsafe"
 )
 
+var EmptyMapHex = []uint{0x0, 0x0, 0x0}
+
 var BITMAP_BAD_EXPRESSION = regexp.MustCompile(`([^\^\d-,]+)|([^\d]+-.*(,|$))|` +
 	`([^,]*-[^\d]+)|(\^[^\d]+)|((\,\s)?\^$)`)
 var ALL_DATAS = regexp.MustCompile(`(\d+)`)
@@ -273,4 +275,19 @@ func string2data(s string) ([]uint, error) {
 		}
 		return datas, nil
 	}
+}
+
+func IsEmptyBitMap(s string) bool {
+	hex, err := string2data(s)
+
+	if err != nil {
+		return false
+	}
+
+	for i, v := range hex {
+		if v != EmptyMapHex[i] {
+			return false
+		}
+	}
+	return true
 }
