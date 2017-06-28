@@ -74,7 +74,6 @@ type CacheCos struct {
 	Mask uint32
 }
 
-// FIXME, should Tasks be int?
 type ResAssociation struct {
 	Tasks    []string
 	Cpus     string
@@ -191,15 +190,18 @@ func (r ResAssociation) Commit(group string) error {
 				return err
 			}
 		}
-	}
 
-	// Only write to cpus if admin specify cpu bit map
-	if r.Cpus != "" {
-		if err := writeFile(path, "cpus", r.Cpus); err != nil {
-			return err
+		// Only write to cpus if admin specify cpu bit map
+		// only commit a user deinfed user defined cpus
+		if r.Cpus != "" {
+			fmt.Println("r.cpus")
+			fmt.Println(r.Cpus)
+			if err := writeFile(path, "cpus", r.Cpus); err != nil {
+				return err
+			}
+		} else {
+			return fmt.Errorf("Need to specify Cpus explicitly")
 		}
-	} else {
-		return fmt.Errorf("Need to specify Cpus explicitly")
 	}
 	// only commit a user deinfed group's task to sys fs
 	if group != "." && len(r.Tasks) > 0 {
@@ -236,6 +238,20 @@ func (r ResAssociation) Commit(group string) error {
 		return err
 	}
 
+	return nil
+}
+
+func (r ResAssociation) Remove(group string) error {
+	path := SysResctrl
+
+	if strings.ToLower(group) != "default" && group != "." {
+		path = filepath.Join(SysResctrl, group)
+		if _, err := os.Stat(path); err == nil {
+			if err := os.Remove(path); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -420,4 +436,14 @@ func EnableCdp() bool {
 		return false
 	}
 	return true
+}
+
+// Resctrl doesn't support remove tasks from sysfs, the way to remove tasks from
+// resource group is to move them to default group
+func RemoveTasks(tasks []string) error {
+	var err error
+	for _, v := range tasks {
+		err = writeFile(SysResctrl, "tasks", v)
+	}
+	return err
 }

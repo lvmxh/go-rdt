@@ -15,3 +15,15 @@ func CbmLen(cbm string) int {
 	}
 	return len
 }
+
+func SubtractStringSlice(slice, s []string) []string {
+	for _, i := range s {
+		for pos, j := range slice {
+			if i == j {
+				slice = append(slice[:pos], slice[pos+1:]...)
+				break
+			}
+		}
+	}
+	return slice
+}

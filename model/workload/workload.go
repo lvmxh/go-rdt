@@ -4,6 +4,7 @@ package workload
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -122,6 +123,38 @@ func (w *RDTWorkLoad) Enforce() error {
 	return nil
 }
 
+// Release Cos
+func (w *RDTWorkLoad) Release() error {
+	resaall := resctrl.GetResAssociation()
+
+	r, ok := resaall[w.CosName]
+
+	if !ok {
+		return nil
+	}
+
+	r.Tasks = modelutil.SubtractStringSlice(r.Tasks, w.TaskIDs)
+
+	// safely remove resource group if no tasks and cpu bit map is empty
+	if len(r.Tasks) < 1 {
+		log.Printf("Remove resource group: %s", w.CosName)
+		if err := r.Remove(w.CosName); err != nil {
+			return err
+		}
+		// TODO (eliqiao): try compensate cbm to default group
+	}
+
+	// remove workload task ids from resource group
+	if len(w.TaskIDs) > 0 {
+		if err := resctrl.RemoveTasks(w.TaskIDs); err != nil {
+			log.Printf("Ignore Error while remove tasks %s", err)
+			return nil
+		}
+	}
+
+	return nil
+}
+
 // return base group name, new group name, sub group name list.
 // e.g.
 // CG1 L3:0=ffff;1=ffff
@@ -141,7 +174,7 @@ func getGroupNames(w *RDTWorkLoad, m map[string]*resctrl.ResAssociation) (b, n s
 			new_grp = w.TaskIDs[0]
 		} else {
 			// FIXME generate a better group name
-			new_grp = "FIXME"
+			new_grp = w.ID
 		}
 		return ".", new_grp, []string{}
 	}

@@ -105,9 +105,25 @@ func (w *WorkLoadResource) WorkLoadNew(request *restful.Request, response *restf
 func (w WorkLoadResource) WorkLoadDeleteById(request *restful.Request, response *restful.Response) {
 
 	id := request.PathParameter("id")
-	wl := workload.RDTWorkLoad{ID: id}
-	// TODO (eliqiao): We need to first remove Cos from the resctrl
-	err := w.Db.DeleteWorkload(&wl)
+	wl, err := w.Db.GetWorkloadById(id)
+
+	if len(wl.ID) == 0 {
+		response.AddHeader("Content-Type", "text/plain")
+		response.WriteErrorString(http.StatusNotFound, "404: Could not found workload")
+		return
+	}
+
+	if err != nil {
+		response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if err = wl.Release(); err != nil {
+		response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	err = w.Db.DeleteWorkload(&wl)
 	if err != nil {
 		response.WriteErrorString(http.StatusInternalServerError, err.Error())
 	}
