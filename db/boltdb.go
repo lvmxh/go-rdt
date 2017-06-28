@@ -70,6 +70,20 @@ func (b *BoltDB) DeleteWorkload(w *workload.RDTWorkLoad) error {
 	})
 }
 
+func (b *BoltDB) UpdateWorkload(w *workload.RDTWorkLoad) error {
+
+	return db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(WorkloadTableName))
+
+		buf, err := json.Marshal(w)
+		if err != nil {
+			return err
+		}
+
+		return b.Put([]byte(w.ID), buf)
+	})
+}
+
 func (b *BoltDB) GetAllWorkload() ([]workload.RDTWorkLoad, error) {
 	ws := []workload.RDTWorkLoad{}
 	err := db.View(func(tx *bolt.Tx) error {

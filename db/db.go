@@ -14,6 +14,7 @@ type DB interface {
 	Initialize(transport, dbname string) error
 	CreateWorkload(w *workload.RDTWorkLoad) error
 	DeleteWorkload(w *workload.RDTWorkLoad) error
+	UpdateWorkload(w *workload.RDTWorkLoad) error
 	GetAllWorkload() ([]workload.RDTWorkLoad, error)
 	GetWorkloadById(id string) (workload.RDTWorkLoad, error)
 }

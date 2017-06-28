@@ -60,6 +60,11 @@ func (m *MgoDB) DeleteWorkload(w *workload.RDTWorkLoad) error {
 	return nil
 }
 
+func (m *MgoDB) UpdateWorkload(w *workload.RDTWorkLoad) error {
+	// not implement yet
+	return nil
+}
+
 func (m *MgoDB) GetAllWorkload() ([]workload.RDTWorkLoad, error) {
 	ws := []workload.RDTWorkLoad{}
 	s := session.Copy()
