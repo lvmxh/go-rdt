@@ -1,7 +1,5 @@
 # RDTagent - the system agent for Intel RDT controlling
 
-TODO - More content from design document later
-
 ## Documents
 
 * docs/UserGuide.md
