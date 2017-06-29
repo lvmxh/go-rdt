@@ -7,6 +7,18 @@ import (
 	"testing"
 )
 
+func TestGenCpuResStringSimple(t *testing.T) {
+	map_list := []string{"0-7"}
+	s, e := GenCpuResString(map_list, 88)
+	if e != nil {
+		t.Errorf("Get CpuResString error: %v", e)
+	}
+
+	fmt.Println(s)
+	// Output:
+	// 0,0,ff
+}
+
 func TestGenCpuResString(t *testing.T) {
 	map_list := []string{"1-8,^3-4,^7,9", "56-87,^86,^61-65"}
 	map_bin := []string{"1101100110",
