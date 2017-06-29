@@ -192,12 +192,14 @@ func (r ResAssociation) Commit(group string) error {
 			}
 		}
 	}
+
+	// Only write to cpus if admin specify cpu bit map
 	if r.Cpus != "" {
-		writeFile(path, "cpus", r.Cpus)
-	} else {
-		if _, err := os.Stat(path); os.IsExist(err) {
-			writeFile(path, "cpus", r.Cpus)
+		if err := writeFile(path, "cpus", r.Cpus); err != nil {
+			return err
 		}
+	} else {
+		return fmt.Errorf("Need to specify Cpus explicitly")
 	}
 	// only commit a user deinfed group's task to sys fs
 	if group != "." && len(r.Tasks) > 0 {
