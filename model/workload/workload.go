@@ -55,7 +55,7 @@ func (w *RDTWorkLoad) Enforce() error {
 		return err
 	}
 
-	cpubitmap, err := libutil.GenerateBitMap(w.CoreIDs, cpunum)
+	cpubitmap, err := libutil.GenCpuResString(w.CoreIDs, cpunum)
 	if err != nil {
 		return err
 	}
