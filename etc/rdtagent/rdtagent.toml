@@ -7,8 +7,10 @@ address = "localhost"
 port = 8081
 
 [log]
-path = "/var/log/redagent.log"
+path = "/var/log/rdagent.log"
+env = "dev"  # production or dev
 level = "debug"
+stdout = "false"
 
 [database]
 backend = "bolt" # mgo

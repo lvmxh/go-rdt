@@ -5,6 +5,7 @@ import (
 	"openstackcore-rdtagent/app"
 	"openstackcore-rdtagent/util/conf"
 	"openstackcore-rdtagent/util/flag"
+	"openstackcore-rdtagent/util/log"
 	"openstackcore-rdtagent/util/options"
 )
 
@@ -14,5 +15,6 @@ func main() {
 	s.AddFlags(pflag.CommandLine)
 	flag.InitFlags()
 	conf.Init()
+	log.Init()
 	app.RunServer(s)
 }

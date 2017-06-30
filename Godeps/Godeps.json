@@ -91,6 +91,11 @@
 			"Rev": "fe7536c3dee2596cdd23ee9976a17c22bdaae286"
 		},
 		{
+			"ImportPath": "github.com/sirupsen/logrus",
+			"Comment": "v1.0.0-2-g3d4380f",
+			"Rev": "3d4380f53a34dcdc95f0c1db702615992b38d9a4"
+		},
+		{
 			"ImportPath": "github.com/spf13/afero",
 			"Rev": "9be650865eab0c12963d8753212f4f9c66cdcf12"
 		},
