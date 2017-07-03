@@ -1,14 +1,14 @@
 catpolicy:
     broadwell:
         - gold:
-            - peakusage: 28160
-            - variance: 10
+            - MaxCache: 4
+            - MinCache: 4
             - overcommit: false
         - silver:
-            - peakusage: 11264
-            - variance: 10
+            - MaxCache: 2
+            - MinCache: 2
             - overcommit: false
         - bronze:
-            - peakusage: 5632
-            - variance: 20
+            - MaxCache: 1
+            - MinCache: 1
             - overcommit: true

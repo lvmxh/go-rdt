@@ -69,6 +69,11 @@ func (w *RDTWorkLoad) Enforce() error {
 
 	resaall := resctrl.GetResAssociation()
 
+	// user don't need to provide group name anymore, if we configured
+	// infra_group, then let RDAgent append the group name
+	// e.g. w.Group = append(w.Group, "infra")
+	// e.g. w.Group = append(w.Group, "w.name")
+
 	if len(w.Group) > 2 {
 		// FIXME what if more than 3 groups
 		return fmt.Errorf("Can not specified more then 2 group list name")
@@ -81,13 +86,13 @@ func (w *RDTWorkLoad) Enforce() error {
 		return fmt.Errorf("Faild to find a suitable group")
 	}
 
-	peakusage, err := strconv.Atoi(p["peakusage"])
+	ways, err := strconv.Atoi(p["MaxCache"])
 
 	if err != nil {
 		return err
 	}
 
-	targetResAss, err := createOrGetResAss(resaall, base_grp, new_grp, sub_grp, uint32(peakusage*1024))
+	targetResAss, err := createOrGetResAss(resaall, base_grp, new_grp, sub_grp, uint32(ways))
 	if err != nil {
 		// log
 		return err
@@ -222,27 +227,23 @@ func getGroupNames(w *RDTWorkLoad, m map[string]*resctrl.ResAssociation) (b, n s
 	return "", "", []string{}
 }
 
-// calculate the mask based on the size
-func getMaskBySize(size, unit uint32) (ret uint32) {
+// calculate the mask based on cache way
+// e.g. getMaskByWays(2) = 3
+// e.g. getMaskByWays(3) = 7
+func getMaskByWays(ways uint32) (ret uint32) {
 
-	if size <= 0 {
+	if ways <= 0 {
 		return 0
 	}
 
-	bitcounts := size / unit
-
-	if size%unit > 0 || bitcounts == 0 {
-		bitcounts += 1
-	}
-
-	return (1 << (bitcounts)) - 1
+	return (1 << (ways)) - 1
 }
 
 // update the mask based on base mask, and consume it
 // return net base mask and new mask, if error the new mask is 0
-func updateMask(basemask, size, unit, offset uint32, consume bool) (newbasemask, newmask uint32) {
+func updateMask(basemask, ways, offset uint32, consume bool) (newbasemask, newmask uint32) {
 
-	newmask = getMaskBySize(size, unit)
+	newmask = getMaskByWays(ways)
 	if newmask >= basemask {
 		// todo log
 		return basemask, 0
@@ -265,9 +266,8 @@ func updateMask(basemask, size, unit, offset uint32, consume bool) (newbasemask,
 	return newbasemask, newmask
 }
 
-// size is in B
 // return a Resassociation with proper mask set
-func createOrGetResAss(r map[string]*resctrl.ResAssociation, base_grp, new_grp string, sub_grp []string, size uint32) (t resctrl.ResAssociation, err error) {
+func createOrGetResAss(r map[string]*resctrl.ResAssociation, base_grp, new_grp string, sub_grp []string, ways uint32) (t resctrl.ResAssociation, err error) {
 	if base_grp == new_grp {
 		return *r[base_grp], nil
 	}
@@ -281,15 +281,13 @@ func createOrGetResAss(r map[string]*resctrl.ResAssociation, base_grp, new_grp s
 	if base_grp == "." {
 		// sub_grp should be empty if the base group is "."
 		// or that should be an internal error.
-		return createNewResassociation(r, ".", size, true, []string{})
+		return createNewResassociation(r, ".", ways, true, []string{})
 	}
-	return createNewResassociation(r, base_grp, size, false, sub_grp)
+	return createNewResassociation(r, base_grp, ways, false, sub_grp)
 }
 
-// size is in B
 // return a new Resassociation based on the given resctrl.ResAssociation
-func createNewResassociation(r map[string]*resctrl.ResAssociation, base string, size uint32, consume bool, sub_grp []string) (t resctrl.ResAssociation, err error) {
-	rdtinfo := resctrl.GetRdtCosInfo()
+func createNewResassociation(r map[string]*resctrl.ResAssociation, base string, ways uint32, consume bool, sub_grp []string) (t resctrl.ResAssociation, err error) {
 	cacheinfo := &cache.CacheInfos{}
 	// Fixme Upper layer should pass a cache level parameter
 	cacheinfo.GetByLevel(3)
@@ -299,15 +297,11 @@ func createNewResassociation(r map[string]*resctrl.ResAssociation, base string, 
 	newResAss.Schemata = make(map[string][]resctrl.CacheCos)
 
 	for cattype, res := range r[base].Schemata {
-		catinfo := rdtinfo[strings.ToLower(cattype)]
-		// CbmMask is in hex
-		cbmlen := modelutil.CbmLen(catinfo.CbmMask)
 		// construct ResAssociation for each cache id
-		for i, c := range cacheinfo.Caches {
+		for i, _ := range cacheinfo.Caches {
 			// compute sub_grp's offset for the i(th) 'cattype'
 			offset := calculateOffset(r, sub_grp, cattype, i)
-			unit := c.TotalSize / uint32(cbmlen)
-			newbasemask, newmask := updateMask(res[i].Mask, size, unit, offset, consume)
+			newbasemask, newmask := updateMask(res[i].Mask, ways, offset, consume)
 			res[i].Mask = newbasemask
 			if newmask == 0 {
 				return newResAss, fmt.Errorf("Not enough cache can be allocated")
