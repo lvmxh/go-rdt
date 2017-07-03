@@ -194,8 +194,6 @@ func (r ResAssociation) Commit(group string) error {
 		// Only write to cpus if admin specify cpu bit map
 		// only commit a user deinfed user defined cpus
 		if r.Cpus != "" {
-			fmt.Println("r.cpus")
-			fmt.Println(r.Cpus)
 			if err := writeFile(path, "cpus", r.Cpus); err != nil {
 				return err
 			}
