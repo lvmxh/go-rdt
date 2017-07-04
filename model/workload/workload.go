@@ -4,7 +4,7 @@ package workload
 
 import (
 	"fmt"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 
@@ -143,12 +143,13 @@ func (w *RDTWorkLoad) Release() error {
 	// safely remove resource group if no tasks and cpu bit map is empty
 	if len(r.Tasks) < 1 {
 		log.Printf("Remove resource group: %s", w.CosName)
-		if err := r.Remove(w.CosName); err != nil {
+		if err := resctrl.DestroyResAssociation(w.CosName); err != nil {
 			return err
 		}
+		delete(resaall, w.CosName)
+		compensateDefault(resaall)
 		// TODO (eliqiao): try compensate cbm to default group
 	}
-
 	// remove workload task ids from resource group
 	if len(w.TaskIDs) > 0 {
 		if err := resctrl.RemoveTasks(w.TaskIDs); err != nil {
@@ -306,4 +307,32 @@ func calculateOffset(r map[string]*resctrl.ResAssociation, sub_grp []string, cat
 		// TODO(shaohe): need to implement bm0.Maximum()
 		return 0
 	}
+}
+
+// compensate cbm back to default if possible
+func compensateDefault(r map[string]*resctrl.ResAssociation) {
+
+	rdtinfo := resctrl.GetRdtCosInfo()
+
+	defaultGrp := r["."]
+	delete(r, ".")
+
+	for t, schemata := range defaultGrp.Schemata {
+		catinfo := rdtinfo[strings.ToLower(t)]
+		for _, v := range schemata {
+			// len is not so important, we don't want to query cbm_mask every time
+			// we new a bitmap, this is too much time costing, later we need to load
+			// Len(cbm_mask) as a global variable
+			bm, _ := libutil.NewBitmap(20, catinfo.CbmMask)
+			// loop for all groups
+			for _, g := range r {
+				gbm, _ := libutil.NewBitmap(20, g.Schemata[t][v.Id].Mask)
+				bm = bm.Xor(gbm)
+			}
+			newdftcbm := bm.ToString()
+			defaultGrp.Schemata[t][v.Id].Mask = newdftcbm
+			log.Debugf("New defulat Mask for Cache %d is %s", v.Id, newdftcbm)
+		}
+	}
+	defaultGrp.Commit(".")
 }

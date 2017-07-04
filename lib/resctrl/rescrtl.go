@@ -238,20 +238,6 @@ func (r ResAssociation) Commit(group string) error {
 	return nil
 }
 
-func (r ResAssociation) Remove(group string) error {
-	path := SysResctrl
-
-	if strings.ToLower(group) != "default" && group != "." {
-		path = filepath.Join(SysResctrl, group)
-		if _, err := os.Stat(path); err == nil {
-			if err := os.Remove(path); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
 // FIXME need to catch error
 func CommitAll(m_res map[string]*ResAssociation) error {
 	ress := GetResAssociation()
