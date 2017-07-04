@@ -12,6 +12,10 @@
 			"Rev": "e9cf4fae01b5a8ff89d0ec6b32f0d9c9f79aefdd"
 		},
 		{
+			"ImportPath": "github.com/denderello/task",
+			"Rev": "ff09f14210d6ccfd446bf448f571d0f9cb42b2a8"
+		},
+		{
 			"ImportPath": "github.com/emicklei/go-restful",
 			"Comment": "2.2.0",
 			"Rev": "cf834cf8da5b681af81bde6fa32304e6ce8eec71"
