@@ -71,7 +71,7 @@ func DestroyResAssociation(group string) error {
 
 type CacheCos struct {
 	Id   uint8
-	Mask uint32
+	Mask string
 }
 
 type ResAssociation struct {
@@ -110,8 +110,7 @@ func ParserResAssociation(basepath string, ignore []string, ps map[string]*ResAs
 				for _, cos := range coses {
 					infos := strings.SplitN(cos, "=", 2)
 					id, _ := strconv.ParseUint(infos[0], 10, 8)
-					mask, _ := strconv.ParseUint(infos[1], 16, 32)
-					cacheCos := &CacheCos{uint8(id), uint32(mask)}
+					cacheCos := &CacheCos{uint8(id), infos[1]}
 					res.Schemata[key] = append(res.Schemata[key], *cacheCos)
 				}
 
@@ -220,7 +219,7 @@ func (r ResAssociation) Commit(group string) error {
 			for cacheid := 0; cacheid < len(v); cacheid++ {
 				for _, cos := range v {
 					if uint8(cacheid) == cos.Id {
-						str = append(str, fmt.Sprintf("%d=%x", cos.Id, cos.Mask))
+						str = append(str, fmt.Sprintf("%d=%s", cos.Id, cos.Mask))
 						break
 					}
 				}

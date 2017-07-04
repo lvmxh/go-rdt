@@ -227,45 +227,6 @@ func getGroupNames(w *RDTWorkLoad, m map[string]*resctrl.ResAssociation) (b, n s
 	return "", "", []string{}
 }
 
-// calculate the mask based on cache way
-// e.g. getMaskByWays(2) = 3
-// e.g. getMaskByWays(3) = 7
-func getMaskByWays(ways uint32) (ret uint32) {
-
-	if ways <= 0 {
-		return 0
-	}
-
-	return (1 << (ways)) - 1
-}
-
-// update the mask based on base mask, and consume it
-// return net base mask and new mask, if error the new mask is 0
-func updateMask(basemask, ways, offset uint32, consume bool) (newbasemask, newmask uint32) {
-
-	newmask = getMaskByWays(ways)
-	if newmask >= basemask {
-		// todo log
-		return basemask, 0
-	}
-
-	newmask = newmask << offset
-
-	// start from the most right place
-	for newmask < basemask {
-		if newmask&basemask == newmask {
-			break
-		} else {
-			newmask = newmask << 1
-		}
-	}
-
-	if consume == true {
-		newbasemask = basemask - newmask
-	}
-	return newbasemask, newmask
-}
-
 // return a Resassociation with proper mask set
 func createOrGetResAss(r map[string]*resctrl.ResAssociation, base_grp, new_grp string, sub_grp []string, ways uint32) (t resctrl.ResAssociation, err error) {
 	if base_grp == new_grp {
@@ -301,12 +262,22 @@ func createNewResassociation(r map[string]*resctrl.ResAssociation, base string, 
 		for i, _ := range cacheinfo.Caches {
 			// compute sub_grp's offset for the i(th) 'cattype'
 			offset := calculateOffset(r, sub_grp, cattype, i)
-			newbasemask, newmask := updateMask(res[i].Mask, ways, offset, consume)
-			res[i].Mask = newbasemask
-			if newmask == 0 {
+
+			// len is not so important, we don't want to query cbm_mask every time
+			// we new a bitmap, this is too much time costing, later we need to load
+			// Len(cbm_mask) as a global variable
+			bmbase, _ := libutil.NewBitmap(20, res[i].Mask)
+			newbm := bmbase.GetConnectiveBits(ways, offset, true)
+
+			if newbm.IsEmpty() {
 				return newResAss, fmt.Errorf("Not enough cache can be allocated")
 			}
-			newcos := resctrl.CacheCos{Id: uint8(i), Mask: newmask}
+
+			if consume {
+				bmbase = bmbase.Xor(newbm)
+			}
+			res[i].Mask = bmbase.ToString()
+			newcos := resctrl.CacheCos{Id: uint8(i), Mask: newbm.ToString()}
 			newResAss.Schemata[cattype] = append(newResAss.Schemata[cattype], newcos)
 		}
 	}
@@ -320,17 +291,19 @@ func createNewResassociation(r map[string]*resctrl.ResAssociation, base string, 
 // calculateOffset(r, sub_grp, L3, 0) = 4
 // calculateOffset(r, sub_grp, L3, 1) = 1
 func calculateOffset(r map[string]*resctrl.ResAssociation, sub_grp []string, cattype string, pos uint32) uint32 {
-	var biggestMask, offset uint32
-	biggestMask = 0
-
+	// len is not so important, we don't want to query cbm_mask every time
+	// we new a bitmap, this is too much time costing, later we need to load
+	// Len(cbm_mask) as a global variable
+	bm0, _ := libutil.NewBitmap(20, "")
 	for _, g := range sub_grp {
-		if biggestMask < r[g].Schemata[cattype][pos].Mask {
-			biggestMask = r[g].Schemata[cattype][pos].Mask
-		}
+		b, _ := libutil.NewBitmap(20, r[g].Schemata[cattype][pos].Mask)
+		bm0 = bm0.Or(b)
 	}
-
-	for offset = 0; biggestMask > 0; biggestMask = biggestMask >> 1 {
-		offset += 1
+	if bm0.IsEmpty() {
+		return 0
+	} else {
+		//return bm0.Maximum()
+		// TODO(shaohe): need to implement bm0.Maximum()
+		return 0
 	}
-	return offset
 }
