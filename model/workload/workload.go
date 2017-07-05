@@ -17,6 +17,13 @@ import (
 	modelutil "openstackcore-rdtagent/model/util"
 )
 
+const (
+	Successful = "Successful"
+	Failed     = "Failed"
+	Invalid    = "Invalid"
+	None       = "None"
+)
+
 type RDTWorkLoad struct {
 	// ID
 	ID string
@@ -34,9 +41,7 @@ type RDTWorkLoad struct {
 	CosName string
 }
 
-func (w *RDTWorkLoad) Enforce() error {
-	// FIXME First check CAT is enabled
-
+func (w *RDTWorkLoad) Validate() error {
 	if len(w.TaskIDs) <= 0 && len(w.CoreIDs) <= 0 {
 		return fmt.Errorf("No task or core id specified")
 	}
@@ -48,7 +53,25 @@ func (w *RDTWorkLoad) Enforce() error {
 			return fmt.Errorf("The workload: %s does not exit", task)
 		}
 	}
+	// user don't need to provide group name anymore, if we configured
+	// infra_group, then let RDAgent append the group name
+	// e.g. w.Group = append(w.Group, "infra")
+	// e.g. w.Group = append(w.Group, "w.name")
+	if len(w.Group) > 2 {
+		return fmt.Errorf("Can not specified more then 2 group list name")
+	}
 
+	return nil
+}
+
+func (w *RDTWorkLoad) Enforce() error {
+	if err := w.Validate(); err != nil {
+		log.Errorf("Failed to validate workload %s, error %s", w.ID, err)
+		w.Status = Invalid
+		return err
+	}
+
+	w.Status = None
 	// FIXME cpunum can be global
 	cpunum, err := cpu.HostCpuNum()
 	if err != nil {
@@ -60,24 +83,10 @@ func (w *RDTWorkLoad) Enforce() error {
 		return err
 	}
 
-	// TODO(eliqiao): if no group sepcify, isolated = true
-	// please refine this in later version
-	p, err := policy.GetPolicy("broadwell", w.Policy)
-	if err != nil {
-		return err
-	}
+	// status will be updated to successful if no errors
+	w.Status = Failed
 
 	resaall := resctrl.GetResAssociation()
-
-	// user don't need to provide group name anymore, if we configured
-	// infra_group, then let RDAgent append the group name
-	// e.g. w.Group = append(w.Group, "infra")
-	// e.g. w.Group = append(w.Group, "w.name")
-
-	if len(w.Group) > 2 {
-		// FIXME what if more than 3 groups
-		return fmt.Errorf("Can not specified more then 2 group list name")
-	}
 
 	base_grp, new_grp, sub_grp := getGroupNames(w, resaall)
 
@@ -86,45 +95,50 @@ func (w *RDTWorkLoad) Enforce() error {
 		return fmt.Errorf("Faild to find a suitable group")
 	}
 
-	ways, err := strconv.Atoi(p["MaxCache"])
+	log.Debugf("base group %s, new group %s, sub group %v", base_grp, new_grp, sub_grp)
 
+	p, err := policy.GetPolicy("broadwell", w.Policy)
+	if err != nil {
+		return err
+	}
+
+	ways, err := strconv.Atoi(p["MaxCache"])
 	if err != nil {
 		return err
 	}
 
 	targetResAss, err := createOrGetResAss(resaall, base_grp, new_grp, sub_grp, uint32(ways))
 	if err != nil {
-		// log
+		log.Errorf("Error while try to create resource group for workload %s", w.ID)
 		return err
 	}
 
 	targetResAss.Tasks = append(targetResAss.Tasks, w.TaskIDs...)
-	// FIXME need to check if we need to change cpubitmap
 	targetResAss.CPUs = cpubitmap
 
 	if base_grp != new_grp && base_grp != "." {
 		new_grp = base_grp + "-" + new_grp
 	}
 
-	err = targetResAss.Commit(new_grp)
-	if err != nil {
-		// log error
+	if err = targetResAss.Commit(new_grp); err != nil {
+		log.Errorf("Error while try to commit resource group for workload %s, group name %s", w.ID, new_grp)
 		return err
 	}
 
 	if base_grp == "." {
 		if err = resaall["."].Commit("."); err != nil {
+			log.Errorf("Error while try to commit resource group for default group")
+			resctrl.DestroyResAssociation(new_grp)
 			return err
 		}
 	}
 
-	//foo(resaall["."], 1, true)
 	if len(w.Group) == 0 {
 		w.Group = append(w.Group, new_grp)
 	}
 
 	w.CosName = new_grp
-
+	w.Status = Successful
 	return nil
 }
 
@@ -148,7 +162,6 @@ func (w *RDTWorkLoad) Release() error {
 		}
 		delete(resaall, w.CosName)
 		compensateDefault(resaall)
-		// TODO (eliqiao): try compensate cbm to default group
 	}
 	// remove workload task ids from resource group
 	if len(w.TaskIDs) > 0 {
