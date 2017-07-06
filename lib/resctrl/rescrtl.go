@@ -76,7 +76,7 @@ type CacheCos struct {
 
 type ResAssociation struct {
 	Tasks    []string
-	Cpus     string
+	CPUs     string
 	Schemata map[string][]CacheCos
 }
 
@@ -86,7 +86,7 @@ type ResAssociation struct {
 func ParserResAssociation(basepath string, ignore []string, ps map[string]*ResAssociation) filepath.WalkFunc {
 	parser := func(res *ResAssociation, name string, val []byte) error {
 		switch name {
-		case "Cpus":
+		case "CPUs":
 			str := strings.TrimSpace(string(val))
 			libutil.SetField(res, name, str)
 			return nil
@@ -193,12 +193,12 @@ func (r ResAssociation) Commit(group string) error {
 
 		// Only write to cpus if admin specify cpu bit map
 		// only commit a user deinfed user defined cpus
-		if r.Cpus != "" {
-			if err := writeFile(path, "cpus", r.Cpus); err != nil {
+		if r.CPUs != "" {
+			if err := writeFile(path, "cpus", r.CPUs); err != nil {
 				return err
 			}
 		} else {
-			return fmt.Errorf("Need to specify Cpus explicitly")
+			return fmt.Errorf("Need to specify CPUs explicitly")
 		}
 	}
 	// only commit a user deinfed group's task to sys fs

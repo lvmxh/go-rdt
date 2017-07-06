@@ -100,7 +100,7 @@ func (w *RDTWorkLoad) Enforce() error {
 
 	targetResAss.Tasks = append(targetResAss.Tasks, w.TaskIDs...)
 	// FIXME need to check if we need to change cpubitmap
-	targetResAss.Cpus = cpubitmap
+	targetResAss.CPUs = cpubitmap
 
 	if base_grp != new_grp && base_grp != "." {
 		new_grp = base_grp + "-" + new_grp
