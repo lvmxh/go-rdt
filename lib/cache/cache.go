@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -110,4 +111,14 @@ func AvailableCacheLevel() []string {
 		}
 	}
 	return levels
+}
+
+func GetLLC() uint32 {
+	avl := AvailableCacheLevel()
+	sort.Sort(sort.Reverse(sort.StringSlice(avl)))
+	l, err := strconv.Atoi(avl[0])
+	if err != nil {
+		return 0
+	}
+	return uint32(l)
 }

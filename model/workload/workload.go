@@ -9,10 +9,12 @@ import (
 	"strings"
 	"sync"
 
+	libcache "openstackcore-rdtagent/lib/cache"
 	"openstackcore-rdtagent/lib/cpu"
 	"openstackcore-rdtagent/lib/proc"
 	"openstackcore-rdtagent/lib/resctrl"
 	libutil "openstackcore-rdtagent/lib/util"
+
 	"openstackcore-rdtagent/model/cache"
 	"openstackcore-rdtagent/model/policy"
 	modelutil "openstackcore-rdtagent/model/util"
@@ -275,8 +277,7 @@ func createOrGetResAss(r map[string]*resctrl.ResAssociation, base_grp, new_grp s
 // return a new Resassociation based on the given resctrl.ResAssociation
 func createNewResassociation(r map[string]*resctrl.ResAssociation, base string, ways uint32, consume bool, sub_grp []string) (t resctrl.ResAssociation, err error) {
 	cacheinfo := &cache.CacheInfos{}
-	// Fixme Upper layer should pass a cache level parameter
-	cacheinfo.GetByLevel(3)
+	cacheinfo.GetByLevel(libcache.GetLLC())
 
 	// loop for each level 3 cache to construct new resassociation
 	newResAss := resctrl.ResAssociation{}
