@@ -301,8 +301,11 @@ func createNewResassociation(r map[string]*resctrl.ResAssociation, base string, 
 			if consume {
 				bmbase = bmbase.Xor(newbm)
 			}
-			res[i].Mask = bmbase.ToString()
+
+			tmpbm := bmbase.MaxConnectiveBits()
+			res[i].Mask = tmpbm.ToString()
 			newcos := resctrl.CacheCos{Id: uint8(i), Mask: newbm.ToString()}
+
 			newResAss.Schemata[cattype] = append(newResAss.Schemata[cattype], newcos)
 		}
 	}
@@ -353,7 +356,8 @@ func compensateDefault(r map[string]*resctrl.ResAssociation) {
 				gbm, _ := libutil.NewBitmap(20, g.Schemata[t][v.Id].Mask)
 				bm = bm.Xor(gbm)
 			}
-			newdftcbm := bm.ToString()
+			tmpbm := bm.MaxConnectiveBits()
+			newdftcbm := tmpbm.ToString()
 			defaultGrp.Schemata[t][v.Id].Mask = newdftcbm
 			log.Debugf("New defulat Mask for Cache %d is %s", v.Id, newdftcbm)
 		}
