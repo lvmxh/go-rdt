@@ -9,6 +9,125 @@ import (
 	. "unsafe"
 )
 
+type BitMaps struct {
+	Len  int
+	Bits []int
+}
+
+func NewBitMaps(l int, map_list ...[]string) (*BitMaps, error) {
+	b := new(BitMaps)
+	b.Len = l
+	if len(map_list) > 0 {
+		bits, err := genBits(map_list[0], l)
+		b.Bits = bits
+		return b, err
+	} else {
+		b.Bits = genBitMaps(l)
+	}
+	return b, nil
+}
+
+// Union
+func (b *BitMaps) Or(m *BitMaps) *BitMaps {
+	// FIXME (Shaohe) The follow code are same with and, any design pattern for it?
+	maxc := len(b.Bits)
+	minc := len(m.Bits)
+	maxl := b.Len
+	minl := m.Len
+	maxb := b
+	minb := m
+	if maxl < minl {
+		maxc, minc = minc, maxc
+		maxb, minb = minb, maxb
+		maxl, minl = minl, maxl
+	}
+
+	r, _ := NewBitMaps(maxl)
+	copy(r.Bits, maxb.Bits)
+	for i := 0; i < minc; i++ {
+		r.Bits[i] = maxb.Bits[i] | minb.Bits[i]
+	}
+
+	return r
+}
+
+// Intersection
+func (b *BitMaps) And(m *BitMaps) *BitMaps {
+	// FIXME (Shaohe) The follow code are same with or, any design pattern for it?
+	maxc := len(b.Bits)
+	minc := len(m.Bits)
+	maxl := b.Len
+	minl := m.Len
+	maxb := b
+	minb := m
+	if maxl < minl {
+		maxc, minc = minc, maxc
+		maxb, minb = minb, maxb
+		maxl, minl = minl, maxl
+	}
+
+	r, _ := NewBitMaps(minl)
+	for i := 0; i < minc; i++ {
+		r.Bits[i] = maxb.Bits[i] & minb.Bits[i]
+	}
+
+	return r
+}
+
+// Difference
+func (b *BitMaps) Xor(m *BitMaps) *BitMaps {
+	// FIXME (Shaohe) The follow code are same with or, any design pattern for it?
+	maxc := len(b.Bits)
+	minc := len(m.Bits)
+	maxl := b.Len
+	minl := m.Len
+	maxb := b
+	minb := m
+	if maxl < minl {
+		maxc, minc = minc, maxc
+		maxb, minb = minb, maxb
+		maxl, minl = minl, maxl
+	}
+
+	r, _ := NewBitMaps(maxl)
+	copy(r.Bits, maxb.Bits)
+	for i := 0; i < minc; i++ {
+		r.Bits[i] = maxb.Bits[i] ^ minb.Bits[i]
+	}
+
+	return r
+}
+
+// asymmetric difference
+func (b *BitMaps) Axor(m *BitMaps) *BitMaps {
+	// FIXME (Shaohe) The follow code are same with or, any design pattern for it?
+	maxc := len(b.Bits)
+	minc := len(m.Bits)
+	maxl := b.Len
+	minl := m.Len
+	maxb := b
+	minb := m
+	if maxl < minl {
+		maxc, minc = minc, maxc
+		maxb, minb = minb, maxb
+		maxl, minl = minl, maxl
+	}
+
+	var r *BitMaps
+	if b.Len == maxl {
+		r, _ = NewBitMaps(maxl)
+		copy(r.Bits, maxb.Bits)
+	} else {
+		r, _ = NewBitMaps(minl)
+	}
+
+	for i := 0; i < minc; i++ {
+		r.Bits[i] = (maxb.Bits[i] ^ minb.Bits[i]) & b.Bits[i]
+	}
+
+	return r
+}
+
 var EmptyMapHex = []uint{0x0, 0x0, 0x0}
 
 var BITMAP_BAD_EXPRESSION = regexp.MustCompile(`([^\^\d-,]+)|([^\d]+-.*(,|$))|` +
@@ -34,7 +153,7 @@ func genBitMaps(num int, platform ...int) []int {
 	if len(platform) > 0 {
 		p = platform[0]
 	}
-	n := (num + p) / p
+	n := (num + p - 1) / p
 	return make([]int, n, n)
 }
 
@@ -112,7 +231,7 @@ func fillBitMap(bits int, scope string, platform ...int) (int, error) {
 }
 
 //{"2-8,^3-4,^7,9", "56-87,^86"}
-func GenCpuResString(map_list []string, bit_len int) (string, error) {
+func genBits(map_list []string, bit_len int) ([]int, error) {
 	bitmaps := genBitMaps(bit_len)
 	is_span := func(span string) bool {
 		return strings.Contains(span, "-")
@@ -186,11 +305,11 @@ func GenCpuResString(map_list []string, bit_len int) (string, error) {
 	m := ALL_DATAS.FindAllString(strings.Join(map_list, ","), -1)
 	si, err := SliceString2Int(m)
 	if err != nil {
-		return "", err
+		return bitmaps, err
 	}
 	sort.Ints(si)
 	if si[len(si)-1] >= bit_len {
-		return "", fmt.Errorf("The biggest index %d is not less than the bit map length %d",
+		return bitmaps, fmt.Errorf("The biggest index %d is not less than the bit map length %d",
 			si[len(si)-1], bit_len)
 	}
 
@@ -198,7 +317,7 @@ func GenCpuResString(map_list []string, bit_len int) (string, error) {
 		// FIXME, remove to before ALL_DATAS?
 		m := BITMAP_BAD_EXPRESSION.FindAllString(v, -1)
 		if len(m) > 0 {
-			return "", fmt.Errorf("wrong expression : %s", v)
+			return bitmaps, fmt.Errorf("wrong expression : %s", v)
 		}
 		scopes := strings.Split(v, ",")
 		for _, v := range scopes {
@@ -206,7 +325,7 @@ func GenCpuResString(map_list []string, bit_len int) (string, error) {
 			if is_span(v) {
 				spans, err := silit_span(v)
 				if err != nil {
-					return "", err
+					return bitmaps, err
 				}
 				for _, span := range spans {
 					span = strings.TrimSpace(span)
@@ -217,14 +336,23 @@ func GenCpuResString(map_list []string, bit_len int) (string, error) {
 			} else {
 				i, err := strconv.Atoi(strings.TrimLeft(v, "^"))
 				if err != nil {
-					return "", err
+					return bitmaps, err
 				}
 				pos := locate(i)
 				bitmaps[pos], _ = fillBitMap(bitmaps[pos], v)
 			}
 		}
 	}
+	return bitmaps, nil
+}
+
+//{"2-8,^3-4,^7,9", "56-87,^86"}
+func GenCpuResString(map_list []string, bit_len int) (string, error) {
+	bitmaps, err := genBits(map_list, bit_len)
 	str := ""
+	if err != nil {
+		return str, err
+	}
 	for i, v := range bitmaps {
 		if i == 0 {
 			str = fmt.Sprintf("%x", v)

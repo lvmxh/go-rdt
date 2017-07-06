@@ -7,6 +7,65 @@ import (
 	"testing"
 )
 
+func TestNewBitMapsUnion(t *testing.T) {
+	b, _ := NewBitMaps(88, []string{"0-7,9-12,85-87"})
+	m, _ := NewBitMaps(64, []string{"6-9"})
+	r := b.Or(m)
+	if r.Bits[0] != 0x1FFF || r.Bits[2] != 0xe00000 {
+		t.Errorf("The union should be : 0xE00000,00000000,00001FFF, now it is 0x%x,%08x,%08x",
+			r.Bits[2], r.Bits[1], r.Bits[0])
+	}
+}
+
+func TestNewBitMapsIntersection(t *testing.T) {
+	minlen := 64
+	b, _ := NewBitMaps(88, []string{"0-7,9-12,32-50,85-87"})
+	m, _ := NewBitMaps(minlen, []string{"6-9,32-48"})
+	r := b.And(m)
+	// r.Bits[0]
+	len := len(r.Bits)
+	if len != 2 {
+		t.Error("The length of intersection of bit maps should be %d, but get %d.",
+			minlen/32, len)
+	}
+	if r.Bits[0] != 0x2C0 || r.Bits[1] != 0x1FFFF {
+		t.Errorf("The intersection should be : 0x00001FFFF,000002C0, now it is 0x%x,%08x",
+			r.Bits[1], r.Bits[0])
+	}
+}
+
+func TestNewBitMapsDifference(t *testing.T) {
+	b, _ := NewBitMaps(88, []string{"0-7,9-12,85-87"})
+	m, _ := NewBitMaps(64, []string{"6-9"})
+	r := b.Xor(m)
+	if r.Bits[0] != 0x1d3f || r.Bits[2] != 0xe00000 {
+		t.Errorf("The difference should be : 0xE00000,00000000,00001d3f, now it is 0x%x,%08x,%08x",
+			r.Bits[2], r.Bits[1], r.Bits[0])
+	}
+}
+
+func TestNewBitMapsAsymmetricDiff(t *testing.T) {
+	minlen := 64
+	b, _ := NewBitMaps(88, []string{"0-7,9-12,85-87"})
+	m, _ := NewBitMaps(minlen, []string{"6-9"})
+	r := b.Axor(m)
+	if r.Bits[0] != 0x1c3f || r.Bits[2] != 0xe00000 {
+		t.Errorf("The asymmetric difference should be : 0xE00000,00000000,00001c3f, now it is 0x%x,%08x,%08x",
+			r.Bits[2], r.Bits[1], r.Bits[0])
+	}
+
+	r = m.Axor(b)
+	len := len(r.Bits)
+	if len != 2 {
+		t.Error("The length of intersection of bit maps should be %d, but get %d.",
+			minlen/32, len)
+	}
+	if r.Bits[0] != 0x100 || r.Bits[1] != 0x0 {
+		t.Errorf("The asymmetric difference should be : 0x0,00000100, now it is 0x%x,%08x",
+			r.Bits[1], r.Bits[0])
+	}
+}
+
 func TestGenCpuResStringSimple(t *testing.T) {
 	map_list := []string{"0-7"}
 	s, e := GenCpuResString(map_list, 88)
