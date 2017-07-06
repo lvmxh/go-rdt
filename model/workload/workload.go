@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
+	"sync"
 
 	"openstackcore-rdtagent/lib/cpu"
 	"openstackcore-rdtagent/lib/proc"
@@ -16,6 +17,11 @@ import (
 	"openstackcore-rdtagent/model/policy"
 	modelutil "openstackcore-rdtagent/model/util"
 )
+
+// global lock for when doing enforce/update/release for a workload.
+// This is a simple way to control RDAgent to access resctrl one
+// goroutine one time
+var l sync.Mutex
 
 const (
 	Successful = "Successful"
@@ -86,6 +92,8 @@ func (w *RDTWorkLoad) Enforce() error {
 	// status will be updated to successful if no errors
 	w.Status = Failed
 
+	l.Lock()
+	defer l.Unlock()
 	resaall := resctrl.GetResAssociation()
 
 	base_grp, new_grp, sub_grp := getGroupNames(w, resaall)
@@ -144,6 +152,9 @@ func (w *RDTWorkLoad) Enforce() error {
 
 // Release Cos
 func (w *RDTWorkLoad) Release() error {
+	l.Lock()
+	defer l.Unlock()
+
 	resaall := resctrl.GetResAssociation()
 
 	r, ok := resaall[w.CosName]
