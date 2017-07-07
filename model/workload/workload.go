@@ -174,7 +174,8 @@ func (w *RDTWorkLoad) Release() error {
 			return err
 		}
 		delete(resaall, w.CosName)
-		compensateDefault(resaall)
+		newDefaultGrp := calculateDefaultGroup(resaall, []string{"."}, true)
+		newDefaultGrp.Commit(".")
 	}
 	// remove workload task ids from resource group
 	if len(w.TaskIDs) > 0 {
@@ -313,6 +314,61 @@ func createNewResassociation(r map[string]*resctrl.ResAssociation, base string, 
 	return newResAss, nil
 }
 
+// calculate a new default group which can be consumed by
+// subtract bit mask in existed resource group
+// e.g.
+// r = ['.': [res1], 'group1': 'res2', 'infra': 'bla']
+// ignore_grp = ['.', 'infra']
+// calculateDefaultGroup will create a new resctrl.ResAssociation, the mask
+// value is calculated by default mask subtract group1's schemata.
+func calculateDefaultGroup(r map[string]*resctrl.ResAssociation, ignore_grp []string, consecutive bool) *resctrl.ResAssociation {
+
+	defaultGrp := r["."]
+
+	for _, v := range ignore_grp {
+		delete(r, v)
+	}
+
+	// FIXME rdtinfo could be a global variable
+	rdtinfo := resctrl.GetRdtCosInfo()
+	newRes := new(resctrl.ResAssociation)
+	newRes.Schemata = make(map[string][]resctrl.CacheCos)
+
+	for t, schemata := range defaultGrp.Schemata {
+		catinfo := rdtinfo[strings.ToLower(t)]
+		newRes.Schemata[t] = make([]resctrl.CacheCos, 0, 10)
+		for id, v := range schemata {
+			// len is not so important, we don't want to query cbm_mask every time
+			// we new a bitmap, this is too much time costing, later we need to load
+			// Len(cbm_mask) as a global variable
+			bm, _ := libutil.NewBitmap(20, catinfo.CbmMask)
+			// loop for all groups
+			for _, g := range r {
+				// len is not so important, we don't want to query cbm_mask every time
+				// we new a bitmap, this is too much time costing, later we need to load
+				// Len(cbm_mask) as a global variable
+				gbm, _ := libutil.NewBitmap(20, g.Schemata[t][v.Id].Mask)
+				bm = bm.Xor(gbm)
+			}
+
+			var newcbm string
+
+			if consecutive {
+				tmpbm := bm.MaxConnectiveBits()
+				newcbm = tmpbm.ToString()
+			} else {
+				newcbm = bm.ToString()
+			}
+			cacheCos := &resctrl.CacheCos{uint8(id), newcbm}
+			newRes.Schemata[t] = append(newRes.Schemata[t], *cacheCos)
+
+			log.Debugf("New defulat Mask for Cache %d is %s", cacheCos.Id, newcbm)
+		}
+	}
+
+	return newRes
+}
+
 // Calculate offset for the pos'th cache of cattype based on sub_grp
 // e.g.
 // sub_grp = [base-sub1]
@@ -335,33 +391,4 @@ func calculateOffset(r map[string]*resctrl.ResAssociation, sub_grp []string, cat
 		// TODO(shaohe): need to implement bm0.Maximum()
 		return 0
 	}
-}
-
-// compensate cbm back to default if possible
-func compensateDefault(r map[string]*resctrl.ResAssociation) {
-
-	rdtinfo := resctrl.GetRdtCosInfo()
-
-	defaultGrp := r["."]
-	delete(r, ".")
-
-	for t, schemata := range defaultGrp.Schemata {
-		catinfo := rdtinfo[strings.ToLower(t)]
-		for _, v := range schemata {
-			// len is not so important, we don't want to query cbm_mask every time
-			// we new a bitmap, this is too much time costing, later we need to load
-			// Len(cbm_mask) as a global variable
-			bm, _ := libutil.NewBitmap(20, catinfo.CbmMask)
-			// loop for all groups
-			for _, g := range r {
-				gbm, _ := libutil.NewBitmap(20, g.Schemata[t][v.Id].Mask)
-				bm = bm.Xor(gbm)
-			}
-			tmpbm := bm.MaxConnectiveBits()
-			newdftcbm := tmpbm.ToString()
-			defaultGrp.Schemata[t][v.Id].Mask = newdftcbm
-			log.Debugf("New defulat Mask for Cache %d is %s", v.Id, newdftcbm)
-		}
-	}
-	defaultGrp.Commit(".")
 }
