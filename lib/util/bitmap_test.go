@@ -98,6 +98,24 @@ func TestBitMapsToBinStrings(t *testing.T) {
 	}
 }
 
+func TestBitMapsMaxConnectiveBits(t *testing.T) {
+	map_list := []string{"1-8,^3-4,^7,9", "56-87,^86,^61-65"}
+	b, _ := NewBitMaps(88, map_list)
+	r := b.MaxConnectiveBits()
+	want := 0x3FFFFC
+	if want != r.Bits[2] {
+		t.Errorf("The value should be '%d', but get '%d'", want, r.Bits[2])
+	}
+
+	map_list = []string{"1"}
+	b, _ = NewBitMaps(24, map_list)
+	r = b.MaxConnectiveBits()
+	want = 0x2
+	if want != r.Bits[0] {
+		t.Errorf("The value should be '%d', but get '%d'", want, r.Bits[0])
+	}
+}
+
 func TestGenCpuResStringSimple(t *testing.T) {
 	map_list := []string{"0-7"}
 	s, e := GenCpuResString(map_list, 88)

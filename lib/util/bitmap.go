@@ -192,6 +192,40 @@ func (b *BitMaps) ToBinStrings() []string {
 	return ss
 }
 
+// Get MaxConnectiveBits
+func (b *BitMaps) MaxConnectiveBits() *BitMaps {
+	ss := b.ToBinStrings()
+	total_l := 0
+	max_i := 0
+	max_len := 0
+	cur := 0
+	for i, v := range ss {
+		l := len(v)
+		if strings.Contains(v, "1") {
+			if max_len < l {
+				max_len = l
+				max_i = i
+				cur = total_l
+			}
+		}
+		total_l += l
+	}
+
+	// Generate the new BitMaps
+	var r *BitMaps
+	scope := ""
+	if max_len == 0 {
+		r, _ = NewBitMaps(b.Len)
+		return r
+	} else if len(ss[max_i]) == 1 {
+		scope = fmt.Sprintf("%d", cur)
+	} else {
+		scope = fmt.Sprintf("%d-%d", cur, cur+len(ss[max_i])-1)
+	}
+	r, _ = NewBitMaps(b.Len, []string{scope})
+	return r
+}
+
 var EmptyMapHex = []uint{0x0, 0x0, 0x0}
 
 var BITMAP_BAD_EXPRESSION = regexp.MustCompile(`([^\^\d-,]+)|([^\d]+-.*(,|$))|` +
