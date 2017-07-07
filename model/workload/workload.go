@@ -280,11 +280,18 @@ func createNewResassociation(r map[string]*resctrl.ResAssociation, base string, 
 	cacheinfo := &cache.CacheInfos{}
 	cacheinfo.GetByLevel(libcache.GetLLC())
 
+	baseRes := r[base]
+	if base == "." {
+		// if infra group are created, should be added it to ignore group.
+		baseRes = calculateDefaultGroup(r, []string{"."}, false)
+		r["."] = baseRes
+	}
+
 	// loop for each level 3 cache to construct new resassociation
 	newResAss := resctrl.ResAssociation{}
 	newResAss.Schemata = make(map[string][]resctrl.CacheCos)
 
-	for cattype, res := range r[base].Schemata {
+	for cattype, res := range baseRes.Schemata {
 		// construct ResAssociation for each cache id
 		for i, _ := range cacheinfo.Caches {
 			// compute sub_grp's offset for the i(th) 'cattype'
@@ -309,6 +316,8 @@ func createNewResassociation(r map[string]*resctrl.ResAssociation, base string, 
 			newcos := resctrl.CacheCos{Id: uint8(i), Mask: newbm.ToString()}
 
 			newResAss.Schemata[cattype] = append(newResAss.Schemata[cattype], newcos)
+			log.Debugf("Newly created Mask for Cache %d is %s", i, newcos.Mask)
+			log.Debugf("Default Mask for Cache %d is %s", i, res[i].Mask)
 		}
 	}
 	return newResAss, nil
@@ -362,7 +371,7 @@ func calculateDefaultGroup(r map[string]*resctrl.ResAssociation, ignore_grp []st
 			cacheCos := &resctrl.CacheCos{uint8(id), newcbm}
 			newRes.Schemata[t] = append(newRes.Schemata[t], *cacheCos)
 
-			log.Debugf("New defulat Mask for Cache %d is %s", cacheCos.Id, newcbm)
+			log.Debugf("New default Mask for Cache %d is %s", cacheCos.Id, newcbm)
 		}
 	}
 
