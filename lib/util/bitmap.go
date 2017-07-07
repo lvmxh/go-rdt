@@ -14,13 +14,19 @@ type BitMaps struct {
 	Bits []int
 }
 
-func NewBitMaps(l int, map_list ...[]string) (*BitMaps, error) {
+func NewBitMaps(l int, value ...interface{}) (*BitMaps, error) {
 	b := new(BitMaps)
 	b.Len = l
-	if len(map_list) > 0 {
-		bits, err := genBits(map_list[0], l)
-		b.Bits = bits
-		return b, err
+	if len(value) > 0 {
+		val := value[0]
+		switch v := val.(type) {
+		case []string:
+			bits, err := genBits(v, l)
+			b.Bits = bits
+			return b, err
+		default:
+			return b, fmt.Errorf("Unknown value type!")
+		}
 	} else {
 		b.Bits = genBitMaps(l)
 	}
