@@ -146,7 +146,7 @@ func (b *BitMaps) ToString() string {
 	return str
 }
 
-// To binary strings
+// To binary string
 func (b *BitMaps) ToBinString() string {
 	// FIXME(Shaohe) Hard code 32.
 	bs32 := fmt.Sprintf("%032d", 0)
@@ -170,6 +170,26 @@ func (b *BitMaps) ToBinString() string {
 		}
 	}
 	return ts
+}
+
+// To binary strings
+func (b *BitMaps) ToBinStrings() []string {
+	ss := []string{}
+	ts := strings.Replace(b.ToBinString(), ",", "", -1)
+	l := len(ts)
+	org_v := ts[l-1]
+	org_index := l
+	for i := b.Len - 1; i >= 0; i-- {
+		if ts[i] != org_v {
+			ss = append(ss, ts[i+1:org_index])
+			org_index = i + 1
+			org_v = ts[i]
+		}
+		if i == 0 {
+			ss = append(ss, ts[0:org_index])
+		}
+	}
+	return ss
 }
 
 var EmptyMapHex = []uint{0x0, 0x0, 0x0}

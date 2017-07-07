@@ -87,6 +87,17 @@ func TestBitMapsToBinString(t *testing.T) {
 	}
 }
 
+func TestBitMapsToBinStrings(t *testing.T) {
+	map_list := []string{"1-8,^3-4,^7,9", "56-87,^86,^61-65"}
+	b, _ := NewBitMaps(88, map_list)
+	ss := b.ToBinStrings()
+
+	if len(ss) != 12 {
+		t.Error("The length of bit maps string sliece should be %d, but get %d.",
+			12, len(ss))
+	}
+}
+
 func TestGenCpuResStringSimple(t *testing.T) {
 	map_list := []string{"0-7"}
 	s, e := GenCpuResString(map_list, 88)
