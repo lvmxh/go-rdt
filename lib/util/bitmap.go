@@ -226,6 +226,58 @@ func (b *BitMaps) MaxConnectiveBits() *BitMaps {
 	return r
 }
 
+// get a connective bits for BitMaps by given ways, offset, and order
+func (b *BitMaps) GetConnectiveBits(ways, offset uint32, fromLow bool) *BitMaps {
+	ts := strings.Replace(b.ToBinString(), ",", "", -1)
+	var total uint32 = 0
+	var cur uint32 = 0
+	if fromLow {
+		for i := uint32(b.Len) - 1 - offset; i >= 0; i-- {
+			if ts[i] == "1"[0] {
+				total++
+				if total >= ways {
+					cur = i
+					break
+				}
+			} else {
+				total = 0
+			}
+		}
+	} else {
+		// FIXME(Shaohe)  duplicated code
+		for i := offset; i < uint32(b.Len); i++ {
+			if ts[i] == "1"[0] {
+				total++
+				if total >= ways {
+					cur = i
+					break
+				}
+			} else {
+				total = 0
+			}
+		}
+	}
+
+	scope := strconv.Itoa(b.Len - 1 - int(cur))
+	if ways > 1 {
+		// Low
+		if fromLow {
+			scope = fmt.Sprintf("%d-%d", uint32(b.Len)-1-cur-(ways-1),
+				uint32(b.Len)-1-cur)
+		} else {
+			// High
+			scope = fmt.Sprintf("%d-%d", uint32(b.Len)-1-cur,
+				uint32(b.Len)-1-cur+(ways-1))
+		}
+	}
+	if total < ways {
+		r, _ := NewBitMaps(b.Len)
+		return r
+	}
+	r, _ := NewBitMaps(b.Len, []string{scope})
+	return r
+}
+
 var EmptyMapHex = []uint{0x0, 0x0, 0x0}
 
 var BITMAP_BAD_EXPRESSION = regexp.MustCompile(`([^\^\d-,]+)|([^\d]+-.*(,|$))|` +

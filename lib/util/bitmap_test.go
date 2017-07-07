@@ -116,6 +116,48 @@ func TestBitMapsMaxConnectiveBits(t *testing.T) {
 	}
 }
 
+func TestBitMapsGetConnectiveBits(t *testing.T) {
+	map_list := []string{"1-8,^3-4,^7,9", "56-87,^86,^61-65"}
+	// 101111111111111111111100,00011111000000000000000000000000,00000000000000000000001101100110
+	b, _ := NewBitMaps(88, map_list)
+	r := b.GetConnectiveBits(10, 10, false)
+	want := 0x3FF0
+	if want != r.Bits[2] {
+		t.Errorf("The value should be '0x%x', but get '0x%x'", want, r.Bits[2])
+	}
+
+	r = b.GetConnectiveBits(3, 4, false)
+	want = 0xe0000
+	if want != r.Bits[2] {
+		t.Errorf("The value should be '0x%x', but get '0x%x'", want, r.Bits[2])
+	}
+
+	r = b.GetConnectiveBits(1, 3, false)
+	want = 0x100000
+	if want != r.Bits[2] {
+		t.Errorf("The value should be '0x%x', but get '0x%x'", want, r.Bits[2])
+	}
+
+	r = b.GetConnectiveBits(1, 0, false)
+	want = 0x800000
+	if want != r.Bits[2] {
+		t.Errorf("The value should be '0x%x', but get '0x%x'", want, r.Bits[2])
+	}
+
+	/********************* True **************************************/
+	r = b.GetConnectiveBits(2, 3, true)
+	want = 0x60
+	if want != r.Bits[0] {
+		t.Errorf("The value should be '%d', but get '%x'", want, r.Bits[0])
+	}
+
+	r = b.GetConnectiveBits(1, 3, true)
+	want = 0x20
+	if want != r.Bits[0] {
+		t.Errorf("The value should be '%d', but get '%x'", want, r.Bits[0])
+	}
+}
+
 func TestGenCpuResStringSimple(t *testing.T) {
 	map_list := []string{"0-7"}
 	s, e := GenCpuResString(map_list, 88)
