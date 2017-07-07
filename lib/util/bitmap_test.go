@@ -71,8 +71,19 @@ func TestBitMapsToString(t *testing.T) {
 	b, _ := NewBitMaps(88, map_list)
 	fmt.Println(b.ToString())
 	str := b.ToString()
-	if "bffffc,1f000000,00000366" != str {
-		t.Errorf("The value should be 'bffffc,1f000000,00000366', but get '%s'", str)
+	want := "bffffc,1f000000,00000366"
+	if want != str {
+		t.Errorf("The value should be '%s', but get '%s'", want, str)
+	}
+}
+
+func TestBitMapsToBinString(t *testing.T) {
+	map_list := []string{"1-8,^3-4,^7,9", "56-87,^86,^61-65"}
+	b, _ := NewBitMaps(88, map_list)
+	str := b.ToBinString()
+	want := "101111111111111111111100,00011111000000000000000000000000,00000000000000000000001101100110"
+	if want != str {
+		t.Errorf("The value should be '%s', but get '%s'", want, str)
 	}
 }
 

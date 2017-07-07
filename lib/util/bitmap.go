@@ -146,6 +146,32 @@ func (b *BitMaps) ToString() string {
 	return str
 }
 
+// To binary strings
+func (b *BitMaps) ToBinString() string {
+	// FIXME(Shaohe) Hard code 32.
+	bs32 := fmt.Sprintf("%032d", 0)
+	ts := ""
+	for i, v := range b.Bits {
+		rb := strconv.FormatUint(uint64(v), 2)
+		l := len(rb)
+		end := 0
+		if 32 >= l {
+			end = 32 - l
+		}
+		if len(b.Bits) == i+1 {
+			if b.Len%32 >= l {
+				end = b.Len%32 - l
+			}
+		}
+		if 0 == i {
+			ts = (bs32[0:end] + rb)
+		} else {
+			ts = (bs32[0:end] + rb) + "," + ts
+		}
+	}
+	return ts
+}
+
 var EmptyMapHex = []uint{0x0, 0x0, 0x0}
 
 var BITMAP_BAD_EXPRESSION = regexp.MustCompile(`([^\^\d-,]+)|([^\d]+-.*(,|$))|` +
