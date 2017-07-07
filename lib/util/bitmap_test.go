@@ -66,6 +66,16 @@ func TestNewBitMapsAsymmetricDiff(t *testing.T) {
 	}
 }
 
+func TestBitMapsToString(t *testing.T) {
+	map_list := []string{"1-8,^3-4,^7,9", "56-87,^86,^61-65"}
+	b, _ := NewBitMaps(88, map_list)
+	fmt.Println(b.ToString())
+	str := b.ToString()
+	if "bffffc,1f000000,00000366" != str {
+		t.Errorf("The value should be 'bffffc,1f000000,00000366', but get '%s'", str)
+	}
+}
+
 func TestGenCpuResStringSimple(t *testing.T) {
 	map_list := []string{"0-7"}
 	s, e := GenCpuResString(map_list, 88)

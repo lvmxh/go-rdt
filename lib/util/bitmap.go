@@ -128,6 +128,24 @@ func (b *BitMaps) Axor(m *BitMaps) *BitMaps {
 	return r
 }
 
+// To hex string
+func (b *BitMaps) ToString() string {
+	str := ""
+	l := len(b.Bits)
+	for i, v := range b.Bits {
+		if i == 0 {
+			// FIXME(Shaohe) Hard code 8.
+			str = fmt.Sprintf("%08x", v)
+		} else if i == l-1 {
+			str = fmt.Sprintf("%x", v) + "," + str
+		} else {
+			// FIXME(Shaohe) Hard code 8.
+			str = fmt.Sprintf("%08x", v) + "," + str
+		}
+	}
+	return str
+}
+
 var EmptyMapHex = []uint{0x0, 0x0, 0x0}
 
 var BITMAP_BAD_EXPRESSION = regexp.MustCompile(`([^\^\d-,]+)|([^\d]+-.*(,|$))|` +
