@@ -396,8 +396,6 @@ func calculateOffset(r map[string]*resctrl.ResAssociation, sub_grp []string, cat
 	if bm0.IsEmpty() {
 		return 0
 	} else {
-		//return bm0.Maximum()
-		// TODO(shaohe): need to implement bm0.Maximum()
-		return 0
+		return bm0.Maximum()
 	}
 }
