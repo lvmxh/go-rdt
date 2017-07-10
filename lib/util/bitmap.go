@@ -150,14 +150,18 @@ func (b *BitMaps) ToString() string {
 	str := ""
 	l := len(b.Bits)
 	for i, v := range b.Bits {
-		if i == 0 {
-			// FIXME(Shaohe) Hard code 8.
-			str = fmt.Sprintf("%08x", v)
-		} else if i == l-1 {
-			str = fmt.Sprintf("%x", v) + "," + str
+		s := ""
+		if i == l-1 {
+			// NOTE Should we limit the length by b.Len?
+			s = fmt.Sprintf("%x", v)
 		} else {
 			// FIXME(Shaohe) Hard code 8.
-			str = fmt.Sprintf("%08x", v) + "," + str
+			s = fmt.Sprintf("%08x", v)
+		}
+		if i == 0 {
+			str = s
+		} else {
+			str = s + "," + str
 		}
 	}
 	return str

@@ -86,6 +86,13 @@ func TestBitMapsToString(t *testing.T) {
 	if want != str {
 		t.Errorf("The value should be '%s', but get '%s'", want, str)
 	}
+
+	b, _ = NewBitMaps(24, "7FF")
+	str = b.ToString()
+	want = "7ff"
+	if want != str {
+		t.Errorf("The value should be '%s', but get '%s'", want, str)
+	}
 }
 
 func TestBitMapsToBinString(t *testing.T) {
