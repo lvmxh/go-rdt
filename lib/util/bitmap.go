@@ -252,6 +252,13 @@ func (b *Bitmap) GetConnectiveBits(ways, offset uint32, fromLow bool) *Bitmap {
 	ts := strings.Replace(b.ToBinString(), ",", "", -1)
 	var total uint32 = 0
 	var cur uint32 = 0
+
+	// early return
+	if offset+ways > uint32(len(ts)) {
+		r, _ := NewBitmap(b.Len)
+		return r
+	}
+
 	if fromLow {
 		for i := uint32(b.Len) - 1 - offset; i >= 0; i-- {
 			if ts[i] == "1"[0] {
