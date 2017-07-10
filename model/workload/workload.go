@@ -300,7 +300,7 @@ func createNewResassociation(r map[string]*resctrl.ResAssociation, base string, 
 			// len is not so important, we don't want to query cbm_mask every time
 			// we new a bitmap, this is too much time costing, later we need to load
 			// Len(cbm_mask) as a global variable
-			bmbase, _ := libutil.NewBitmap(20, res[i].Mask)
+			bmbase, _ := libutil.NewBitmap(res[i].Mask)
 			newbm := bmbase.GetConnectiveBits(ways, offset, true)
 
 			if newbm.IsEmpty() {
@@ -350,13 +350,13 @@ func calculateDefaultGroup(r map[string]*resctrl.ResAssociation, ignore_grp []st
 			// len is not so important, we don't want to query cbm_mask every time
 			// we new a bitmap, this is too much time costing, later we need to load
 			// Len(cbm_mask) as a global variable
-			bm, _ := libutil.NewBitmap(20, catinfo.CbmMask)
+			bm, _ := libutil.NewBitmap(catinfo.CbmMask)
 			// loop for all groups
 			for _, g := range r {
 				// len is not so important, we don't want to query cbm_mask every time
 				// we new a bitmap, this is too much time costing, later we need to load
 				// Len(cbm_mask) as a global variable
-				gbm, _ := libutil.NewBitmap(20, g.Schemata[t][v.Id].Mask)
+				gbm, _ := libutil.NewBitmap(g.Schemata[t][v.Id].Mask)
 				bm = bm.Xor(gbm)
 			}
 
@@ -388,9 +388,9 @@ func calculateOffset(r map[string]*resctrl.ResAssociation, sub_grp []string, cat
 	// len is not so important, we don't want to query cbm_mask every time
 	// we new a bitmap, this is too much time costing, later we need to load
 	// Len(cbm_mask) as a global variable
-	bm0, _ := libutil.NewBitmap(20, "")
+	bm0, _ := libutil.NewBitmap("")
 	for _, g := range sub_grp {
-		b, _ := libutil.NewBitmap(20, r[g].Schemata[cattype][pos].Mask)
+		b, _ := libutil.NewBitmap(r[g].Schemata[cattype][pos].Mask)
 		bm0 = bm0.Or(b)
 	}
 	if bm0.IsEmpty() {

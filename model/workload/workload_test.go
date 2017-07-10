@@ -78,8 +78,8 @@ func TestGetGroupNamesWithGroupNameAndSub(t *testing.T) {
 }
 
 func TestCalculateOffset(t *testing.T) {
-	cos1 := resctrl.CacheCos{0, 0xf}
-	cos2 := resctrl.CacheCos{0, 0x10}
+	cos1 := resctrl.CacheCos{0, "f"}
+	cos2 := resctrl.CacheCos{0, "10"}
 
 	r := map[string]*resctrl.ResAssociation{
 		"sub1": &resctrl.ResAssociation{Schemata: map[string][]resctrl.CacheCos{"L3": []resctrl.CacheCos{cos1}}},
