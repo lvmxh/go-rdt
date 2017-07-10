@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"openstackcore-rdtagent/lib/util"
 	"openstackcore-rdtagent/model/workload"
 )
 
@@ -34,7 +35,7 @@ func hasElem(s interface{}, elem interface{}) bool {
 
 // Check if TasksIDs of a workload existed in a workload array
 func validateTasks(w workload.RDTWorkLoad, ws []workload.RDTWorkLoad) error {
-	if len(w.TaskIDs) < 1 {
+	if len(w.TaskIDs) < 1 && len(w.CoreIDs) < 1 {
 		return nil
 	}
 
@@ -45,5 +46,24 @@ func validateTasks(w workload.RDTWorkLoad, ws []workload.RDTWorkLoad) error {
 			}
 		}
 	}
+
+	if len(w.CoreIDs) == 0 {
+		return nil
+	}
+
+	bm, _ := util.NewBitmap(w.CoreIDs)
+	bmsum, _ := util.NewBitmap("")
+
+	for _, c := range ws {
+		tmpbm, _ := util.NewBitmap(c.CoreIDs)
+		bmsum = bmsum.Or(tmpbm)
+	}
+
+	bminter := bm.And(bmsum)
+
+	if !bminter.IsEmpty() {
+		return fmt.Errorf("CPU list %s has been assigned.", bminter.ToString())
+	}
+
 	return nil
 }
