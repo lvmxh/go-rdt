@@ -284,3 +284,143 @@ func TestIsEmptyBitMap(t *testing.T) {
 		t.Errorf("Parser error, the %s element is not empty bit map\n", cpus)
 	}
 }
+
+// Below cases are for resctrl schemata
+func TestBitmap(t *testing.T) {
+	mask0 := ""
+	bm0, _ := NewBitmap(11, mask0)
+	if !bm0.IsEmpty() {
+		t.Errorf("Wrong mask, it should be empty")
+	}
+
+	mask1 := "7ff"
+	bm1, _ := NewBitmap(11, mask1)
+	if bm1.ToString() != "7ff" {
+		t.Errorf("Wrong mask, it should be 7ff")
+	}
+}
+
+func TestBitmapXor(t *testing.T) {
+	mask1 := "7ff"
+	bm1, _ := NewBitmap(11, mask1)
+
+	mask2 := "f3"
+	bm2, _ := NewBitmap(11, mask2)
+	bm1 = bm1.Xor(bm2)
+	if bm1.ToString() != "70c" {
+		t.Errorf("Wrong mask, 7ff xor f3 must be 70c")
+	}
+}
+
+func TestBitmapAnd(t *testing.T) {
+	mask1 := "7ff"
+	bm1, _ := NewBitmap(11, mask1)
+
+	mask2 := "f3"
+	bm2, _ := NewBitmap(11, mask2)
+	bm1 = bm1.And(bm2)
+	if bm1.ToString() != "f3" {
+		t.Errorf("Wrong mask, 7ff xor f3 must be f3")
+	}
+}
+
+func TestBitmapOr(t *testing.T) {
+	mask1 := "7ff"
+	bm1, _ := NewBitmap(11, mask1)
+
+	mask2 := "f800"
+	bm2, _ := NewBitmap(16, mask2)
+	bm1 = bm1.Or(bm2)
+
+	if bm1.ToString() != "ffff" {
+		t.Errorf("Wrong mask, 7ff xor f800 must be ffff")
+	}
+}
+
+func TestBitmapMaxConnectiveBitsForSchemata(t *testing.T) {
+	mask1 := "7ff"
+	bm1, _ := NewBitmap(11, mask1)
+
+	cb := bm1.MaxConnectiveBits()
+	if cb.ToString() != "7ff" {
+		t.Errorf("Wrong mask, max connective bits must be 7ff")
+	}
+
+	mask2 := "7f0f"
+	bm2, _ := NewBitmap(16, mask2)
+
+	cb = bm2.MaxConnectiveBits()
+	if cb.ToString() != "7f00" {
+		t.Errorf("Wrong mask, max connective bits must be 7f00")
+	}
+}
+
+func TestBitmapGetConnectiveBitsForSchemata(t *testing.T) {
+	mask1 := "f03"
+	bm1, _ := NewBitmap(12, mask1)
+
+	if bm1.GetConnectiveBits(3, 0, true).ToString() != "700" {
+		t.Errorf("Wrong mask, get 3 connective bits from f03 low bit offset = 0 must be 700")
+	}
+
+	if bm1.GetConnectiveBits(3, 1, true).ToString() != "700" {
+		t.Errorf("Wrong mask, get 3 connective bits from f03 low bit offset = 1 must be 700")
+	}
+
+	if bm1.GetConnectiveBits(2, 0, true).ToString() != "3" {
+		t.Errorf("Wrong mask, get 2 connective bits from f03 low bit offset = 0 must be 3")
+	}
+
+	if bm1.GetConnectiveBits(2, 1, true).ToString() != "300" {
+		t.Errorf("Wrong mask, get 2 connective bits from f03 low bit offset = 1 must be 300")
+	}
+
+	if bm1.GetConnectiveBits(1, 1, true).ToString() != "2" {
+		t.Errorf("Wrong mask, get 1 connective bits from f03 low bit offset = 1 must be 1")
+	}
+
+	if bm1.GetConnectiveBits(3, 0, false).ToString() != "e00" {
+		t.Errorf("Wrong mask, get 3 connective bits from f03 high bit offset = 0 must be e00")
+	}
+
+	if bm1.GetConnectiveBits(3, 1, false).ToString() != "700" {
+		t.Errorf("Wrong mask, get 3 connective bits from f03 high bit offset = 1 must be 700")
+	}
+
+	if bm1.GetConnectiveBits(2, 0, false).ToString() != "c00" {
+		t.Errorf("Wrong mask, get 2 connective bits from f03 high bit offset = 1 must be c00")
+	}
+
+	if bm1.GetConnectiveBits(2, 1, false).ToString() != "600" {
+		t.Errorf("Wrong mask, get 2 connective bits from f03 high bit offset = 1 must be 600")
+	}
+}
+
+func TestBitmapGetConnectiveBitsEmpty(t *testing.T) {
+	mask1 := "7ff"
+	bm1, _ := NewBitmap(11, mask1)
+
+	if !bm1.GetConnectiveBits(12, 1, true).IsEmpty() {
+		t.Errorf("Wrong mask, get 12 connective bits from 7ff low bit offset = 1 must be empty")
+	}
+
+	if !bm1.GetConnectiveBits(12, 0, false).IsEmpty() {
+		t.Errorf("Wrong mask, get 12 connective bits from 7ff high bit offset = 0 must be empty")
+	}
+
+	if !bm1.GetConnectiveBits(12, 1, false).IsEmpty() {
+		t.Errorf("Wrong mask, get 12 connective bits from 7ff high bit offset = 1 must be empty")
+	}
+
+	mask2 := "101"
+	bm2, _ := NewBitmap(9, mask2)
+
+	if !bm2.GetConnectiveBits(2, 100, false).IsEmpty() {
+		t.Errorf("Wrong mask, get 2 connective bits from 101 high bit offset = 100 must be empty")
+	}
+
+	if !bm2.GetConnectiveBits(2, 0, false).IsEmpty() {
+		t.Errorf("Wrong mask, get 2 connective bits from 101 high bit offset = 0 must be empty")
+	}
+
+}
