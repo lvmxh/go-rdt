@@ -2,10 +2,11 @@ package util
 
 // cbm are all consecutive bits
 var HexMap = map[byte]int{
-	49:  1,
-	51:  2,
-	55:  3,
-	102: 4,
+	'1': 1,
+	'3': 2,
+	'7': 3,
+	'f': 4,
+	'F': 4,
 }
 
 func CbmLen(cbm string) int {
