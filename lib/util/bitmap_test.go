@@ -9,7 +9,7 @@ import (
 
 func TestNewBitmapUnion(t *testing.T) {
 	b, _ := NewBitmap(88, []string{"0-7,9-12,85-87"})
-	m, _ := NewBitmap(64, []string{"6-9"})
+	m, _ := NewBitmap([]string{"6-9"})
 	r := b.Or(m)
 	if r.Bits[0] != 0x1FFF || r.Bits[2] != 0xe00000 {
 		t.Errorf("The union should be : 0xE00000,00000000,00001FFF, now it is 0x%x,%08x,%08x",
@@ -20,6 +20,15 @@ func TestNewBitmapUnion(t *testing.T) {
 func TestNewBitmap(t *testing.T) {
 	b, _ := NewBitmap(96, "3df00cfff00ffafff")
 	wants := []int{0xffafff, 0xdf00cfff, 0x3}
+	for i, v := range wants {
+		if v != b.Bits[i] {
+			t.Errorf("The bitmap of index %d should be: 0x%x, but it is: 0x%x",
+				i, v, b.Bits[i])
+		}
+	}
+
+	b, _ = NewBitmap("3df00cfff00ffafff")
+	wants = []int{0xffafff, 0xdf00cfff, 0x3}
 	for i, v := range wants {
 		if v != b.Bits[i] {
 			t.Errorf("The bitmap of index %d should be: 0x%x, but it is: 0x%x",
@@ -80,7 +89,6 @@ func TestNewBitmapAsymmetricDiff(t *testing.T) {
 func TestBitmapToString(t *testing.T) {
 	map_list := []string{"1-8,^3-4,^7,9", "56-87,^86,^61-65"}
 	b, _ := NewBitmap(88, map_list)
-	fmt.Println(b.ToString())
 	str := b.ToString()
 	want := "bffffc,1f000000,00000366"
 	if want != str {
@@ -257,7 +265,6 @@ func TestString2data(t *testing.T) {
 			fmt.Printf("Parser %d element, get: 0x%x. \n", i, v)
 		}
 	}
-	fmt.Println("*****************************************")
 	hex_datas = []uint{0x00ffafff, 0xdf00cfff, 0x3}
 	datas, _ = string2data("3df00cfff00ffafff")
 	for i, v := range datas {

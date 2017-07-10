@@ -9,6 +9,8 @@ import (
 	. "unsafe"
 )
 
+var ALL_DATAS = regexp.MustCompile(`(\d+)`)
+
 type Bitmap struct {
 	Len  int
 	Bits []int
@@ -20,26 +22,65 @@ type Bitmap struct {
 //     cpu_numbers := 88
 //     return NewBitmap(cpu_numbers, value)
 // }
-// We can also consider to remove the "l int" parameter.
-func NewBitmap(l int, value ...interface{}) (*Bitmap, error) {
-	b := new(Bitmap)
-	b.Len = l
-	if len(value) > 0 {
-		val := value[0]
-		switch v := val.(type) {
-		case []string:
-			bits, err := genBits(v, l)
-			b.Bits = bits
-			return b, err
-		case string:
-			bits, err := genBitsFromHexString(v)
-			b.Bits = bits
-			return b, err
-		default:
-			return b, fmt.Errorf("Unknown value type!")
+func NewBitmap(value ...interface{}) (*Bitmap, error) {
+	// FIXME, need to this code after refacor genBits.
+	len_human_style := func(scope []string) int {
+		m := ALL_DATAS.FindAllString(strings.Join(scope, ","), -1)
+		sort.Sort(sort.Reverse(sort.StringSlice(m)))
+		l, err := strconv.Atoi(m[0])
+		if err != nil {
+			return 0
 		}
+		return l
+	}
+
+	b := new(Bitmap)
+	b.Len = 0
+
+	if len(value) > 0 {
+		for i, val := range value {
+			// Only support 2 parameters at present.
+			if i >= 2 {
+				break
+			}
+			switch v := val.(type) {
+			case int:
+				b.Len = v
+				break
+			}
+		}
+		for i, val := range value {
+			switch v := val.(type) {
+			case []string:
+				if b.Len == 0 {
+					// After refacor, we should get len by genBits
+					b.Len = len_human_style(v) + 1
+				}
+				// need to refacor genBits
+				bits, err := genBits(v, b.Len)
+				b.Bits = bits
+				return b, err
+			case string:
+				bits, err := genBitsFromHexString(v)
+				b.Bits = bits
+				if b.Len == 0 {
+					// This is not accurate, for example:
+					// The 0x7ff should be 11 bits instead of 32
+					// But no harmful
+					b.Len = len(bits) * 32
+				}
+				return b, err
+			case int:
+				if i >= 2 {
+					break
+				}
+			default:
+				return b, fmt.Errorf("Unknown value type!")
+			}
+		}
+		b.Bits = genBitmap(b.Len)
 	} else {
-		b.Bits = genBitmap(l)
+		b.Bits = genBitmap(b.Len)
 	}
 	return b, nil
 }
@@ -324,7 +365,6 @@ func (b *Bitmap) IsEmpty() bool {
 
 var BITMAP_BAD_EXPRESSION = regexp.MustCompile(`([^\^\d-,]+)|([^\d]+-.*(,|$))|` +
 	`([^,]*-[^\d]+)|(\^[^\d]+)|((\,\s)?\^$)`)
-var ALL_DATAS = regexp.MustCompile(`(\d+)`)
 
 func SliceString2Int(s []string) ([]int, error) {
 	// 2^32 -1 = 4294967295
