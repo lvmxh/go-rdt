@@ -7,9 +7,9 @@ import (
 	"testing"
 )
 
-func TestNewBitMapsUnion(t *testing.T) {
-	b, _ := NewBitMaps(88, []string{"0-7,9-12,85-87"})
-	m, _ := NewBitMaps(64, []string{"6-9"})
+func TestNewBitmapUnion(t *testing.T) {
+	b, _ := NewBitmap(88, []string{"0-7,9-12,85-87"})
+	m, _ := NewBitmap(64, []string{"6-9"})
 	r := b.Or(m)
 	if r.Bits[0] != 0x1FFF || r.Bits[2] != 0xe00000 {
 		t.Errorf("The union should be : 0xE00000,00000000,00001FFF, now it is 0x%x,%08x,%08x",
@@ -17,8 +17,8 @@ func TestNewBitMapsUnion(t *testing.T) {
 	}
 }
 
-func TestNewBitMaps(t *testing.T) {
-	b, _ := NewBitMaps(96, "3df00cfff00ffafff")
+func TestNewBitmap(t *testing.T) {
+	b, _ := NewBitmap(96, "3df00cfff00ffafff")
 	wants := []int{0xffafff, 0xdf00cfff, 0x3}
 	for i, v := range wants {
 		if v != b.Bits[i] {
@@ -28,10 +28,10 @@ func TestNewBitMaps(t *testing.T) {
 	}
 }
 
-func TestNewBitMapsIntersection(t *testing.T) {
+func TestNewBitmapIntersection(t *testing.T) {
 	minlen := 64
-	b, _ := NewBitMaps(88, []string{"0-7,9-12,32-50,85-87"})
-	m, _ := NewBitMaps(minlen, []string{"6-9,32-48"})
+	b, _ := NewBitmap(88, []string{"0-7,9-12,32-50,85-87"})
+	m, _ := NewBitmap(minlen, []string{"6-9,32-48"})
 	r := b.And(m)
 	// r.Bits[0]
 	len := len(r.Bits)
@@ -45,9 +45,9 @@ func TestNewBitMapsIntersection(t *testing.T) {
 	}
 }
 
-func TestNewBitMapsDifference(t *testing.T) {
-	b, _ := NewBitMaps(88, []string{"0-7,9-12,85-87"})
-	m, _ := NewBitMaps(64, []string{"6-9"})
+func TestNewBitmapDifference(t *testing.T) {
+	b, _ := NewBitmap(88, []string{"0-7,9-12,85-87"})
+	m, _ := NewBitmap(64, []string{"6-9"})
 	r := b.Xor(m)
 	if r.Bits[0] != 0x1d3f || r.Bits[2] != 0xe00000 {
 		t.Errorf("The difference should be : 0xE00000,00000000,00001d3f, now it is 0x%x,%08x,%08x",
@@ -55,10 +55,10 @@ func TestNewBitMapsDifference(t *testing.T) {
 	}
 }
 
-func TestNewBitMapsAsymmetricDiff(t *testing.T) {
+func TestNewBitmapAsymmetricDiff(t *testing.T) {
 	minlen := 64
-	b, _ := NewBitMaps(88, []string{"0-7,9-12,85-87"})
-	m, _ := NewBitMaps(minlen, []string{"6-9"})
+	b, _ := NewBitmap(88, []string{"0-7,9-12,85-87"})
+	m, _ := NewBitmap(minlen, []string{"6-9"})
 	r := b.Axor(m)
 	if r.Bits[0] != 0x1c3f || r.Bits[2] != 0xe00000 {
 		t.Errorf("The asymmetric difference should be : 0xE00000,00000000,00001c3f, now it is 0x%x,%08x,%08x",
@@ -77,9 +77,9 @@ func TestNewBitMapsAsymmetricDiff(t *testing.T) {
 	}
 }
 
-func TestBitMapsToString(t *testing.T) {
+func TestBitmapToString(t *testing.T) {
 	map_list := []string{"1-8,^3-4,^7,9", "56-87,^86,^61-65"}
-	b, _ := NewBitMaps(88, map_list)
+	b, _ := NewBitmap(88, map_list)
 	fmt.Println(b.ToString())
 	str := b.ToString()
 	want := "bffffc,1f000000,00000366"
@@ -87,7 +87,7 @@ func TestBitMapsToString(t *testing.T) {
 		t.Errorf("The value should be '%s', but get '%s'", want, str)
 	}
 
-	b, _ = NewBitMaps(24, "7FF")
+	b, _ = NewBitmap(24, "7FF")
 	str = b.ToString()
 	want = "7ff"
 	if want != str {
@@ -95,9 +95,9 @@ func TestBitMapsToString(t *testing.T) {
 	}
 }
 
-func TestBitMapsToBinString(t *testing.T) {
+func TestBitmapToBinString(t *testing.T) {
 	map_list := []string{"1-8,^3-4,^7,9", "56-87,^86,^61-65"}
-	b, _ := NewBitMaps(88, map_list)
+	b, _ := NewBitmap(88, map_list)
 	str := b.ToBinString()
 	want := "101111111111111111111100,00011111000000000000000000000000,00000000000000000000001101100110"
 	if want != str {
@@ -105,9 +105,9 @@ func TestBitMapsToBinString(t *testing.T) {
 	}
 }
 
-func TestBitMapsToBinStrings(t *testing.T) {
+func TestBitmapToBinStrings(t *testing.T) {
 	map_list := []string{"1-8,^3-4,^7,9", "56-87,^86,^61-65"}
-	b, _ := NewBitMaps(88, map_list)
+	b, _ := NewBitmap(88, map_list)
 	ss := b.ToBinStrings()
 
 	if len(ss) != 12 {
@@ -116,9 +116,9 @@ func TestBitMapsToBinStrings(t *testing.T) {
 	}
 }
 
-func TestBitMapsMaxConnectiveBits(t *testing.T) {
+func TestBitmapMaxConnectiveBits(t *testing.T) {
 	map_list := []string{"1-8,^3-4,^7,9", "56-87,^86,^61-65"}
-	b, _ := NewBitMaps(88, map_list)
+	b, _ := NewBitmap(88, map_list)
 	r := b.MaxConnectiveBits()
 	want := 0x3FFFFC
 	if want != r.Bits[2] {
@@ -126,7 +126,7 @@ func TestBitMapsMaxConnectiveBits(t *testing.T) {
 	}
 
 	map_list = []string{"1"}
-	b, _ = NewBitMaps(24, map_list)
+	b, _ = NewBitmap(24, map_list)
 	r = b.MaxConnectiveBits()
 	want = 0x2
 	if want != r.Bits[0] {
@@ -134,10 +134,10 @@ func TestBitMapsMaxConnectiveBits(t *testing.T) {
 	}
 }
 
-func TestBitMapsGetConnectiveBits(t *testing.T) {
+func TestBitmapGetConnectiveBits(t *testing.T) {
 	map_list := []string{"1-8,^3-4,^7,9", "56-87,^86,^61-65"}
 	// 101111111111111111111100,00011111000000000000000000000000,00000000000000000000001101100110
-	b, _ := NewBitMaps(88, map_list)
+	b, _ := NewBitmap(88, map_list)
 	r := b.GetConnectiveBits(10, 10, false)
 	want := 0x3FF0
 	if want != r.Bits[2] {
@@ -273,13 +273,13 @@ func TestString2data(t *testing.T) {
 func TestIsEmptyBitMap(t *testing.T) {
 
 	cpus := "000000,00000000,00000000"
-	b, _ := NewBitMaps(88, cpus)
+	b, _ := NewBitmap(88, cpus)
 	if !b.IsEmpty() {
 		t.Errorf("Parser error, the %s element is empty bit map\n", cpus)
 	}
 
 	cpus = "000000,00000000,00000001"
-	b, _ = NewBitMaps(88, cpus)
+	b, _ = NewBitmap(88, cpus)
 	if b.IsEmpty() {
 		t.Errorf("Parser error, the %s element is not empty bit map\n", cpus)
 	}

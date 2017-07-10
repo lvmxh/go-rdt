@@ -9,20 +9,20 @@ import (
 	. "unsafe"
 )
 
-type BitMaps struct {
+type Bitmap struct {
 	Len  int
 	Bits []int
 }
 
-// We can add a wraper for NewBitMaps
+// We can add a wraper for NewBitmap
 // such as:
-// func NewCPUBitMaps( value ...interface{}) (*BitMaps, error) {
+// func NewCPUBitmap( value ...interface{}) (*Bitmap, error) {
 //     cpu_numbers := 88
-//     return NewBitMaps(cpu_numbers, value)
+//     return NewBitmap(cpu_numbers, value)
 // }
 // We can also consider to remove the "l int" parameter.
-func NewBitMaps(l int, value ...interface{}) (*BitMaps, error) {
-	b := new(BitMaps)
+func NewBitmap(l int, value ...interface{}) (*Bitmap, error) {
+	b := new(Bitmap)
 	b.Len = l
 	if len(value) > 0 {
 		val := value[0]
@@ -39,13 +39,13 @@ func NewBitMaps(l int, value ...interface{}) (*BitMaps, error) {
 			return b, fmt.Errorf("Unknown value type!")
 		}
 	} else {
-		b.Bits = genBitMaps(l)
+		b.Bits = genBitmap(l)
 	}
 	return b, nil
 }
 
 // Union
-func (b *BitMaps) Or(m *BitMaps) *BitMaps {
+func (b *Bitmap) Or(m *Bitmap) *Bitmap {
 	// FIXME (Shaohe) The follow code are same with and, any design pattern for it?
 	maxc := len(b.Bits)
 	minc := len(m.Bits)
@@ -59,7 +59,7 @@ func (b *BitMaps) Or(m *BitMaps) *BitMaps {
 		maxl, minl = minl, maxl
 	}
 
-	r, _ := NewBitMaps(maxl)
+	r, _ := NewBitmap(maxl)
 	copy(r.Bits, maxb.Bits)
 	for i := 0; i < minc; i++ {
 		r.Bits[i] = maxb.Bits[i] | minb.Bits[i]
@@ -69,7 +69,7 @@ func (b *BitMaps) Or(m *BitMaps) *BitMaps {
 }
 
 // Intersection
-func (b *BitMaps) And(m *BitMaps) *BitMaps {
+func (b *Bitmap) And(m *Bitmap) *Bitmap {
 	// FIXME (Shaohe) The follow code are same with or, any design pattern for it?
 	maxc := len(b.Bits)
 	minc := len(m.Bits)
@@ -83,7 +83,7 @@ func (b *BitMaps) And(m *BitMaps) *BitMaps {
 		maxl, minl = minl, maxl
 	}
 
-	r, _ := NewBitMaps(minl)
+	r, _ := NewBitmap(minl)
 	for i := 0; i < minc; i++ {
 		r.Bits[i] = maxb.Bits[i] & minb.Bits[i]
 	}
@@ -92,7 +92,7 @@ func (b *BitMaps) And(m *BitMaps) *BitMaps {
 }
 
 // Difference
-func (b *BitMaps) Xor(m *BitMaps) *BitMaps {
+func (b *Bitmap) Xor(m *Bitmap) *Bitmap {
 	// FIXME (Shaohe) The follow code are same with or, any design pattern for it?
 	maxc := len(b.Bits)
 	minc := len(m.Bits)
@@ -106,7 +106,7 @@ func (b *BitMaps) Xor(m *BitMaps) *BitMaps {
 		maxl, minl = minl, maxl
 	}
 
-	r, _ := NewBitMaps(maxl)
+	r, _ := NewBitmap(maxl)
 	copy(r.Bits, maxb.Bits)
 	for i := 0; i < minc; i++ {
 		r.Bits[i] = maxb.Bits[i] ^ minb.Bits[i]
@@ -116,7 +116,7 @@ func (b *BitMaps) Xor(m *BitMaps) *BitMaps {
 }
 
 // asymmetric difference
-func (b *BitMaps) Axor(m *BitMaps) *BitMaps {
+func (b *Bitmap) Axor(m *Bitmap) *Bitmap {
 	// FIXME (Shaohe) The follow code are same with or, any design pattern for it?
 	maxc := len(b.Bits)
 	minc := len(m.Bits)
@@ -130,12 +130,12 @@ func (b *BitMaps) Axor(m *BitMaps) *BitMaps {
 		maxl, minl = minl, maxl
 	}
 
-	var r *BitMaps
+	var r *Bitmap
 	if b.Len == maxl {
-		r, _ = NewBitMaps(maxl)
+		r, _ = NewBitmap(maxl)
 		copy(r.Bits, maxb.Bits)
 	} else {
-		r, _ = NewBitMaps(minl)
+		r, _ = NewBitmap(minl)
 	}
 
 	for i := 0; i < minc; i++ {
@@ -146,7 +146,7 @@ func (b *BitMaps) Axor(m *BitMaps) *BitMaps {
 }
 
 // To hex string
-func (b *BitMaps) ToString() string {
+func (b *Bitmap) ToString() string {
 	str := ""
 	l := len(b.Bits)
 	for i, v := range b.Bits {
@@ -168,7 +168,7 @@ func (b *BitMaps) ToString() string {
 }
 
 // To binary string
-func (b *BitMaps) ToBinString() string {
+func (b *Bitmap) ToBinString() string {
 	// FIXME(Shaohe) Hard code 32.
 	bs32 := fmt.Sprintf("%032d", 0)
 	ts := ""
@@ -194,7 +194,7 @@ func (b *BitMaps) ToBinString() string {
 }
 
 // To binary strings
-func (b *BitMaps) ToBinStrings() []string {
+func (b *Bitmap) ToBinStrings() []string {
 	ss := []string{}
 	ts := strings.Replace(b.ToBinString(), ",", "", -1)
 	l := len(ts)
@@ -214,7 +214,7 @@ func (b *BitMaps) ToBinStrings() []string {
 }
 
 // Get MaxConnectiveBits
-func (b *BitMaps) MaxConnectiveBits() *BitMaps {
+func (b *Bitmap) MaxConnectiveBits() *Bitmap {
 	ss := b.ToBinStrings()
 	total_l := 0
 	max_i := 0
@@ -232,23 +232,23 @@ func (b *BitMaps) MaxConnectiveBits() *BitMaps {
 		total_l += l
 	}
 
-	// Generate the new BitMaps
-	var r *BitMaps
+	// Generate the new Bitmap
+	var r *Bitmap
 	scope := ""
 	if max_len == 0 {
-		r, _ = NewBitMaps(b.Len)
+		r, _ = NewBitmap(b.Len)
 		return r
 	} else if len(ss[max_i]) == 1 {
 		scope = fmt.Sprintf("%d", cur)
 	} else {
 		scope = fmt.Sprintf("%d-%d", cur, cur+len(ss[max_i])-1)
 	}
-	r, _ = NewBitMaps(b.Len, []string{scope})
+	r, _ = NewBitmap(b.Len, []string{scope})
 	return r
 }
 
-// get a connective bits for BitMaps by given ways, offset, and order
-func (b *BitMaps) GetConnectiveBits(ways, offset uint32, fromLow bool) *BitMaps {
+// get a connective bits for Bitmap by given ways, offset, and order
+func (b *Bitmap) GetConnectiveBits(ways, offset uint32, fromLow bool) *Bitmap {
 	ts := strings.Replace(b.ToBinString(), ",", "", -1)
 	var total uint32 = 0
 	var cur uint32 = 0
@@ -292,14 +292,14 @@ func (b *BitMaps) GetConnectiveBits(ways, offset uint32, fromLow bool) *BitMaps 
 		}
 	}
 	if total < ways {
-		r, _ := NewBitMaps(b.Len)
+		r, _ := NewBitmap(b.Len)
 		return r
 	}
-	r, _ := NewBitMaps(b.Len, []string{scope})
+	r, _ := NewBitmap(b.Len, []string{scope})
 	return r
 }
 
-func (b *BitMaps) IsEmpty() bool {
+func (b *Bitmap) IsEmpty() bool {
 	if len(b.Bits) == 0 {
 		return true
 	}
@@ -333,7 +333,7 @@ func SliceString2Int(s []string) ([]int, error) {
 	return si, nil
 }
 
-func genBitMaps(num int, platform ...int) []int {
+func genBitmap(num int, platform ...int) []int {
 	p := 32
 	if len(platform) > 0 {
 		p = platform[0]
@@ -417,7 +417,7 @@ func fillBitMap(bits int, scope string, platform ...int) (int, error) {
 
 //{"2-8,^3-4,^7,9", "56-87,^86"}
 func genBits(map_list []string, bit_len int) ([]int, error) {
-	bitmaps := genBitMaps(bit_len)
+	Bitmap := genBitmap(bit_len)
 	is_span := func(span string) bool {
 		return strings.Contains(span, "-")
 	}
@@ -490,11 +490,11 @@ func genBits(map_list []string, bit_len int) ([]int, error) {
 	m := ALL_DATAS.FindAllString(strings.Join(map_list, ","), -1)
 	si, err := SliceString2Int(m)
 	if err != nil {
-		return bitmaps, err
+		return Bitmap, err
 	}
 	sort.Ints(si)
 	if si[len(si)-1] >= bit_len {
-		return bitmaps, fmt.Errorf("The biggest index %d is not less than the bit map length %d",
+		return Bitmap, fmt.Errorf("The biggest index %d is not less than the bit map length %d",
 			si[len(si)-1], bit_len)
 	}
 
@@ -502,7 +502,7 @@ func genBits(map_list []string, bit_len int) ([]int, error) {
 		// FIXME, remove to before ALL_DATAS?
 		m := BITMAP_BAD_EXPRESSION.FindAllString(v, -1)
 		if len(m) > 0 {
-			return bitmaps, fmt.Errorf("wrong expression : %s", v)
+			return Bitmap, fmt.Errorf("wrong expression : %s", v)
 		}
 		scopes := strings.Split(v, ",")
 		for _, v := range scopes {
@@ -510,35 +510,35 @@ func genBits(map_list []string, bit_len int) ([]int, error) {
 			if is_span(v) {
 				spans, err := silit_span(v)
 				if err != nil {
-					return bitmaps, err
+					return Bitmap, err
 				}
 				for _, span := range spans {
 					span = strings.TrimSpace(span)
 					low, _, _ := span_phypen2int(strings.TrimLeft(span, "^"))
 					pos := locate(low)
-					bitmaps[pos], _ = fillBitMap(bitmaps[pos], span)
+					Bitmap[pos], _ = fillBitMap(Bitmap[pos], span)
 				}
 			} else {
 				i, err := strconv.Atoi(strings.TrimLeft(v, "^"))
 				if err != nil {
-					return bitmaps, err
+					return Bitmap, err
 				}
 				pos := locate(i)
-				bitmaps[pos], _ = fillBitMap(bitmaps[pos], v)
+				Bitmap[pos], _ = fillBitMap(Bitmap[pos], v)
 			}
 		}
 	}
-	return bitmaps, nil
+	return Bitmap, nil
 }
 
 //{"2-8,^3-4,^7,9", "56-87,^86"}
 func GenCpuResString(map_list []string, bit_len int) (string, error) {
-	bitmaps, err := genBits(map_list, bit_len)
+	Bitmap, err := genBits(map_list, bit_len)
 	str := ""
 	if err != nil {
 		return str, err
 	}
-	for i, v := range bitmaps {
+	for i, v := range Bitmap {
 		if i == 0 {
 			str = fmt.Sprintf("%x", v)
 		} else {
