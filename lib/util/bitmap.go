@@ -14,6 +14,13 @@ type BitMaps struct {
 	Bits []int
 }
 
+// We can add a wraper for NewBitMaps
+// such as:
+// func NewCPUBitMaps( value ...interface{}) (*BitMaps, error) {
+//     cpu_numbers := 88
+//     return NewBitMaps(cpu_numbers, value)
+// }
+// We can also consider to remove the "l int" parameter.
 func NewBitMaps(l int, value ...interface{}) (*BitMaps, error) {
 	b := new(BitMaps)
 	b.Len = l
@@ -22,6 +29,10 @@ func NewBitMaps(l int, value ...interface{}) (*BitMaps, error) {
 		switch v := val.(type) {
 		case []string:
 			bits, err := genBits(v, l)
+			b.Bits = bits
+			return b, err
+		case string:
+			bits, err := genBitsFromHexString(v)
 			b.Bits = bits
 			return b, err
 		default:
@@ -561,6 +572,15 @@ func string2data(s string) ([]uint, error) {
 	}
 }
 
+// FIXME(Shaohe) unify []int and []uint.
+func genBitsFromHexString(s string) ([]int, error) {
+	d, e := string2data(s)
+	sd := (*(*[]int)(Pointer(&d)))[:]
+	return sd, e
+
+}
+
+// FIXME(Shaohe) use bitmap to check Empty.
 func IsEmptyBitMap(s string) bool {
 	hex, err := string2data(s)
 

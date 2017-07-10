@@ -17,6 +17,17 @@ func TestNewBitMapsUnion(t *testing.T) {
 	}
 }
 
+func TestNewBitMaps(t *testing.T) {
+	b, _ := NewBitMaps(96, "3df00cfff00ffafff")
+	wants := []int{0xffafff, 0xdf00cfff, 0x3}
+	for i, v := range wants {
+		if v != b.Bits[i] {
+			t.Errorf("The bitmap of index %d should be: 0x%x, but it is: 0x%x",
+				i, v, b.Bits[i])
+		}
+	}
+}
+
 func TestNewBitMapsIntersection(t *testing.T) {
 	minlen := 64
 	b, _ := NewBitMaps(88, []string{"0-7,9-12,32-50,85-87"})
