@@ -273,14 +273,14 @@ func TestString2data(t *testing.T) {
 func TestIsEmptyBitMap(t *testing.T) {
 
 	cpus := "000000,00000000,00000000"
-	empty := IsEmptyBitMap(cpus)
-	if !empty {
+	b, _ := NewBitMaps(88, cpus)
+	if !b.IsEmpty() {
 		t.Errorf("Parser error, the %s element is empty bit map\n", cpus)
 	}
 
 	cpus = "000000,00000000,00000001"
-	empty = IsEmptyBitMap(cpus)
-	if empty {
+	b, _ = NewBitMaps(88, cpus)
+	if b.IsEmpty() {
 		t.Errorf("Parser error, the %s element is not empty bit map\n", cpus)
 	}
 }

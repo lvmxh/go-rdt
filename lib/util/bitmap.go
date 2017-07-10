@@ -299,7 +299,21 @@ func (b *BitMaps) GetConnectiveBits(ways, offset uint32, fromLow bool) *BitMaps 
 	return r
 }
 
-var EmptyMapHex = []uint{0x0, 0x0, 0x0}
+func (b *BitMaps) IsEmpty() bool {
+	if len(b.Bits) == 0 {
+		return true
+	}
+	r := b.Bits[0]
+	for i, v := range b.Bits {
+		if i > 0 {
+			r = r | v
+		}
+	}
+	if r == 0 {
+		return true
+	}
+	return false
+}
 
 var BITMAP_BAD_EXPRESSION = regexp.MustCompile(`([^\^\d-,]+)|([^\d]+-.*(,|$))|` +
 	`([^,]*-[^\d]+)|(\^[^\d]+)|((\,\s)?\^$)`)
@@ -582,20 +596,4 @@ func genBitsFromHexString(s string) ([]int, error) {
 	sd := (*(*[]int)(Pointer(&d)))[:]
 	return sd, e
 
-}
-
-// FIXME(Shaohe) use bitmap to check Empty.
-func IsEmptyBitMap(s string) bool {
-	hex, err := string2data(s)
-
-	if err != nil {
-		return false
-	}
-
-	for i, v := range hex {
-		if v != EmptyMapHex[i] {
-			return false
-		}
-	}
-	return true
 }
