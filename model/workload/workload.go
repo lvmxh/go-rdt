@@ -58,7 +58,7 @@ func (w *RDTWorkLoad) Validate() error {
 	ps := proc.ListProcesses()
 	for _, task := range w.TaskIDs {
 		if _, ok := ps[task]; !ok {
-			return fmt.Errorf("The workload: %s does not exit", task)
+			return fmt.Errorf("The task: %s does not exist", task)
 		}
 	}
 	// user don't need to provide group name anymore, if we configured
@@ -74,7 +74,7 @@ func (w *RDTWorkLoad) Validate() error {
 
 func (w *RDTWorkLoad) Enforce() error {
 	if err := w.Validate(); err != nil {
-		log.Errorf("Failed to validate workload %s, error %s", w.ID, err)
+		log.Errorf("Failed to validate workload %s, error: %s", w.ID, err)
 		w.Status = Invalid
 		return err
 	}
