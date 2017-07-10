@@ -431,3 +431,30 @@ func TestBitmapGetConnectiveBitsEmpty(t *testing.T) {
 	}
 
 }
+
+func TestBitmapMaximum(t *testing.T) {
+	mask1 := ""
+	bm1, _ := NewBitmap(mask1)
+	if bm1.Maximum() != 0 {
+		t.Errorf("The maximum bit of empty Bitmap must be 0")
+	}
+
+	mask1 = "101"
+	bm1, _ = NewBitmap(mask1)
+	if bm1.Maximum() != 9 {
+		t.Errorf("The maximum bit of 101 must be 9")
+	}
+
+	mask1 = "1fff,f0000001"
+	bm1, _ = NewBitmap(mask1)
+	if bm1.Maximum() != 45 {
+		t.Errorf("The maximum bit of 1fff,f0000001 must be 45")
+	}
+
+	mask1 = "30,00000000,f0000001"
+	bm1, _ = NewBitmap(mask1)
+	if bm1.Maximum() != 70 {
+		t.Errorf("The maximum bit of 30,00000000,f0000001 must be 70")
+	}
+
+}

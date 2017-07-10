@@ -363,6 +363,26 @@ func (b *Bitmap) IsEmpty() bool {
 	return false
 }
 
+func (b *Bitmap) Maximum() uint32 {
+	l := len(b.Bits)
+
+	if len(b.Bits) == 0 {
+		return 0
+	}
+
+	// Find the highest bits
+	val := b.Bits[l-1]
+	max := 0
+	// Bad performance, refactor if possible.
+	for val > 0 {
+		val = val >> 1
+		max = max + 1
+	}
+
+	// each bit indicate 8 hex.
+	return uint32(max + 8*4*(l-1))
+}
+
 var BITMAP_BAD_EXPRESSION = regexp.MustCompile(`([^\^\d-,]+)|([^\d]+-.*(,|$))|` +
 	`([^,]*-[^\d]+)|(\^[^\d]+)|((\,\s)?\^$)`)
 
