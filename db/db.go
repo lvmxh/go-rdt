@@ -55,8 +55,10 @@ func validateTasks(w workload.RDTWorkLoad, ws []workload.RDTWorkLoad) error {
 	bmsum, _ := util.NewBitmap("")
 
 	for _, c := range ws {
-		tmpbm, _ := util.NewBitmap(c.CoreIDs)
-		bmsum = bmsum.Or(tmpbm)
+		if len(c.CoreIDs) > 0 {
+			tmpbm, _ := util.NewBitmap(c.CoreIDs)
+			bmsum = bmsum.Or(tmpbm)
+		}
 	}
 
 	bminter := bm.And(bmsum)
