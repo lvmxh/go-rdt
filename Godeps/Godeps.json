@@ -2,9 +2,6 @@
 	"ImportPath": "openstackcore-rdtagent",
 	"GoVersion": "go1.8",
 	"GodepVersion": "v79",
-	"Packages": [
-		"."
-	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/boltdb/bolt",
