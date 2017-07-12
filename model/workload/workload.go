@@ -399,3 +399,19 @@ func calculateOffset(r map[string]*resctrl.ResAssociation, sub_grp []string, cat
 		return bm0.Maximum()
 	}
 }
+
+func getCacheIDs(cpubitmap string, cacheinfos cache.CacheInfos, cpunum int) []uint32 {
+	var CacheIDs []uint32
+
+	// Okay, NewBitmap only support string list if we using computer style
+	cpubm, _ := libutil.NewBitmap(cpunum, strings.Split(cpubitmap, "\n"))
+
+	for _, c := range cacheinfos.Caches {
+		// Okay, NewBitmap only support string list if we using computer style
+		bm, _ := libutil.NewBitmap(cpunum, strings.Split(c.ShareCpuList, "\n"))
+		if !cpubm.And(bm).IsEmpty() {
+			CacheIDs = append(CacheIDs, c.ID)
+		}
+	}
+	return CacheIDs
+}

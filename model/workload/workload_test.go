@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"openstackcore-rdtagent/lib/resctrl"
+	"openstackcore-rdtagent/model/cache"
 )
 
 func testGetGroupNames(w *RDTWorkLoad, m map[string]*resctrl.ResAssociation, b, n string, s []string, t *testing.T) {
@@ -90,4 +91,38 @@ func TestCalculateOffset(t *testing.T) {
 	if (calculateOffset(r, sub_grp, "L3", 0)) != 5 {
 		t.Errorf("wrong offset")
 	}
+}
+
+func TestGetCacheIDs(t *testing.T) {
+	cacheinfos := cache.CacheInfos{Num: 2,
+		Caches: map[uint32]cache.CacheInfo{
+			0: cache.CacheInfo{ID: 0, ShareCpuList: "0-3"},
+			1: cache.CacheInfo{ID: 1, ShareCpuList: "4-7"},
+		}}
+
+	cpubitmap := "0-1"
+
+	cache_ids := getCacheIDs(cpubitmap, cacheinfos, 8)
+	if len(cache_ids) != 1 && cache_ids[0] != 0 {
+		t.Errorf("cache_ids should be [0], but we get %v", cache_ids)
+	}
+
+	cpubitmap = "0-4"
+	cache_ids = getCacheIDs(cpubitmap, cacheinfos, 8)
+	if len(cache_ids) != 2 {
+		t.Errorf("cache_ids should be [0, 1], but we get %v", cache_ids)
+	}
+
+	cpubitmap = "4"
+	cache_ids = getCacheIDs(cpubitmap, cacheinfos, 8)
+	if len(cache_ids) != 1 && cache_ids[0] != 1 {
+		t.Errorf("cache_ids should be [1], but we get %v", cache_ids)
+	}
+
+	cpubitmap = "10"
+	cache_ids = getCacheIDs(cpubitmap, cacheinfos, 8)
+	if len(cache_ids) != 0 {
+		t.Errorf("cache_ids should be [], but we get %v", cache_ids)
+	}
+
 }
