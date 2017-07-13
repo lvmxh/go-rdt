@@ -70,7 +70,7 @@ func getSignature() uint32 {
 			f := family[1:2]
 			exm := model[0:1]
 			m := model[1:2]
-			sig, err := strconv.Atoi(exf + exm + "0" + f + m + "0")
+			sig, err := strconv.ParseUint(exf+exm+"0"+f+m+"0", 16, 32)
 			if err != nil {
 				return 0
 			}
