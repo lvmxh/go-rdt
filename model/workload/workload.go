@@ -49,6 +49,27 @@ type RDTWorkLoad struct {
 	CosName string
 }
 
+// build this struct when create Resasscciation
+type EnforceRequest struct {
+	// all resassociations on the host
+	Resall map[string]*resctrl.ResAssociation
+	// on which group we allocate cache
+	BaseGrp string
+	// new group name of the workload
+	NewGrp string
+	// sub group list in the base groups
+	// this will be used to calculate offset
+	SubGrps []string
+	// max cache ways
+	MaxWays uint32
+	// min cache ways, not used yet
+	MinWays uint32
+	// enforce on which cache ids
+	Cache_IDs []uint32
+	// consume from base group or not
+	Consume bool
+}
+
 func (w *RDTWorkLoad) Validate() error {
 	if len(w.TaskIDs) <= 0 && len(w.CoreIDs) <= 0 {
 		return fmt.Errorf("No task or core id specified")
@@ -117,7 +138,17 @@ func (w *RDTWorkLoad) Enforce() error {
 		return err
 	}
 
-	targetResAss, err := createOrGetResAss(resaall, base_grp, new_grp, sub_grp, uint32(ways))
+	cacheinfo := &cache.CacheInfos{}
+	cacheinfo.GetByLevel(libcache.GetLLC())
+
+	er := &EnforceRequest{Resall: resaall,
+		BaseGrp:   base_grp,
+		NewGrp:    new_grp,
+		SubGrps:   sub_grp,
+		MaxWays:   uint32(ways),
+		Cache_IDs: getCacheIDs(cpubitmap, cacheinfo, cpunum)}
+
+	targetResAss, err := createOrGetResAss(er)
 	if err != nil {
 		log.Errorf("Error while try to create resource group for workload %s", w.ID)
 		return err
@@ -256,64 +287,68 @@ func getGroupNames(w *RDTWorkLoad, m map[string]*resctrl.ResAssociation) (b, n s
 }
 
 // return a Resassociation with proper mask set
-func createOrGetResAss(r map[string]*resctrl.ResAssociation, base_grp, new_grp string, sub_grp []string, ways uint32) (t resctrl.ResAssociation, err error) {
-	if base_grp == new_grp {
-		return *r[base_grp], nil
+func createOrGetResAss(er *EnforceRequest) (t resctrl.ResAssociation, err error) {
+	if er.BaseGrp == er.NewGrp {
+		return *er.Resall[er.BaseGrp], nil
 	}
-	for _, sg := range sub_grp {
-		if base_grp+"-"+new_grp == sg {
+	for _, sg := range er.SubGrps {
+		if er.BaseGrp+"-"+er.NewGrp == sg {
 			// new_grp has existed
-			return *r[sg], nil
+			return *er.Resall[sg], nil
 		}
 	}
 	// consider move consume checking to createNewResassociation
-	if base_grp == "." {
+	if er.BaseGrp == "." {
 		// sub_grp should be empty if the base group is "."
 		// or that should be an internal error.
-		return createNewResassociation(r, ".", ways, true, []string{})
+		er.Consume = true
+		er.SubGrps = []string{}
+	} else {
+		er.Consume = false
 	}
-	return createNewResassociation(r, base_grp, ways, false, sub_grp)
+	return createNewResassociation(er)
 }
 
 // return a new Resassociation based on the given resctrl.ResAssociation
-func createNewResassociation(r map[string]*resctrl.ResAssociation, base string, ways uint32, consume bool, sub_grp []string) (t resctrl.ResAssociation, err error) {
-	cacheinfo := &cache.CacheInfos{}
-	cacheinfo.GetByLevel(libcache.GetLLC())
-
-	baseRes := r[base]
-	if base == "." {
+func createNewResassociation(er *EnforceRequest) (t resctrl.ResAssociation, err error) {
+	baseRes := er.Resall[er.BaseGrp]
+	if er.BaseGrp == "." {
 		// if infra group are created, should be added it to ignore group.
-		baseRes = calculateDefaultGroup(r, []string{"."}, false)
-		r["."] = baseRes
+		baseRes = calculateDefaultGroup(er.Resall, []string{"."}, false)
+		er.Resall["."] = baseRes
 	}
 
+	rdtinfo := resctrl.GetRdtCosInfo()
 	// loop for each level 3 cache to construct new resassociation
 	newResAss := resctrl.ResAssociation{}
 	newResAss.Schemata = make(map[string][]resctrl.CacheCos)
 
 	for cattype, res := range baseRes.Schemata {
 		// construct ResAssociation for each cache id
-		for i, _ := range cacheinfo.Caches {
-			// compute sub_grp's offset for the i(th) 'cattype'
-			offset := calculateOffset(r, sub_grp, cattype, i)
+		catinfo := rdtinfo[strings.ToLower(cattype)]
+		for i, _ := range res {
+			var newcos resctrl.CacheCos
+			// fill the new mask with cbm_mask
+			if !inCacheList(uint32(i), er.Cache_IDs) {
+				newcos = resctrl.CacheCos{Id: uint8(i), Mask: catinfo.CbmMask}
+			} else {
+				// compute sub_grp's offset for the i(th) 'cattype'
+				offset := calculateOffset(er.Resall, er.SubGrps, cattype, uint32(i))
+				bmbase, _ := libutil.NewBitmap(res[i].Mask)
+				newbm := bmbase.GetConnectiveBits(er.MaxWays, offset, true)
 
-			// len is not so important, we don't want to query cbm_mask every time
-			// we new a bitmap, this is too much time costing, later we need to load
-			// Len(cbm_mask) as a global variable
-			bmbase, _ := libutil.NewBitmap(res[i].Mask)
-			newbm := bmbase.GetConnectiveBits(ways, offset, true)
+				if newbm.IsEmpty() {
+					return newResAss, fmt.Errorf("Not enough cache can be allocated")
+				}
 
-			if newbm.IsEmpty() {
-				return newResAss, fmt.Errorf("Not enough cache can be allocated")
+				if er.Consume {
+					bmbase = bmbase.Xor(newbm)
+				}
+
+				tmpbm := bmbase.MaxConnectiveBits()
+				res[i].Mask = tmpbm.ToString()
+				newcos = resctrl.CacheCos{Id: uint8(i), Mask: newbm.ToString()}
 			}
-
-			if consume {
-				bmbase = bmbase.Xor(newbm)
-			}
-
-			tmpbm := bmbase.MaxConnectiveBits()
-			res[i].Mask = tmpbm.ToString()
-			newcos := resctrl.CacheCos{Id: uint8(i), Mask: newbm.ToString()}
 
 			newResAss.Schemata[cattype] = append(newResAss.Schemata[cattype], newcos)
 			log.Debugf("Newly created Mask for Cache %d is %s", i, newcos.Mask)
@@ -347,15 +382,13 @@ func calculateDefaultGroup(r map[string]*resctrl.ResAssociation, ignore_grp []st
 		catinfo := rdtinfo[strings.ToLower(t)]
 		newRes.Schemata[t] = make([]resctrl.CacheCos, 0, 10)
 		for id, v := range schemata {
-			// len is not so important, we don't want to query cbm_mask every time
-			// we new a bitmap, this is too much time costing, later we need to load
-			// Len(cbm_mask) as a global variable
 			bm, _ := libutil.NewBitmap(catinfo.CbmMask)
 			// loop for all groups
 			for _, g := range r {
-				// len is not so important, we don't want to query cbm_mask every time
-				// we new a bitmap, this is too much time costing, later we need to load
-				// Len(cbm_mask) as a global variable
+				// ignore whole cbm
+				if g.Schemata[t][v.Id].Mask == catinfo.CbmMask {
+					continue
+				}
 				gbm, _ := libutil.NewBitmap(g.Schemata[t][v.Id].Mask)
 				bm = bm.Xor(gbm)
 			}
@@ -412,4 +445,22 @@ func getCacheIDs(cpubitmap string, cacheinfos *cache.CacheInfos, cpunum int) []u
 		}
 	}
 	return CacheIDs
+}
+
+func inCacheList(cache uint32, cache_list []uint32) bool {
+	// TODO: if this case, workload has taskids.
+	// Later we need to have abilitity to discover if has taskset
+	// to pin this taskids on a cpuset or not, for now we allocate
+	// cache on all cache.
+	// FIXME: this shouldn't happen here actually
+	if len(cache_list) == 0 {
+		return true
+	}
+
+	for _, c := range cache_list {
+		if cache == c {
+			return true
+		}
+	}
+	return false
 }

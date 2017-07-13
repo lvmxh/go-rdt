@@ -24,6 +24,8 @@ var (
 	// The absolute path to the root of the Intel RDT "resource control" filesystem
 	intelRdtRootLock sync.Mutex
 	intelRdtRoot     string
+	// global immutable variable
+	RdtInfo *map[string]*RdtCosInfo
 )
 
 type NotFoundError struct {
@@ -313,11 +315,15 @@ func ParserRdtCosInfo(basepath string, ignore []string, mres map[string]*RdtCosI
 // https://gist.github.com/ericchiang/ce0fdcac5659d0a80b38
 // now we can use lib/flock/flock.go
 func GetRdtCosInfo() map[string]*RdtCosInfo {
+	if RdtInfo != nil {
+		return *RdtInfo
+	}
 	ignore := []string{"info"} // ignore the toppath
 	info := make(map[string]*RdtCosInfo)
 	basepath := SysResctrl + "/info"
 	filepath.Walk(basepath, ParserRdtCosInfo(basepath, ignore, info))
-	return info
+	RdtInfo = &info
+	return *RdtInfo
 }
 
 // Return the mount point path of Intel RDT "resource control" filesysem
