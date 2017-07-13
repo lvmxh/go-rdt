@@ -2,7 +2,6 @@ package cpu
 
 // ignore stepping
 var m = map[uint32]string{
-	0x80650: "Skylake",
 	0x406e0: "Skylake",
 	0x506e0: "Skylake",
 	0x50650: "Skylake",

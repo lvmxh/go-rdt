@@ -30,9 +30,10 @@ func HostCpuNum() (int, error) {
 }
 
 // ignore stepping and processor type.
+// NOTE, Guess all cpus in one hose are same microarch
 func getSignature() uint32 {
 	// family, model string
-	var family, model string
+	var family, model int
 
 	f, err := os.Open(CpuInfoPath)
 	if err != nil {
@@ -50,30 +51,18 @@ func getSignature() uint32 {
 		}
 		if strings.HasPrefix(s, "cpu family") {
 			sl := strings.Split(s, ":")
-			family = strings.TrimSpace(sl[1])
+			family, _ = strconv.Atoi(strings.TrimSpace(sl[1]))
 			find++
 		} else if strings.HasPrefix(s, "model") {
 			sl := strings.Split(s, ":")
 			if strings.TrimSpace(sl[0]) == "model" {
-				model = strings.TrimSpace(sl[1])
+				model, _ = strconv.Atoi(strings.TrimSpace(sl[1]))
 				find++
 			}
 		}
 		if find >= 2 {
-			if len(model) == 1 {
-				model = "0" + model
-			}
-			if len(family) == 1 {
-				family = "0" + family
-			}
-			exf := family[0:1]
-			f := family[1:2]
-			exm := model[0:1]
-			m := model[1:2]
-			sig, err := strconv.ParseUint(exf+exm+"0"+f+m+"0", 16, 32)
-			if err != nil {
-				return 0
-			}
+			sig := (family>>4)<<20 + (family&0xf)<<8
+			sig |= (model>>4)<<16 + (model&0xf)<<4
 			return uint32(sig)
 		}
 	}

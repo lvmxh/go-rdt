@@ -13,13 +13,13 @@ func TestGetSignature(t *testing.T) {
 	}
 }
 func TestGetMicroArch(t *testing.T) {
-	m := GetMicroArch(0x80650)
+	m := GetMicroArch(0x50650)
 	fmt.Println("CPU MicroArch is", m)
 	if m != "Skylake" {
 		t.Errorf("CPU MicroArch should be %s.\n", "Skylake")
 	}
 
-	m = GetMicroArch(0x80659)
+	m = GetMicroArch(0x50659)
 	fmt.Println("CPU MicroArch is", m)
 	if m != "Skylake" {
 		t.Errorf("CPU MicroArch should be %s.\n", "Skylake")
