@@ -177,6 +177,13 @@ func GetResAssociation() map[string]*ResAssociation {
 	return ress
 }
 
+// FIXME(Shaohe) Commit should be a transaction.
+// So we use taskFlow to guarantee the consistency.
+// Also we need a coarse granularity lock for IPC. We already has it.
+// Also we need a file lock for consistency among different processes. In plan.
+// After some test on taskFlow, we can remove these logic code and use taskFlow.
+// The taskFlow need a snapshot of all ResAssociation for the transaction.
+// It can be gotten by GetResAssociation.
 func (r ResAssociation) Commit(group string) error {
 	if !isIntelRdtMounted() {
 		return fmt.Errorf("Can't apply this association, for resctrl is not mounted!")

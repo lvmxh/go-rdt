@@ -11,7 +11,7 @@ import (
 type ResctrlTask struct {
 	TaskName string
 	*ResAssociation
-	RessSnapshot []ResAssociation
+	RessSnapshot map[string]*ResAssociation
 	Group        string
 	Path         string
 	Revert       bool // whether need to Revert after task faild
@@ -122,7 +122,7 @@ func (t ResctrlSchemataTask) Rollback() error {
 	return nil
 }
 
-func TaskFlow(group string, r *ResAssociation, rs []ResAssociation) error {
+func taskFlow(group string, r *ResAssociation, rs map[string]*ResAssociation) error {
 	ts := []task.Task{}
 	path := SysResctrl
 
