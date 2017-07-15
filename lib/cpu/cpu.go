@@ -31,7 +31,7 @@ func HostCpuNum() (int, error) {
 
 // ignore stepping and processor type.
 // NOTE, Guess all cpus in one hose are same microarch
-func getSignature() uint32 {
+func GetSignature() uint32 {
 	// family, model string
 	var family, model int
 

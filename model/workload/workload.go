@@ -131,7 +131,12 @@ func (w *RDTWorkLoad) Enforce() error {
 
 	log.Debugf("base group %s, new group %s, sub group %v", base_grp, new_grp, sub_grp)
 
-	p, err := policy.GetPolicy("broadwell", w.Policy)
+	pf := cpu.GetMicroArch(cpu.GetSignature())
+	if pf == "" {
+		return fmt.Errorf("Unknow platform, please update the cpu_map.toml conf file.")
+	}
+
+	p, err := policy.GetPolicy(strings.ToLower(pf), w.Policy)
 	if err != nil {
 		return err
 	}

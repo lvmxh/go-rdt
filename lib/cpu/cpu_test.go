@@ -6,7 +6,7 @@ import (
 )
 
 func TestGetSignature(t *testing.T) {
-	sig := getSignature()
+	sig := GetSignature()
 	fmt.Printf("CPU signature is 0x%x.\n", sig)
 	if sig == 0 {
 		t.Errorf("CPU signature should be >0.\n")
