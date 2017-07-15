@@ -51,9 +51,9 @@ func (t ResctrlCPUsTask) Run() error {
 	// only commit a user deinfed cpus
 	if t.CPUs != "" {
 		return writeFile(t.Path, "cpus", t.CPUs)
-	} else {
-		return fmt.Errorf("Need to specify CPUs explicitly")
 	}
+	// NOTE: CPUS is "" means no need to change the cpus file.
+	return nil
 }
 
 func (t ResctrlCPUsTask) Rollback() error {

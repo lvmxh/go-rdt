@@ -189,61 +189,7 @@ func (r ResAssociation) Commit(group string) error {
 		return fmt.Errorf("Can't apply this association, for resctrl is not mounted!")
 	}
 
-	path := SysResctrl
-
-	if strings.ToLower(group) != "default" && group != "." {
-		path = filepath.Join(SysResctrl, group)
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			if err := os.MkdirAll(path, 0755); err != nil {
-				return err
-			}
-		}
-
-		// Only write to cpus if admin specify cpu bit map
-		// only commit a user deinfed user defined cpus
-		if r.CPUs != "" {
-			if err := writeFile(path, "cpus", r.CPUs); err != nil {
-				return err
-			}
-		}
-		// NOTE: CPUS is "" means no need to change the cpus file.
-	}
-	// only commit a user deinfed group's task to sys fs
-	if group != "." && len(r.Tasks) > 0 {
-		// write one task one time, or write will fail
-		for _, t := range r.Tasks {
-			err := writeFile(path, "tasks", t)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	if len(r.Schemata) > 0 {
-		schemata := make([]string, 0, 10)
-		for k, v := range r.Schemata {
-			str := make([]string, 0, 10)
-			// resctrl require we have strict cache id order
-			for cacheid := 0; cacheid < len(v); cacheid++ {
-				for _, cos := range v {
-					if uint8(cacheid) == cos.Id {
-						str = append(str, fmt.Sprintf("%d=%s", cos.Id, cos.Mask))
-						break
-					}
-				}
-			}
-			schemata = append(schemata, strings.Join([]string{k, strings.Join(str, ";")}, ":"))
-		}
-		data := strings.Join(schemata, "\n")
-		err := writeFile(path, "schemata", data)
-		if err != nil {
-			path := filepath.Join(SysResctrl, group)
-			os.Remove(path)
-		}
-		return err
-	}
-
-	return nil
+	return taskFlow(group, &r, GetResAssociation())
 }
 
 // FIXME need to catch error
