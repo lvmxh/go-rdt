@@ -205,9 +205,8 @@ func (r ResAssociation) Commit(group string) error {
 			if err := writeFile(path, "cpus", r.CPUs); err != nil {
 				return err
 			}
-		} else {
-			return fmt.Errorf("Need to specify CPUs explicitly")
 		}
+		// NOTE: CPUS is "" means no need to change the cpus file.
 	}
 	// only commit a user deinfed group's task to sys fs
 	if group != "." && len(r.Tasks) > 0 {
