@@ -301,11 +301,11 @@ func (b *Bitmap) GetConnectiveBits(ways, offset uint32, fromLow bool) *Bitmap {
 	}
 
 	if fromLow {
-		for i := uint32(b.Len) - 1 - offset; i >= 0; i-- {
-			if ts[i] == "1"[0] {
+		for i := b.Len - 1 - int(offset); i >= 0; i-- {
+			if ts[i] == '1' {
 				total++
 				if total >= ways {
-					cur = i
+					cur = uint32(i)
 					break
 				}
 			} else {
@@ -315,7 +315,7 @@ func (b *Bitmap) GetConnectiveBits(ways, offset uint32, fromLow bool) *Bitmap {
 	} else {
 		// FIXME(Shaohe)  duplicated code
 		for i := offset; i < uint32(b.Len); i++ {
-			if ts[i] == "1"[0] {
+			if ts[i] == '1' {
 				total++
 				if total >= ways {
 					cur = i
