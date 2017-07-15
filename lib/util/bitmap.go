@@ -554,6 +554,10 @@ func genBits(map_list []string, bit_len int) ([]int, error) {
 		return spans, err
 	}
 
+	if len(map_list) == 0 {
+		return Bitmap, nil
+	}
+
 	m := ALL_DATAS.FindAllString(strings.Join(map_list, ","), -1)
 	si, err := SliceString2Int(m)
 	if err != nil {

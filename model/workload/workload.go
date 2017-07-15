@@ -107,9 +107,12 @@ func (w *RDTWorkLoad) Enforce() error {
 		return err
 	}
 
-	cpubitmap, err := libutil.GenCpuResString(w.CoreIDs, cpunum)
-	if err != nil {
-		return err
+	cpubitstr := ""
+	if len(w.CoreIDs) >= 0 {
+		cpubitstr, err = libutil.GenCpuResString(w.CoreIDs, cpunum)
+		if err != nil {
+			return err
+		}
 	}
 
 	// status will be updated to successful if no errors
@@ -146,7 +149,7 @@ func (w *RDTWorkLoad) Enforce() error {
 		NewGrp:    new_grp,
 		SubGrps:   sub_grp,
 		MaxWays:   uint32(ways),
-		Cache_IDs: getCacheIDs(cpubitmap, cacheinfo, cpunum)}
+		Cache_IDs: getCacheIDs(cpubitstr, cacheinfo, cpunum)}
 
 	targetResAss, err := createOrGetResAss(er)
 	if err != nil {
@@ -155,7 +158,7 @@ func (w *RDTWorkLoad) Enforce() error {
 	}
 
 	targetResAss.Tasks = append(targetResAss.Tasks, w.TaskIDs...)
-	targetResAss.CPUs = cpubitmap
+	targetResAss.CPUs = cpubitstr
 
 	if base_grp != new_grp && base_grp != "." {
 		new_grp = base_grp + "-" + new_grp
