@@ -101,14 +101,15 @@ func (w *RDTWorkLoad) Enforce() error {
 	}
 
 	w.Status = None
-	// FIXME cpunum can be global
-	cpunum, err := cpu.HostCpuNum()
-	if err != nil {
-		return err
+	// FIXME need a wrap for CPU bitmap.
+	cpunum := cpu.HostCpuNum()
+	if cpunum == 0 {
+		return fmt.Errorf("Unable to get Total CPU numbers on Host")
 	}
 
 	cpubitstr := ""
 	if len(w.CoreIDs) >= 0 {
+		var err error
 		cpubitstr, err = libutil.GenCpuResString(w.CoreIDs, cpunum)
 		if err != nil {
 			return err
@@ -426,9 +427,15 @@ func calculateDefaultGroup(r map[string]*resctrl.ResAssociation, ignore_grp []st
 // calculateOffset(r, sub_grp, L3, 0) = 4
 // calculateOffset(r, sub_grp, L3, 1) = 1
 func calculateOffset(r map[string]*resctrl.ResAssociation, sub_grp []string, cattype string, pos uint32) uint32 {
-	// len is not so important, we don't want to query cbm_mask every time
-	// we new a bitmap, this is too much time costing, later we need to load
-	// Len(cbm_mask) as a global variable
+	// len is used to avoid error prone. Though it is not so much time costing,
+	// we really do not need to query it every time. It can be a global variable.
+	// But it had better not to be sync.Once. It had better to be a singleton
+	// that depens on who enable resctrl.
+	// And we need a wrap for the NewBitmap with len. such as:
+	// func NewCosBitmap(v string) {
+	//     len := GetLenofCosOnce()
+	//     return NewBitmap(len, v)
+	// }
 	bm0, _ := libutil.NewBitmap("")
 	for _, g := range sub_grp {
 		b, _ := libutil.NewBitmap(r[g].Schemata[cattype][pos].Mask)

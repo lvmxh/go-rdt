@@ -2,11 +2,13 @@ package cpu
 
 import (
 	"bufio"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 const (
@@ -14,19 +16,26 @@ const (
 	CpuInfoPath = "/proc/cpuinfo"
 )
 
+var cpunOnce sync.Once
+
+var cpuNumber int = 0
+
 // REF: https://www.kernel.org/doc/Documentation/cputopology.txt
 // another way is call sysconf via cgo, like libpqos
-func HostCpuNum() (int, error) {
-
-	path := filepath.Join(SysCpu, "possible")
-	data, _ := ioutil.ReadFile(path)
-	strs := strings.TrimSpace(string(data))
-	num, err := strconv.Atoi(strings.SplitN(strs, "-", 2)[1])
-	if err != nil {
-		return 0, err
-	}
-	num++
-	return num, err
+func HostCpuNum() int {
+	cpumapOnce.Do(func() {
+		path := filepath.Join(SysCpu, "possible")
+		data, _ := ioutil.ReadFile(path)
+		strs := strings.TrimSpace(string(data))
+		num, err := strconv.Atoi(strings.SplitN(strs, "-", 2)[1])
+		if err != nil {
+			log.Fatalf("Failed to get cup numbers on host: %v", err)
+			return
+		}
+		num++
+		cpuNumber = num
+	})
+	return cpuNumber
 }
 
 // ignore stepping and processor type.
