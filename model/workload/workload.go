@@ -101,19 +101,14 @@ func (w *RDTWorkLoad) Enforce() error {
 	}
 
 	w.Status = None
-	// FIXME need a wrap for CPU bitmap.
-	cpunum := cpu.HostCpuNum()
-	if cpunum == 0 {
-		return fmt.Errorf("Unable to get Total CPU numbers on Host")
-	}
 
 	cpubitstr := ""
 	if len(w.CoreIDs) >= 0 {
-		var err error
-		cpubitstr, err = libutil.GenCpuResString(w.CoreIDs, cpunum)
+		bm, err := CpuBitmaps(w.CoreIDs)
 		if err != nil {
 			return err
 		}
+		cpubitstr = bm.ToString()
 	}
 
 	// status will be updated to successful if no errors
@@ -149,6 +144,11 @@ func (w *RDTWorkLoad) Enforce() error {
 
 	cacheinfo := &cache.CacheInfos{}
 	cacheinfo.GetByLevel(libcache.GetLLC())
+
+	cpunum := cpu.HostCpuNum()
+	if cpunum == 0 {
+		return fmt.Errorf("Unable to get Total CPU numbers on Host")
+	}
 
 	er := &EnforceRequest{Resall: resaall,
 		BaseGrp:   base_grp,
