@@ -17,8 +17,10 @@ const (
 )
 
 var cpunOnce sync.Once
+var isolCPUsOnce sync.Once
 
 var cpuNumber int = 0
+var isolatedCPUs string = ""
 
 // REF: https://www.kernel.org/doc/Documentation/cputopology.txt
 // another way is call sysconf via cgo, like libpqos
@@ -76,4 +78,18 @@ func GetSignature() uint32 {
 		}
 	}
 	return 0
+}
+
+// Get isolated CPUs.
+// The result will be as follow:
+// 2-21,24-43,46-65,68-87
+// This result can generate a Bitmap
+func IsolatedCPUs() string {
+	isolCPUsOnce.Do(func() {
+		path := filepath.Join(SysCpu, "isolated")
+		data, _ := ioutil.ReadFile(path)
+		strs := strings.TrimSpace(string(data))
+		isolatedCPUs = strs
+	})
+	return isolatedCPUs
 }
