@@ -79,15 +79,19 @@ func (w *WorkLoadResource) WorkLoadNew(request *restful.Request, response *restf
 		return
 	}
 
-	err = w.Db.CreateWorkload(wl)
+	if err := wl.Validate(); err != nil {
+		response.WriteErrorString(http.StatusBadRequest,
+			"Failed to validate workload. Reason: "+err.Error())
+		return
+	}
 
+	err = w.Db.CreateWorkload(wl)
 	if err != nil {
 		response.WriteErrorString(http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	e := wl.Enforce()
-
 	if e != nil {
 		response.WriteErrorString(e.Code, e.Error())
 		// Some thing wrong in user's request parameters. Delete the DB.

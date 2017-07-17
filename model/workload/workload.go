@@ -96,13 +96,6 @@ func (w *RDTWorkLoad) Validate() error {
 }
 
 func (w *RDTWorkLoad) Enforce() *AppError {
-	if err := w.Validate(); err != nil {
-		log.Errorf("Failed to validate workload %s, error: %s", w.ID, err)
-		w.Status = Invalid
-		return NewAppError(http.StatusBadRequest,
-			"Failed to validate workload.", err)
-	}
-
 	w.Status = None
 
 	cpubitstr := ""
