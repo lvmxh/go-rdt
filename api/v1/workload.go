@@ -86,10 +86,14 @@ func (w *WorkLoadResource) WorkLoadNew(request *restful.Request, response *restf
 		return
 	}
 
-	err = wl.Enforce()
+	e := wl.Enforce()
 
-	if err != nil {
-		response.WriteErrorString(http.StatusInternalServerError, err.Error())
+	if e != nil {
+		response.WriteErrorString(e.Code, e.Error())
+		// Some thing wrong in user's request parameters. Delete the DB.
+		if e.Code == http.StatusBadRequest {
+			err = w.Db.DeleteWorkload(wl)
+		}
 		return
 	}
 

@@ -5,6 +5,7 @@ package workload
 import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -15,6 +16,7 @@ import (
 	"openstackcore-rdtagent/lib/resctrl"
 	libutil "openstackcore-rdtagent/lib/util"
 
+	. "openstackcore-rdtagent/api/error"
 	"openstackcore-rdtagent/model/cache"
 	"openstackcore-rdtagent/model/policy"
 	modelutil "openstackcore-rdtagent/model/util"
@@ -93,11 +95,12 @@ func (w *RDTWorkLoad) Validate() error {
 	return nil
 }
 
-func (w *RDTWorkLoad) Enforce() error {
+func (w *RDTWorkLoad) Enforce() *AppError {
 	if err := w.Validate(); err != nil {
 		log.Errorf("Failed to validate workload %s, error: %s", w.ID, err)
 		w.Status = Invalid
-		return err
+		return NewAppError(http.StatusBadRequest,
+			"Failed to validate workload.", err)
 	}
 
 	w.Status = None
@@ -106,7 +109,8 @@ func (w *RDTWorkLoad) Enforce() error {
 	if len(w.CoreIDs) >= 0 {
 		bm, err := CpuBitmaps(w.CoreIDs)
 		if err != nil {
-			return err
+			return NewAppError(http.StatusBadRequest,
+				"Failed to Pareser workload coreIDs.", err)
 		}
 		cpubitstr = bm.ToString()
 	}
@@ -122,24 +126,27 @@ func (w *RDTWorkLoad) Enforce() error {
 
 	if base_grp == "" {
 		// log group information
-		return fmt.Errorf("Faild to find a suitable group")
+		return AppErrorf(http.StatusBadRequest, "Faild to find a suitable group")
 	}
 
 	log.Debugf("base group %s, new group %s, sub group %v", base_grp, new_grp, sub_grp)
 
 	pf := cpu.GetMicroArch(cpu.GetSignature())
 	if pf == "" {
-		return fmt.Errorf("Unknow platform, please update the cpu_map.toml conf file.")
+		return AppErrorf(http.StatusInternalServerError,
+			"Unknow platform, please update the cpu_map.toml conf file.")
 	}
 
 	p, err := policy.GetPolicy(strings.ToLower(pf), w.Policy)
 	if err != nil {
-		return err
+		return NewAppError(http.StatusInternalServerError,
+			"Could not find the Polciy.", err)
 	}
 
 	ways, err := strconv.Atoi(p["MaxCache"])
 	if err != nil {
-		return err
+		return NewAppError(http.StatusInternalServerError,
+			"Error define MaxCache in Polciy.", err)
 	}
 
 	cacheinfo := &cache.CacheInfos{}
@@ -147,7 +154,8 @@ func (w *RDTWorkLoad) Enforce() error {
 
 	cpunum := cpu.HostCpuNum()
 	if cpunum == 0 {
-		return fmt.Errorf("Unable to get Total CPU numbers on Host")
+		return AppErrorf(http.StatusInternalServerError,
+			"Unable to get Total CPU numbers on Host")
 	}
 
 	er := &EnforceRequest{Resall: resaall,
@@ -160,7 +168,8 @@ func (w *RDTWorkLoad) Enforce() error {
 	targetResAss, err := createOrGetResAss(er)
 	if err != nil {
 		log.Errorf("Error while try to create resource group for workload %s", w.ID)
-		return err
+		return NewAppError(http.StatusInternalServerError,
+			"Error to create resource group.", err)
 	}
 
 	targetResAss.Tasks = append(targetResAss.Tasks, w.TaskIDs...)
@@ -172,14 +181,16 @@ func (w *RDTWorkLoad) Enforce() error {
 
 	if err = targetResAss.Commit(new_grp); err != nil {
 		log.Errorf("Error while try to commit resource group for workload %s, group name %s", w.ID, new_grp)
-		return err
+		return NewAppError(http.StatusInternalServerError,
+			"Error to commit resource group for workload.", err)
 	}
 
 	if base_grp == "." {
 		if err = resaall["."].Commit("."); err != nil {
 			log.Errorf("Error while try to commit resource group for default group")
 			resctrl.DestroyResAssociation(new_grp)
-			return err
+			return NewAppError(http.StatusInternalServerError,
+				"Error while try to commit resource group for default group.", err)
 		}
 	}
 
