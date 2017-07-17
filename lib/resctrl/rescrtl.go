@@ -185,7 +185,7 @@ func GetResAssociation() map[string]*ResAssociation {
 // The taskFlow need a snapshot of all ResAssociation for the transaction.
 // It can be gotten by GetResAssociation.
 func (r ResAssociation) Commit(group string) error {
-	if !isIntelRdtMounted() {
+	if !IsIntelRdtMounted() {
 		return fmt.Errorf("Can't apply this association, for resctrl is not mounted!")
 	}
 
@@ -338,7 +338,7 @@ func getIntelRdtRoot() (string, error) {
 	return intelRdtRoot, nil
 }
 
-func isIntelRdtMounted() bool {
+func IsIntelRdtMounted() bool {
 	_, err := getIntelRdtRoot()
 	if err != nil {
 		if !IsNotFound(err) {
@@ -349,7 +349,7 @@ func isIntelRdtMounted() bool {
 }
 
 func DisableRdt() bool {
-	if isIntelRdtMounted() {
+	if IsIntelRdtMounted() {
 		if err := exec.Command("umount", "/sys/fs/resctrl").Run(); err != nil {
 			return false
 		}

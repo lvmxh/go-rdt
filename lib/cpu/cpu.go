@@ -23,7 +23,7 @@ var cpuNumber int = 0
 // REF: https://www.kernel.org/doc/Documentation/cputopology.txt
 // another way is call sysconf via cgo, like libpqos
 func HostCpuNum() int {
-	cpumapOnce.Do(func() {
+	cpunOnce.Do(func() {
 		path := filepath.Join(SysCpu, "possible")
 		data, _ := ioutil.ReadFile(path)
 		strs := strings.TrimSpace(string(data))
