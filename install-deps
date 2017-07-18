@@ -7,7 +7,4 @@ fi
 
 go fmt
 godep go install openstackcore-rdtagent && \
-sudo mkdir /etc/rdtagent/  2>/dev/null || \
-sudo cp etc/policy.yaml /etc/rdtagent/policy.yaml
-sudo cp etc/rdtagent/rdtagent.toml /etc/rdtagent/
-sudo cp etc/rdtagent/cpu_map.toml /etc/rdtagent/
+sudo cp -r etc/rdtagent /etc
