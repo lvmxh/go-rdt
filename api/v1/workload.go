@@ -85,9 +85,10 @@ func (w *WorkLoadResource) WorkLoadNew(request *restful.Request, response *restf
 		return
 	}
 
-	err = w.Db.CreateWorkload(wl)
+	err = w.Db.ValidateWorkload(wl)
 	if err != nil {
-		response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		response.WriteErrorString(http.StatusBadRequest,
+			"Failed to validate workload. Reason: "+err.Error())
 		return
 	}
 
@@ -101,7 +102,7 @@ func (w *WorkLoadResource) WorkLoadNew(request *restful.Request, response *restf
 		return
 	}
 
-	err = w.Db.UpdateWorkload(wl)
+	err = w.Db.CreateWorkload(wl)
 	if err != nil {
 		response.WriteErrorString(http.StatusInternalServerError, err.Error())
 		return

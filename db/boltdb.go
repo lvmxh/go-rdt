@@ -32,27 +32,28 @@ func (b *BoltDB) Initialize(transport, dbname string) error {
 	return nil
 }
 
-func (b *BoltDB) CreateWorkload(w *workload.RDTWorkLoad) error {
+func (b *BoltDB) ValidateWorkload(w *workload.RDTWorkLoad) error {
 	/* When create a new workload we need to verify that the new PIDs
 	   we the workload specified should not existed */
-
 	ws, err := b.GetAllWorkload()
 	if err != nil {
 		return err
 	}
-
-	err = validateTasks(*w, ws)
-	if err != nil {
+	if err = validateWorkload(*w, ws); err != nil {
 		return err
 	}
+	return nil
+}
 
+func (b *BoltDB) CreateWorkload(w *workload.RDTWorkLoad) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(WorkloadTableName))
 
-		// Generate ID for the workload.
-		id, _ := b.NextSequence()
-		w.ID = strconv.Itoa(int(id))
-
+		if w.ID == "" {
+			// Generate ID for the workload.
+			id, _ := b.NextSequence()
+			w.ID = strconv.Itoa(int(id))
+		}
 		// Marshal  data into bytes.
 		buf, err := json.Marshal(w)
 		if err != nil {

@@ -45,6 +45,13 @@ func (m *MgoDB) Initialize(transport, dbname string) error {
 	return nil
 }
 
+func (m *MgoDB) ValidateWorkload(w *workload.RDTWorkLoad) error {
+	/* When create a new workload we need to verify that the new PIDs
+	   we the workload specified should not existed */
+	// not implement yet
+	return nil
+}
+
 func (m *MgoDB) CreateWorkload(w *workload.RDTWorkLoad) error {
 	s := session.Copy()
 	defer s.Close()

@@ -36,7 +36,7 @@ const (
 
 type RDTWorkLoad struct {
 	// ID
-	ID string
+	ID string `json:"id,omitempty"`
 	// core ids, the work load run on top of cores/cpus
 	CoreIDs []string `json:"core_ids"`
 	// task ids, the work load's task ids
