@@ -6,6 +6,7 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -230,6 +231,67 @@ func (w *RDTWorkLoad) Release() error {
 	}
 
 	return nil
+}
+
+// Patch a workload
+func (w *RDTWorkLoad) Update(patched *RDTWorkLoad) (*RDTWorkLoad, *AppError) {
+
+	// if we change policy, release current resource group and re-enforce it.
+	if patched.Policy != w.Policy {
+		if err := w.Release(); err != nil {
+			return w, NewAppError(http.StatusInternalServerError, "Faild to release workload",
+				fmt.Errorf(""))
+		}
+		w.Policy = patched.Policy
+
+		if len(patched.TaskIDs) > 0 {
+			w.TaskIDs = patched.TaskIDs
+		}
+		if len(patched.CoreIDs) > 0 {
+			w.CoreIDs = patched.CoreIDs
+		}
+		return w, w.Enforce()
+	}
+
+	l.Lock()
+	defer l.Unlock()
+	resaall := resctrl.GetResAssociation()
+
+	if !reflect.DeepEqual(patched.CoreIDs, w.CoreIDs) ||
+		!reflect.DeepEqual(patched.TaskIDs, w.TaskIDs) {
+		err := patched.Validate()
+		if err != nil {
+			return w, NewAppError(http.StatusBadRequest, "Failed to validate workload", err)
+		}
+
+		targetResAss, ok := resaall[w.CosName]
+		if !ok {
+			return w, NewAppError(http.StatusInternalServerError, "Can not find resource group name",
+				fmt.Errorf(""))
+		}
+
+		if len(patched.TaskIDs) > 0 {
+			targetResAss.Tasks = append(targetResAss.Tasks, patched.TaskIDs...)
+			w.TaskIDs = patched.TaskIDs
+		}
+		if len(patched.CoreIDs) > 0 {
+			bm, err := CpuBitmaps(patched.CoreIDs)
+			if err != nil {
+				return w, NewAppError(http.StatusBadRequest,
+					"Failed to Pareser workload coreIDs.", err)
+			}
+			// TODO: check if this new CoreIDs overwrite other resource group
+			targetResAss.CPUs = bm.ToString()
+			w.CoreIDs = patched.CoreIDs
+		}
+		// commit changes
+		if err = targetResAss.Commit(w.CosName); err != nil {
+			log.Errorf("Error while try to commit resource group for workload %s, group name %s", w.ID, w.CosName)
+			return w, NewAppError(http.StatusInternalServerError,
+				"Error to commit resource group for workload.", err)
+		}
+	}
+	return w, nil
 }
 
 // return base group name, new group name, sub group name list.

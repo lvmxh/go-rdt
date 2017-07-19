@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/emicklei/go-restful"
+	log "github.com/sirupsen/logrus"
 	"openstackcore-rdtagent/db"
 	"openstackcore-rdtagent/model/workload"
 )
@@ -33,6 +34,11 @@ func (w WorkLoadResource) Register(container *restful.Container) {
 		Param(ws.PathParameter("id", "id").DataType("string")).
 		Operation("WorkLoadGetById"))
 
+	ws.Route(ws.PATCH("/{id:[0-9]*}").To(w.WorkLoadPatch).
+		Doc("Patch workload by id").
+		Param(ws.PathParameter("id", "id").DataType("string")).
+		Operation("WorkLoadPatch"))
+
 	ws.Route(ws.DELETE("/{id:[0-9]*}").To(w.WorkLoadDeleteById).
 		Doc("Delete workload by id").
 		Param(ws.PathParameter("id", "id").DataType("string")).
@@ -55,6 +61,7 @@ func (w WorkLoadResource) WorkLoadGet(request *restful.Request, response *restfu
 func (w WorkLoadResource) WorkLoadGetById(request *restful.Request, response *restful.Response) {
 
 	id := request.PathParameter("id")
+	log.Infof("Try to get workload by %s", id)
 	wl, err := w.Db.GetWorkloadById(id)
 	if len(wl.ID) == 0 {
 		response.AddHeader("Content-Type", "text/plain")
@@ -72,6 +79,7 @@ func (w WorkLoadResource) WorkLoadGetById(request *restful.Request, response *re
 // body : '{"core_ids":["1","2"], "task_ids":["123","456"], "policys": ["foo"], "algorithms": ["bar"], "group": ["infra"]}'
 func (w *WorkLoadResource) WorkLoadNew(request *restful.Request, response *restful.Response) {
 	wl := new(workload.RDTWorkLoad)
+	log.Infof("Try to create workload %v", wl)
 	err := request.ReadEntity(&wl)
 	if err != nil {
 		response.AddHeader("Content-Type", "text/plain")
@@ -110,10 +118,39 @@ func (w *WorkLoadResource) WorkLoadNew(request *restful.Request, response *restf
 	response.WriteHeaderAndEntity(http.StatusCreated, wl)
 }
 
+// PATCH /v1/workloads/{id}
+func (w WorkLoadResource) WorkLoadPatch(request *restful.Request, response *restful.Response) {
+	id := request.PathParameter("id")
+	wl, err := w.Db.GetWorkloadById(id)
+	if len(wl.ID) == 0 || err != nil {
+		response.AddHeader("Content-Type", "text/plain")
+		response.WriteErrorString(http.StatusNotFound, "404: Could not found workload")
+		return
+	}
+
+	newwl := new(workload.RDTWorkLoad)
+	request.ReadEntity(&newwl)
+	newwl.ID = id
+
+	log.Infof("Try to patch a workload %v", newwl)
+	updatedwl, e := wl.Update(newwl)
+	if e != nil {
+		response.WriteErrorString(e.Code, e.Error())
+		return
+	}
+	if err = w.Db.UpdateWorkload(updatedwl); err != nil {
+		response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.WriteEntity(updatedwl)
+}
+
 // DELETE /v1/workloads/{id}
 func (w WorkLoadResource) WorkLoadDeleteById(request *restful.Request, response *restful.Response) {
 
 	id := request.PathParameter("id")
+	log.Infof("Try to delete workload by %s", id)
 	wl, err := w.Db.GetWorkloadById(id)
 
 	if len(wl.ID) == 0 {
