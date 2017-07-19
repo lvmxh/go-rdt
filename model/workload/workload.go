@@ -342,12 +342,14 @@ func createNewResassociation(er *EnforceRequest) (t resctrl.ResAssociation, err 
 		for i, _ := range res {
 			var newcos resctrl.CacheCos
 			// fill the new mask with cbm_mask
+
+			bmbase, _ := libutil.NewBitmap(res[i].Mask)
+
 			if !inCacheList(uint32(i), er.Cache_IDs) {
 				newcos = resctrl.CacheCos{Id: uint8(i), Mask: catinfo.CbmMask}
 			} else {
 				// compute sub_grp's offset for the i(th) 'cattype'
 				offset := calculateOffset(er.Resall, er.SubGrps, cattype, uint32(i))
-				bmbase, _ := libutil.NewBitmap(res[i].Mask)
 				newbm := bmbase.GetConnectiveBits(er.MaxWays, offset, true)
 
 				if newbm.IsEmpty() {
@@ -357,11 +359,12 @@ func createNewResassociation(er *EnforceRequest) (t resctrl.ResAssociation, err 
 				if er.Consume {
 					bmbase = bmbase.Xor(newbm)
 				}
-
-				tmpbm := bmbase.MaxConnectiveBits()
-				res[i].Mask = tmpbm.ToString()
 				newcos = resctrl.CacheCos{Id: uint8(i), Mask: newbm.ToString()}
 			}
+			// calculateDefaultGroup may return unconnected bits,
+			// We need to use connective bits anytime
+			tmpbm := bmbase.MaxConnectiveBits()
+			res[i].Mask = tmpbm.ToString()
 
 			newResAss.Schemata[cattype] = append(newResAss.Schemata[cattype], newcos)
 			log.Debugf("Newly created Mask for Cache %d is %s", i, newcos.Mask)
