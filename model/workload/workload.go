@@ -400,7 +400,10 @@ func createNewResassociation(er *EnforceRequest) (t resctrl.ResAssociation, err 
 
 	for cattype, res := range baseRes.Schemata {
 		// construct ResAssociation for each cache id
-		catinfo := rdtinfo[strings.ToLower(cattype)]
+		catinfo, ok := rdtinfo[strings.ToLower(cattype)]
+		if !ok {
+			continue
+		}
 		for i, _ := range res {
 			var newcos resctrl.CacheCos
 			// fill the new mask with cbm_mask
@@ -457,7 +460,10 @@ func calculateDefaultGroup(r map[string]*resctrl.ResAssociation, ignore_grp []st
 	newRes.Schemata = make(map[string][]resctrl.CacheCos)
 
 	for t, schemata := range defaultGrp.Schemata {
-		catinfo := rdtinfo[strings.ToLower(t)]
+		catinfo, ok := rdtinfo[strings.ToLower(t)]
+		if !ok {
+			continue
+		}
 		newRes.Schemata[t] = make([]resctrl.CacheCos, 0, 10)
 		for id, v := range schemata {
 			bm, _ := libutil.NewBitmap(catinfo.CbmMask)
