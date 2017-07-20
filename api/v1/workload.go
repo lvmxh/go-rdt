@@ -79,8 +79,8 @@ func (w WorkLoadResource) WorkLoadGetById(request *restful.Request, response *re
 // body : '{"core_ids":["1","2"], "task_ids":["123","456"], "policys": ["foo"], "algorithms": ["bar"], "group": ["infra"]}'
 func (w *WorkLoadResource) WorkLoadNew(request *restful.Request, response *restful.Response) {
 	wl := new(workload.RDTWorkLoad)
-	log.Infof("Try to create workload %v", wl)
 	err := request.ReadEntity(&wl)
+	log.Infof("Try to create workload %v", wl)
 	if err != nil {
 		response.AddHeader("Content-Type", "text/plain")
 		response.WriteErrorString(http.StatusInternalServerError, err.Error())
