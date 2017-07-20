@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"reflect"
 
+	// from app import an config is really not a good idea.
+	// uncouple it from APP. Or we can add it in a rmd/config
+	. "openstackcore-rdtagent/db/config"
 	"openstackcore-rdtagent/lib/util"
 	"openstackcore-rdtagent/model/workload"
 )
@@ -19,6 +22,17 @@ type DB interface {
 	GetAllWorkload() ([]workload.RDTWorkLoad, error)
 	GetWorkloadById(id string) (workload.RDTWorkLoad, error)
 	ValidateWorkload(w *workload.RDTWorkLoad) error
+}
+
+func NewDB() (DB, error) {
+	dbcon := NewConfig()
+	if dbcon.Backend == "bolt" {
+		return newBoltDB()
+	} else if dbcon.Backend == "mgo" {
+		return newMgoDB()
+	} else {
+		return nil, fmt.Errorf("Unsupported DB backend %s", dbcon.Backend)
+	}
 }
 
 // Helper function to find if a elem in a slice

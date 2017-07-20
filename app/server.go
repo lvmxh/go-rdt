@@ -67,28 +67,15 @@ func BuildServerConfig(s *options.ServerRunOptions) *Config {
 }
 
 func InitializeDB(c *Config) (db.DB, error) {
-	var d db.DB
-
-	if c.Generic.DBBackend == "bolt" {
-		d = new(db.BoltDB)
-	} else if c.Generic.DBBackend == "mgo" {
-		d = new(db.MgoDB)
-	} else {
-		return nil, fmt.Errorf("Unsupported DB backend %s", c.Generic.DBBackend)
-	}
-
-	err := d.Initialize(c.Generic.Transport, c.Generic.DBName)
-
-	if err != nil {
-		return nil, err
-	}
-	return d, nil
+	return db.NewDB()
+	// no need Initialize. We can Initialize it at bootcheck
+	// also, Initialize should be for the whole DB setting.
+	// d.Initialize(c.Generic.Transport, c.Generic.DBName)
 }
 
 // Initialize server from config
 func Initialize(c *Config) (*http.Server, error) {
 	db, err := InitializeDB(c)
-
 	if err != nil {
 		return nil, err
 	}

@@ -23,6 +23,7 @@ import (
 	modelutil "openstackcore-rdtagent/model/util"
 )
 
+// FIXME this is not a global lock
 // global lock for when doing enforce/update/release for a workload.
 // This is a simple way to control RDAgent to access resctrl one
 // goroutine one time

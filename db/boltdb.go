@@ -2,25 +2,49 @@ package db
 
 import (
 	"encoding/json"
-	"github.com/boltdb/bolt"
 	"strconv"
+	"sync"
 
+	"github.com/boltdb/bolt"
+
+	. "openstackcore-rdtagent/db/config"
 	"openstackcore-rdtagent/model/workload"
 )
 
 var db *bolt.DB
+var boltSession *bolt.DB
+
+var boltSessionOnce sync.Once
 
 type BoltDB struct {
+	session *bolt.DB
+}
+
+// We thought, open a file, means open a session.
+// Unity Concept with mongodb
+func getSession() error {
+	var err error
+	boltSessionOnce.Do(func() {
+		conf := NewConfig()
+		boltSession, err = bolt.Open(conf.Transport, 0600, nil)
+	})
+	return err
+}
+
+func closeSession() {
+}
+
+func newBoltDB() (DB, error) {
+	var db BoltDB
+	if err := getSession(); err != nil {
+		return &db, err
+	}
+	db.session = boltSession
+	return &db, nil
 }
 
 func (b *BoltDB) Initialize(transport, dbname string) error {
-	var err error
-	db, err = bolt.Open(transport, 0600, nil)
-	if err != nil {
-		return err
-	}
-
-	db.Update(func(tx *bolt.Tx) error {
+	b.session.Update(func(tx *bolt.Tx) error {
 		// First touch a Bucket
 		_, err := tx.CreateBucketIfNotExists([]byte(WorkloadTableName))
 		if err != nil {
@@ -46,7 +70,7 @@ func (b *BoltDB) ValidateWorkload(w *workload.RDTWorkLoad) error {
 }
 
 func (b *BoltDB) CreateWorkload(w *workload.RDTWorkLoad) error {
-	return db.Update(func(tx *bolt.Tx) error {
+	return b.session.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(WorkloadTableName))
 
 		if w.ID == "" {
@@ -65,7 +89,7 @@ func (b *BoltDB) CreateWorkload(w *workload.RDTWorkLoad) error {
 }
 
 func (b *BoltDB) DeleteWorkload(w *workload.RDTWorkLoad) error {
-	return db.Update(func(tx *bolt.Tx) error {
+	return b.session.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(WorkloadTableName))
 		return b.Delete([]byte(w.ID))
 	})
@@ -73,7 +97,7 @@ func (b *BoltDB) DeleteWorkload(w *workload.RDTWorkLoad) error {
 
 func (b *BoltDB) UpdateWorkload(w *workload.RDTWorkLoad) error {
 
-	return db.Update(func(tx *bolt.Tx) error {
+	return b.session.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(WorkloadTableName))
 
 		buf, err := json.Marshal(w)
@@ -87,7 +111,7 @@ func (b *BoltDB) UpdateWorkload(w *workload.RDTWorkLoad) error {
 
 func (b *BoltDB) GetAllWorkload() ([]workload.RDTWorkLoad, error) {
 	ws := []workload.RDTWorkLoad{}
-	err := db.View(func(tx *bolt.Tx) error {
+	err := b.session.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(WorkloadTableName))
 		c := b.Cursor()
 		for k, v := c.First(); k != nil; k, v = c.Next() {
@@ -102,7 +126,7 @@ func (b *BoltDB) GetAllWorkload() ([]workload.RDTWorkLoad, error) {
 
 func (b *BoltDB) GetWorkloadById(id string) (workload.RDTWorkLoad, error) {
 	w := workload.RDTWorkLoad{}
-	err := db.View(func(tx *bolt.Tx) error {
+	err := b.session.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(WorkloadTableName))
 		v := b.Get([]byte(id))
 		return json.Unmarshal(v, &w)

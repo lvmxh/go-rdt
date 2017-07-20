@@ -4,10 +4,13 @@ package bootcheck
 
 import (
 	"fmt"
+	"os"
+
 	log "github.com/sirupsen/logrus"
+
+	"openstackcore-rdtagent/db"
 	"openstackcore-rdtagent/lib/cpu"
 	"openstackcore-rdtagent/lib/resctrl"
-	"os"
 )
 
 func SanityCheck() {
@@ -31,4 +34,50 @@ func SanityCheck() {
 		fmt.Println(msg)
 		os.Exit(1)
 	}
+	if err := DBCheck(); err != nil {
+		msg := "Check db error. Reason: " + err.Error()
+		log.Fatalf(msg)
+		fmt.Println(msg)
+		os.Exit(1)
+	}
+}
+
+func DBCheck() error {
+	d, err := db.NewDB()
+	if err != nil {
+		return err
+	}
+
+	err = d.Initialize("", "")
+	if err != nil {
+		return err
+	}
+
+	resaall := resctrl.GetResAssociation()
+
+	wl, err := d.GetAllWorkload()
+	if err != nil {
+		return err
+	}
+
+	for _, w := range wl {
+		switch w.CosName {
+		case "":
+			d.DeleteWorkload(&w)
+		case "os":
+		case "OS":
+		case ".":
+		case "infra":
+			// FIXME Now we can allow to create multi-infra, need clean?
+		case "default":
+		default:
+			if v, ok := resaall[w.CosName]; !ok {
+				d.DeleteWorkload(&w)
+				fmt.Println(v)
+			}
+			// FIXME, delete the group with null tasks and zero cpus.
+		}
+	}
+	return nil
+
 }
