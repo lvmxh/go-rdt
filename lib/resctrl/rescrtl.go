@@ -100,10 +100,12 @@ func ParserResAssociation(basepath string, ignore []string, ps map[string]*ResAs
 			for _, data := range strs {
 				datas := strings.SplitN(data, ":", 2)
 				key := datas[0]
+
+				key = strings.Replace(key, " ", "", -1)
+
 				if key == "" {
 					return nil
 				}
-
 				if _, ok := res.Schemata[key]; !ok {
 					res.Schemata[key] = make([]CacheCos, 0, 10)
 				}
