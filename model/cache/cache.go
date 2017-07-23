@@ -11,6 +11,8 @@ import (
 
 	"openstackcore-rdtagent/lib/cache"
 	"openstackcore-rdtagent/lib/proc"
+	"openstackcore-rdtagent/lib/resctrl"
+	libutil "openstackcore-rdtagent/lib/util"
 )
 
 var SizeMap = map[string]uint32{
@@ -34,6 +36,7 @@ type CacheInfo struct {
 	CacheLevel    uint32
 	Location      string `json:"location_on_socket"`
 	ShareCpuList  string `json:"share_cpu_list"`
+	AvaliableWays string `json:"avaliable_ways"`
 }
 
 type CacheInfos struct {
@@ -169,11 +172,52 @@ func (c *CacheInfos) GetByLevel(level uint32) error {
 			// multiple cpus chares on same cache.
 			continue
 		} else {
+			// TODO: NumPartitions uint32,  NumClasses    uint32
+			//       WayContention uint64,  Location string
 			new_cacheinfo := CacheInfo{}
+
+			ui32, _ := strconv.Atoi(sc.CoherencyLineSize)
+			new_cacheinfo.LineSize = uint32(ui32)
+
+			ui32, _ = strconv.Atoi(sc.NumberOfSets)
+			new_cacheinfo.NumSets = uint32(ui32)
+
+			// FIXME the relation between NumWays and sc.PhysicalLinePartition
+			ui32, _ = strconv.Atoi(sc.WaysOfAssociativity)
+			new_cacheinfo.NumWays = uint32(ui32)
+			new_cacheinfo.WaySize = new_cacheinfo.LineSize * new_cacheinfo.NumSets
+
 			new_cacheinfo.ID = uint32(id)
 			new_cacheinfo.TotalSize = ConvertCacheSize(sc.Size)
 			new_cacheinfo.ShareCpuList = sc.SharedCpuList
 			new_cacheinfo.CacheLevel = level
+
+			resaall := resctrl.GetResAssociation()
+
+			var sb []*libutil.Bitmap
+			for k, v := range resaall {
+				if k == "infra" {
+					continue
+				}
+				for _, sv := range v.Schemata {
+					for _, cv := range sv {
+						if cv.Id == uint8(id) {
+							// FIXME we assume number of ways == length of cbm mask
+							bm, _ := libutil.NewBitmap(int(new_cacheinfo.NumWays), cv.Mask)
+							sb = append(sb, bm)
+						}
+					}
+				}
+			}
+
+			inf := resctrl.GetRdtCosInfo()
+			freeM := inf["l"+target_lev].CbmMask
+			freeb, _ := libutil.NewBitmap(int(new_cacheinfo.NumWays), freeM)
+			for _, v := range sb {
+				freeb = freeb.Axor(v)
+			}
+			new_cacheinfo.AvaliableWays = freeb.ToBinString()
+
 			c.Caches[uint32(id)] = new_cacheinfo
 			c.Num = c.Num + 1
 		}

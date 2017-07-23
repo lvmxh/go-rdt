@@ -32,14 +32,14 @@ func (cache CachesResource) Register(container *restful.Container) {
 		Operation("CachesGet").
 		Writes(CachesResource{}))
 
-	ws.Route(ws.GET("/{cache-level:l[2-3]}").To(cache.CachesLevelGet).
+	ws.Route(ws.GET("/{cache-level:^l[2-3]$}").To(cache.CachesLevelGet).
 		Doc("Get the info of a specified level cache.").
 		Param(ws.PathParameter("cache-level", "cache level").DataType("string")).
 		Operation("CachesLevelGet").
 		Writes(CachesLevelResource{}))
 
 	// FIXME (Shaohe): should use pattern, \d\{1,3\}
-	ws.Route(ws.GET("/{cache-level:l[2-3]}/{id}").To(cache.CacheGet).
+	ws.Route(ws.GET("/{cache-level:^l[2-3]$}/{id:^[0-9]{1,9}$").To(cache.CacheGet).
 		Doc("Get the info of a specified cache.").
 		Param(ws.PathParameter("cache-level", "cache level").DataType("string")).
 		Param(ws.PathParameter("id", "cache id").DataType("uint")).
