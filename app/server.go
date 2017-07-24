@@ -86,12 +86,14 @@ func Initialize(c *Config) (*http.Server, error) {
 	cap := v1.CapabilitiesResource{}
 	caches := v1.CachesResource{}
 	policy := v1.PolicyResource{}
+	hospitality := v1.HospitalityResource{}
 	wls := v1.WorkLoadResource{Db: db}
 
 	// Register controller to container
 	cap.Register(wsContainer)
 	caches.Register(wsContainer)
 	policy.Register(wsContainer)
+	hospitality.Register(wsContainer)
 	wls.Register(wsContainer)
 
 	// Install adds the SgaggerUI webservices

@@ -10,9 +10,11 @@ import (
 	"strings"
 
 	"openstackcore-rdtagent/lib/cache"
+	"openstackcore-rdtagent/lib/cpu"
 	"openstackcore-rdtagent/lib/proc"
 	"openstackcore-rdtagent/lib/resctrl"
 	libutil "openstackcore-rdtagent/lib/util"
+	"openstackcore-rdtagent/model/policy"
 )
 
 var SizeMap = map[string]uint32{
@@ -24,19 +26,20 @@ var SizeMap = map[string]uint32{
    CacheInfo with details
 */
 type CacheInfo struct {
-	ID            uint32 `json:"cache_id"`
-	NumWays       uint32
-	NumSets       uint32
-	NumPartitions uint32
-	LineSize      uint32
-	TotalSize     uint32 `json:"total_size"`
-	WaySize       uint32
-	NumClasses    uint32
-	WayContention uint64
-	CacheLevel    uint32
-	Location      string `json:"location_on_socket"`
-	ShareCpuList  string `json:"share_cpu_list"`
-	AvaliableWays string `json:"avaliable_ways"`
+	ID              uint32 `json:"cache_id"`
+	NumWays         uint32
+	NumSets         uint32
+	NumPartitions   uint32
+	LineSize        uint32
+	TotalSize       uint32 `json:"total_size"`
+	WaySize         uint32
+	NumClasses      uint32
+	WayContention   uint64
+	CacheLevel      uint32
+	Location        string            `json:"location_on_socket"`
+	ShareCpuList    string            `json:"share_cpu_list"`
+	AvaliableWays   string            `json:"avaliable_ways"`
+	AvaliablePolicy map[string]uint32 `json:"avaliable_policy"` // should move out here
 }
 
 type CacheInfos struct {
@@ -217,6 +220,37 @@ func (c *CacheInfos) GetByLevel(level uint32) error {
 				freeb = freeb.Axor(v)
 			}
 			new_cacheinfo.AvaliableWays = freeb.ToBinString()
+
+			pf := cpu.GetMicroArch(cpu.GetSignature())
+			if pf == "" {
+				return fmt.Errorf("Unknow platform, please update the cpu_map.toml conf file.")
+			}
+			// FIXME add error check. This code is just for China Open days.
+			p, _ := policy.GetPlatformPolicy(strings.ToLower(pf))
+			ap := make(map[string]uint32)
+			ap_counter := make(map[string]int)
+			for _, pv := range p {
+				for k, v := range pv {
+					ap[k] = 0
+					for _, cv := range v[0] {
+						iv, err := strconv.Atoi(cv)
+						if err != nil {
+							return err
+						}
+						ap_counter[k] = iv
+						break
+					}
+				}
+			}
+			fbs := freeb.ToBinStrings()
+			for ak, av := range ap_counter {
+				for _, v := range fbs {
+					if v[0] == '1' {
+						ap[ak] += uint32(len(v) / av)
+					}
+				}
+			}
+			new_cacheinfo.AvaliablePolicy = ap
 
 			c.Caches[uint32(id)] = new_cacheinfo
 			c.Num = c.Num + 1
