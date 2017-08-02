@@ -272,6 +272,7 @@ func (w *RDTWorkLoad) Update(patched *RDTWorkLoad) (*RDTWorkLoad, *AppError) {
 		}
 
 		if len(patched.TaskIDs) > 0 {
+			// FIXME (Shaohe) Is this a bug? Seems the targetResAss.Tasks is inconsistent with w.TaskIDs
 			targetResAss.Tasks = append(targetResAss.Tasks, patched.TaskIDs...)
 			w.TaskIDs = patched.TaskIDs
 		}

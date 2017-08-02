@@ -16,3 +16,8 @@ stdout = "false"
 backend = "bolt" # mgo
 transport = "/var/run/rdtagent.db" # mongodb://localhost
 dbname = "bolt" # RDTPolicy
+
+
+[OSGroup] # OSGroup is mandatory
+cacheways = 1
+cpuset = "0-1"

@@ -11,6 +11,7 @@ import (
 	"openstackcore-rdtagent/db"
 	"openstackcore-rdtagent/lib/cpu"
 	"openstackcore-rdtagent/lib/resctrl"
+	"openstackcore-rdtagent/util/bootcheck/osgroup"
 )
 
 func SanityCheck() {
@@ -36,6 +37,12 @@ func SanityCheck() {
 	}
 	if err := DBCheck(); err != nil {
 		msg := "Check db error. Reason: " + err.Error()
+		log.Fatalf(msg)
+		fmt.Println(msg)
+		os.Exit(1)
+	}
+	if err := osgroup.SetOSGroup(); err != nil {
+		msg := "Error, create OS groups failed! Reason: " + err.Error()
 		log.Fatalf(msg)
 		fmt.Println(msg)
 		os.Exit(1)

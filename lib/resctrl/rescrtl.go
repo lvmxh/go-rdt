@@ -88,9 +88,9 @@ type ResAssociation struct {
 func ParserResAssociation(basepath string, ignore []string, ps map[string]*ResAssociation) filepath.WalkFunc {
 	parser := func(res *ResAssociation, name string, val []byte) error {
 		switch name {
-		case "CPUs":
+		case "Cpus":
 			str := strings.TrimSpace(string(val))
-			libutil.SetField(res, name, str)
+			libutil.SetField(res, "CPUs", str)
 			return nil
 		case "Schemata":
 			strs := strings.Split(string(val), "\n")

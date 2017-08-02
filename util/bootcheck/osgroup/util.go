@@ -1,4 +1,4 @@
-package workload
+package osgroup
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 
 // FIXME should find a good accommodation for CpuBitmaps
 // a wraper for Bitmap
-func CpuBitmaps(cpuids []string) (*Bitmap, error) {
+func CpuBitmaps(cpuids interface{}) (*Bitmap, error) {
 	// FIXME need a wrap for CPU bitmap.
 	cpunum := cpu.HostCpuNum()
 	if cpunum == 0 {
