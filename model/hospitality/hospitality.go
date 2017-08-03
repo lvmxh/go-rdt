@@ -99,16 +99,19 @@ func (h *Hospitality) getScoreByLevel(level uint32) error {
 			ap := make(map[string]uint32)
 			ap_counter := make(map[string]int)
 			for _, pv := range p {
-				for k, v := range pv {
+				// pv is policy.CATConfig.Catpolicy
+				for k, _ := range pv {
+					// k is the policy tier name
 					ap[k] = 0
-					for _, cv := range v[0] {
-						iv, err := strconv.Atoi(cv)
-						if err != nil {
-							return err
-						}
-						ap_counter[k] = iv
-						break
+					tier, err := policy.GetPolicy(strings.ToLower(pf), k)
+					if err != nil {
+						return err
 					}
+					iv, err := strconv.Atoi(tier["MaxCache"])
+					if err != nil {
+						return err
+					}
+					ap_counter[k] = iv
 				}
 			}
 			fbs := freeb.ToBinStrings()
