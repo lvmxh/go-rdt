@@ -5,10 +5,12 @@ package hospitality
 
 import (
 	"fmt"
+	"net/http"
 	"sort"
 	"strconv"
 	"strings"
 
+	. "openstackcore-rdtagent/api/error"
 	"openstackcore-rdtagent/lib/cache"
 	libcache "openstackcore-rdtagent/lib/cache"
 	"openstackcore-rdtagent/lib/cpu"
@@ -16,6 +18,8 @@ import (
 	"openstackcore-rdtagent/lib/resctrl"
 	libutil "openstackcore-rdtagent/lib/util"
 	"openstackcore-rdtagent/model/policy"
+	modelutil "openstackcore-rdtagent/model/util"
+	"openstackcore-rdtagent/model/workload"
 )
 
 /*
@@ -125,9 +129,7 @@ func (h *Hospitality) getScoreByLevel(level uint32) error {
 				// FIXME need to consider round
 				ap[ak] = (ap[ak]*uint32(av)*100 + numWays/2) / numWays
 			}
-
 			cacheS[sc.Id] = ap
-			h.SC[cacheLevel][sc.Id] = ap
 		}
 	}
 
@@ -137,4 +139,115 @@ func (h *Hospitality) getScoreByLevel(level uint32) error {
 func (h *Hospitality) Get() error {
 	level := libcache.GetLLC()
 	return h.getScoreByLevel(level)
+}
+
+///////////////////////////////////////////////////////////////
+//  Support to give hospitality score by request             //
+///////////////////////////////////////////////////////////////
+// Hospitality score request
+type HospitalityRequest struct {
+	MaxCache uint32  `json:"max_cache,omitempty"`
+	MinCache uint32  `json:"min_cache,omitempty"`
+	Policy   string  `json:"policy,omitempty"`
+	CacheId  *uint32 `json:"cache_id,omitempty"`
+}
+
+/*
+{
+	"score": {
+		"l3": {
+			"0": 30
+			"1": 30
+		}
+	}
+}
+*/
+type CacheScoreRaw map[string]uint32
+type HospitalityRaw struct {
+	SC map[string]CacheScoreRaw `json:"score"`
+}
+
+func (h *HospitalityRaw) GetByRequest(req *HospitalityRequest) *AppError {
+	level := libcache.GetLLC()
+	target_lev := strconv.FormatUint(uint64(level), 10)
+	cacheLevel := "l" + target_lev
+	cacheS := make(map[string]uint32)
+	h.SC = map[string]CacheScoreRaw{cacheLevel: cacheS}
+
+	max := req.MaxCache
+	min := req.MinCache
+
+	if req.Policy != "" {
+		pf := cpu.GetMicroArch(cpu.GetSignature())
+		if pf == "" {
+			return AppErrorf(http.StatusInternalServerError,
+				"Unknow platform, please update the cpu_map.toml conf file.")
+		}
+		tier, err := policy.GetPolicy(strings.ToLower(pf), req.Policy)
+		if err != nil {
+			return NewAppError(http.StatusInternalServerError,
+				"Can not find Policy", err)
+		}
+		m, _ := strconv.Atoi(tier["MaxCache"])
+		n, _ := strconv.Atoi(tier["MinCache"])
+		max = uint32(m)
+		min = uint32(n)
+	}
+	return h.GetByRequestMaxMin(max, min, req.CacheId, target_lev)
+}
+
+func (h *HospitalityRaw) GetByRequestMaxMin(max, min uint32, cache_id *uint32, target_lev string) *AppError {
+
+	// TODO: for max > min > 0 we need to wait for besteffort pool get implemented.
+	if max != min {
+		err := fmt.Errorf("Don't support max != mix case yet!")
+		return NewAppError(http.StatusBadRequest, "Bad request", err)
+	}
+
+	cacheS := make(map[string]uint32)
+	h.SC = map[string]CacheScoreRaw{"l" + target_lev: cacheS}
+
+	// TODO: Need to calculate how many workload for this kinds already
+	// running. For now treat it as max = min = 1
+	if max == min && max == 0 {
+		max = 1
+		min = 1
+	}
+
+	resaall := resctrl.GetResAssociation()
+	rdtinfo := resctrl.GetRdtCosInfo()
+
+	// ignore "." and "infra" group for now
+	grp := workload.CalculateDefaultGroup(resaall, []string{".", "infra"}, false)
+	catinfo, ok := rdtinfo[strings.ToLower("l"+target_lev)]
+
+	numWays := uint32(modelutil.CbmLen(catinfo.CbmMask))
+
+	if !ok {
+		err := fmt.Errorf("Don't support cache level l%s", target_lev)
+		return NewAppError(http.StatusBadRequest, "Bad request", err)
+	}
+
+	for _, schemata := range grp.Schemata["L"+target_lev] {
+		id := strconv.FormatUint(uint64(schemata.Id), 10)
+		freeb, _ := libutil.NewBitmap(schemata.Mask)
+		fbs := freeb.ToBinStrings()
+
+		cacheS[id] = 0
+		for _, v := range fbs {
+			if v[0] == '1' {
+				cacheS[id] += uint32(len(v) / int(max))
+			}
+		}
+		// Conver to percentage
+		cacheS[id] = (cacheS[id]*uint32(max)*100 + numWays/2) / numWays
+
+		if cache_id != nil {
+			// We only care about specific cache_id
+			if *cache_id != uint32(schemata.Id) {
+				delete(cacheS, id)
+			}
+		}
+	}
+	return nil
 }

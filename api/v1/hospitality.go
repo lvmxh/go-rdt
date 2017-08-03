@@ -2,7 +2,7 @@ package v1
 
 import (
 	_ "fmt"
-	//log "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 
 	"github.com/emicklei/go-restful"
@@ -25,6 +25,11 @@ func (hospitality HospitalityResource) Register(container *restful.Container) {
 		Operation("HospitalitysGet").
 		Writes(HospitalityResource{}))
 
+	ws.Route(ws.POST("/").To(hospitality.HospitalityGetByRequest).
+		Doc("Get the hospitality information per request.").
+		Operation("HospitalityGetByRequest").
+		Writes(HospitalityResource{}))
+
 	container.Add(ws)
 }
 
@@ -35,6 +40,26 @@ func (hospitality HospitalityResource) HospitalitysGet(request *restful.Request,
 	// FIXME (Shaohe): We should classify the error.
 	if err != nil {
 		response.WriteError(http.StatusInternalServerError, err)
+		return
+	}
+	response.WriteEntity(h)
+}
+
+func (hospitality HospitalityResource) HospitalityGetByRequest(request *restful.Request, response *restful.Response) {
+	hr := &m_hospitality.HospitalityRequest{}
+	err := request.ReadEntity(&hr)
+
+	if err != nil {
+		response.AddHeader("Content-Type", "text/plain")
+		response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	log.Infof("Try to get hospitality score by %v", hr)
+	h := &m_hospitality.HospitalityRaw{}
+	e := h.GetByRequest(hr)
+	if e != nil {
+		response.WriteErrorString(e.Code, e.Error())
 		return
 	}
 	response.WriteEntity(h)

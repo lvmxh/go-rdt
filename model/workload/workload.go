@@ -220,7 +220,7 @@ func (w *RDTWorkLoad) Release() error {
 			return err
 		}
 		delete(resaall, w.CosName)
-		newDefaultGrp := calculateDefaultGroup(resaall, []string{"."}, true)
+		newDefaultGrp := CalculateDefaultGroup(resaall, []string{"."}, true)
 		newDefaultGrp.Commit(".")
 	}
 	// remove workload task ids from resource group
@@ -391,7 +391,7 @@ func createNewResassociation(er *EnforceRequest) (t resctrl.ResAssociation, err 
 	baseRes := er.Resall[er.BaseGrp]
 	if er.BaseGrp == "." {
 		// if infra group are created, should be added it to ignore group.
-		baseRes = calculateDefaultGroup(er.Resall, []string{"."}, false)
+		baseRes = CalculateDefaultGroup(er.Resall, []string{"."}, false)
 		er.Resall["."] = baseRes
 	}
 
@@ -428,7 +428,7 @@ func createNewResassociation(er *EnforceRequest) (t resctrl.ResAssociation, err 
 				}
 				newcos = resctrl.CacheCos{Id: uint8(i), Mask: newbm.ToString()}
 			}
-			// calculateDefaultGroup may return unconnected bits,
+			// CalculateDefaultGroup may return unconnected bits,
 			// We need to use connective bits anytime
 			tmpbm := bmbase.MaxConnectiveBits()
 			res[i].Mask = tmpbm.ToString()
@@ -446,9 +446,9 @@ func createNewResassociation(er *EnforceRequest) (t resctrl.ResAssociation, err 
 // e.g.
 // r = ['.': [res1], 'group1': 'res2', 'infra': 'bla']
 // ignore_grp = ['.', 'infra']
-// calculateDefaultGroup will create a new resctrl.ResAssociation, the mask
+// CalculateDefaultGroup will create a new resctrl.ResAssociation, the mask
 // value is calculated by default mask subtract group1's schemata.
-func calculateDefaultGroup(r map[string]*resctrl.ResAssociation, ignore_grp []string, consecutive bool) *resctrl.ResAssociation {
+func CalculateDefaultGroup(r map[string]*resctrl.ResAssociation, ignore_grp []string, consecutive bool) *resctrl.ResAssociation {
 
 	defaultGrp := r["."]
 
