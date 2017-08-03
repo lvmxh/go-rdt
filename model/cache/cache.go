@@ -195,26 +195,29 @@ func (c *CacheInfos) GetByLevel(level uint32) error {
 			new_cacheinfo.ShareCpuList = sc.SharedCpuList
 			new_cacheinfo.CacheLevel = level
 
-			resaall := resctrl.GetResAssociation()
-
+			inf := resctrl.GetRdtCosInfo()
+			freeM := ""
 			var sb []*libutil.Bitmap
-			for k, v := range resaall {
-				if k == "infra" {
-					continue
-				}
-				for _, sv := range v.Schemata {
-					for _, cv := range sv {
-						if cv.Id == uint8(id) {
-							// FIXME we assume number of ways == length of cbm mask
-							bm, _ := libutil.NewBitmap(int(new_cacheinfo.NumWays), cv.Mask)
-							sb = append(sb, bm)
+			if _, ok := inf["l"+target_lev]; ok {
+				freeM = inf["l"+target_lev].CbmMask
+				resaall := resctrl.GetResAssociation()
+
+				for k, v := range resaall {
+					if k == "infra" {
+						continue
+					}
+					for _, sv := range v.Schemata {
+						for _, cv := range sv {
+							if cv.Id == uint8(id) {
+								// FIXME we assume number of ways == length of cbm mask
+								bm, _ := libutil.NewBitmap(int(new_cacheinfo.NumWays), cv.Mask)
+								sb = append(sb, bm)
+							}
 						}
 					}
 				}
-			}
 
-			inf := resctrl.GetRdtCosInfo()
-			freeM := inf["l"+target_lev].CbmMask
+			}
 			freeb, _ := libutil.NewBitmap(int(new_cacheinfo.NumWays), freeM)
 			for _, v := range sb {
 				freeb = freeb.Axor(v)

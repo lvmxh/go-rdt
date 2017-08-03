@@ -239,6 +239,9 @@ func (b *Bitmap) ToBinStrings() []string {
 	ss := []string{}
 	ts := strings.Replace(b.ToBinString(), ",", "", -1)
 	l := len(ts)
+	if l < 1 {
+		return []string{}
+	}
 	org_v := ts[l-1]
 	org_index := l
 	for i := b.Len - 1; i >= 0; i-- {
