@@ -76,10 +76,13 @@ type CacheCos struct {
 	Mask string
 }
 
+// NOTE (Shaohe) e1589538 clean up. It changes "Cpus" to "CPUs", but this improdocu a bug.
+// In order to avoid this bug, I'd like to add a tag for the feilds.
+// TODO (Shaohe) need to paser the tag for field setting.
 type ResAssociation struct {
-	Tasks    []string
-	CPUs     string
-	Schemata map[string][]CacheCos
+	Tasks    []string              `"taks"`
+	CPUs     string                `"cpus"`
+	Schemata map[string][]CacheCos `"schemata"`
 }
 
 //Usage:
