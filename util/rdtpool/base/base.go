@@ -1,4 +1,4 @@
-package osgroup
+package base
 
 import (
 	"fmt"
@@ -23,7 +23,7 @@ var catCosInfo = &CosInfo{0, 0, 0}
 var infoOnce sync.Once
 
 // Concurrency-safe.
-func getCosInfo() CosInfo {
+func GetCosInfo() CosInfo {
 	infoOnce.Do(func() {
 		rcinfo := resctrl.GetRdtCosInfo()
 		level := syscache.GetLLC()
@@ -51,7 +51,7 @@ func CpuBitmaps(cpuids interface{}) (*Bitmap, error) {
 
 func CacheBitmaps(bitmask interface{}) (*Bitmap, error) {
 	// FIXME need a wrap for CPU bitmap.
-	len := getCosInfo().CbmMaskLen
+	len := GetCosInfo().CbmMaskLen
 	if len == 0 {
 		// return nil or an empty Bitmap?
 		var bm *Bitmap

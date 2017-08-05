@@ -9,6 +9,7 @@ import (
 	"openstackcore-rdtagent/lib/resctrl"
 	util "openstackcore-rdtagent/lib/util"
 	. "openstackcore-rdtagent/util/bootcheck/osgroup/config"
+	. "openstackcore-rdtagent/util/rdtpool/base"
 )
 
 type OSGroupReserve struct {
@@ -81,7 +82,7 @@ func GetAvailableCaches(allres map[string]*resctrl.ResAssociation,
 	// FIXME (Shaohe) A central util to generate schemata Bitmap
 
 	schemata := map[string]*util.Bitmap{}
-	ways := getCosInfo().CbmMaskLen
+	ways := GetCosInfo().CbmMaskLen
 	// fullMaks is really mask, just Pointer type cast.
 	fullMask := strconv.FormatUint(1<<uint(ways)-1, 16)
 	for k, _ := range reserve.Schemata {
@@ -122,7 +123,7 @@ func SetOSGroup() error {
 	level := syscache.GetLLC()
 	target_lev := strconv.FormatUint(uint64(level), 10)
 	cacheLevel := "L" + target_lev
-	ways := getCosInfo().CbmMaskLen
+	ways := GetCosInfo().CbmMaskLen
 	schemata := GetAvailableCaches(allres, reserve, cacheLevel)
 
 	for i, v := range osGroup.Schemata[cacheLevel] {
