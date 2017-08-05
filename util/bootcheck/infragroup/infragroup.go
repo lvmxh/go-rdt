@@ -5,7 +5,11 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/gobwas/glob"
+	log "github.com/sirupsen/logrus"
+
 	"openstackcore-rdtagent/lib/cache"
+	"openstackcore-rdtagent/lib/proc"
 	"openstackcore-rdtagent/lib/resctrl"
 	util "openstackcore-rdtagent/lib/util"
 	. "openstackcore-rdtagent/util/bootcheck/infragroup/config"
@@ -16,6 +20,17 @@ var groupName string = "infra"
 
 var infraGroupReserve = &Reserved{}
 var once sync.Once
+
+func GetGlobTasks() []glob.Glob {
+	conf := NewConfig()
+	l := len(conf.Tasks)
+	gs := make([]glob.Glob, l, l)
+	for i, v := range conf.Tasks {
+		g := glob.MustCompile(v)
+		gs[i] = g
+	}
+	return gs
+}
 
 // NOTE (Shaohe) This group can be merged into GetOSGroupReserve
 func GetInfraGroupReserve() (Reserved, error) {
@@ -70,6 +85,7 @@ func GetInfraGroupReserve() (Reserved, error) {
 				}
 			}
 		}
+
 		infraGroupReserve.CPUsPerNode = infraCPUs
 		infraGroupReserve.Schemata = schemata
 	})
@@ -114,6 +130,24 @@ func SetInfraGroup() error {
 		infraGroup.Schemata[cacheLevel][id] = cc
 	}
 
-	infraGroup.Commit(groupName)
+	gt := GetGlobTasks()
+	tasks := []string{}
+	ps := proc.ListProcesses()
+	for k, v := range ps {
+		for _, g := range gt {
+			if g.Match(v.CmdLine) {
+				tasks = append(tasks, k)
+				log.Infof("Add task: %d to infra group. Command line: %s",
+					v.Pid, v.CmdLine)
+			}
+		}
+	}
+
+	infraGroup.Tasks = append(infraGroup.Tasks, tasks...)
+
+	if err := infraGroup.Commit(groupName); err != nil {
+		return err
+	}
+
 	return nil
 }

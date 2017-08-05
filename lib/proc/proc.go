@@ -104,7 +104,7 @@ func IsEnableCat() bool {
 
 type Process struct {
 	Pid     int
-	cmdline string
+	CmdLine string
 }
 
 func ListProcesses() map[string]Process {
