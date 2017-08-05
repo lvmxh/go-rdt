@@ -85,6 +85,13 @@ type ResAssociation struct {
 	Schemata map[string][]CacheCos `"schemata"`
 }
 
+func NewResAssociation() *ResAssociation {
+	ra := &ResAssociation{}
+	ra.Tasks = []string{}
+	ra.Schemata = make(map[string][]CacheCos)
+	return ra
+}
+
 //Usage:
 //    ress := make(map[string]*ResAssociation)
 //	  filepath.Walk(SysResctrl, ParserResAssociation(SysResctrl, ignore, ress))
