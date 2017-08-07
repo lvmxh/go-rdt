@@ -12,7 +12,6 @@ import (
 )
 
 // FIXME should find a good accommodation for file
-
 type CosInfo struct {
 	CbmMaskLen int
 	MinCbmBits int
@@ -21,6 +20,15 @@ type CosInfo struct {
 
 var catCosInfo = &CosInfo{0, 0, 0}
 var infoOnce sync.Once
+
+// Schemata inforamtion
+type Reserved struct {
+	AllCPUs     *Bitmap            //cpu bit masp
+	SchemaNum   int                // Numbers of schema
+	Name        string             // Resource group name if it is a resource group instead of pool
+	Schemata    map[string]*Bitmap // Schema list
+	CPUsPerNode map[string]*Bitmap // CPU bitmap
+}
 
 // Concurrency-safe.
 func GetCosInfo() CosInfo {

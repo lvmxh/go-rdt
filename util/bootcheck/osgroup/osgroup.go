@@ -12,16 +12,10 @@ import (
 	. "openstackcore-rdtagent/util/rdtpool/base"
 )
 
-type OSGroupReserve struct {
-	AllCPUs     *util.Bitmap
-	CpusPerNode map[string]*util.Bitmap
-	Schemata    map[string]*util.Bitmap
-}
-
-var osGroupReserve = &OSGroupReserve{}
+var osGroupReserve = &Reserved{}
 var once sync.Once
 
-func GetOSGroupReserve() (OSGroupReserve, error) {
+func GetOSGroupReserve() (Reserved, error) {
 	var return_err error
 	once.Do(func() {
 		conf := NewConfig()
@@ -68,7 +62,7 @@ func GetOSGroupReserve() (OSGroupReserve, error) {
 				}
 			}
 		}
-		osGroupReserve.CpusPerNode = osCPUs
+		osGroupReserve.CPUsPerNode = osCPUs
 		osGroupReserve.Schemata = schemata
 	})
 
@@ -77,7 +71,7 @@ func GetOSGroupReserve() (OSGroupReserve, error) {
 }
 
 func GetAvailableCaches(allres map[string]*resctrl.ResAssociation,
-	reserve OSGroupReserve,
+	reserve Reserved,
 	cacheLevel string) map[string]*util.Bitmap {
 	// FIXME (Shaohe) A central util to generate schemata Bitmap
 
@@ -128,7 +122,7 @@ func SetOSGroup() error {
 
 	for i, v := range osGroup.Schemata[cacheLevel] {
 		cacheId := strconv.Itoa(int(v.Id))
-		if !reserve.CpusPerNode[cacheId].IsEmpty() {
+		if !reserve.CPUsPerNode[cacheId].IsEmpty() {
 			// OSGroup is the first Group, use the edge cache ways.
 			// FIXME (Shaohe), left or right cache ways, need to be check.
 			conf := NewConfig()

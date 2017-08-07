@@ -14,17 +14,11 @@ import (
 
 var groupName string = "infra"
 
-type InfraGroupReserve struct {
-	AllCPUs     *util.Bitmap
-	CpusPerNode map[string]*util.Bitmap
-	Schemata    map[string]*util.Bitmap
-}
-
-var infraGroupReserve = &InfraGroupReserve{}
+var infraGroupReserve = &Reserved{}
 var once sync.Once
 
 // NOTE (Shaohe) This group can be merged into GetOSGroupReserve
-func GetInfraGroupReserve() (InfraGroupReserve, error) {
+func GetInfraGroupReserve() (Reserved, error) {
 	var return_err error
 	once.Do(func() {
 		conf := NewConfig()
@@ -76,7 +70,7 @@ func GetInfraGroupReserve() (InfraGroupReserve, error) {
 				}
 			}
 		}
-		infraGroupReserve.CpusPerNode = infraCPUs
+		infraGroupReserve.CPUsPerNode = infraCPUs
 		infraGroupReserve.Schemata = schemata
 	})
 
@@ -111,7 +105,7 @@ func SetInfraGroup() error {
 	for k, v := range reserve.Schemata {
 		id, _ := strconv.Atoi(k)
 		var mask string
-		if !reserve.CpusPerNode[k].IsEmpty() {
+		if !reserve.CPUsPerNode[k].IsEmpty() {
 			mask = v.ToString()
 		} else {
 			mask = strconv.FormatUint(1<<uint(ways)-1, 16)
