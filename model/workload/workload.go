@@ -51,6 +51,10 @@ type RDTWorkLoad struct {
 	Group []string `json:"group"`
 	// CosName
 	CosName string
+	// Max Cache ways, use pointer to distinguish 0 value and empty value
+	MaxCache *uint32 `json:"max_cache,omitempty"`
+	// Min Cache ways, use pointer to distinguish 0 value and empty value
+	MinCache *uint32 `json:"min_cache,omitempty"`
 }
 
 // build this struct when create Resasscciation
@@ -98,67 +102,18 @@ func (w *RDTWorkLoad) Validate() error {
 }
 
 func (w *RDTWorkLoad) Enforce() *AppError {
-	w.Status = None
-
-	cpubitstr := ""
-	if len(w.CoreIDs) >= 0 {
-		bm, err := CpuBitmaps(w.CoreIDs)
-		if err != nil {
-			return NewAppError(http.StatusBadRequest,
-				"Failed to Pareser workload coreIDs.", err)
-		}
-		cpubitstr = bm.ToString()
-	}
-
 	// status will be updated to successful if no errors
 	w.Status = Failed
 
 	l.Lock()
 	defer l.Unlock()
+
 	resaall := resctrl.GetResAssociation()
-
-	base_grp, new_grp, sub_grp := getGroupNames(w, resaall)
-
-	if base_grp == "" {
-		// log group information
-		return AppErrorf(http.StatusBadRequest, "Faild to find a suitable group")
+	er := &EnforceRequest{}
+	if err := populateEnforceRequest(er, w, resaall); err != nil {
+		return err
 	}
-
-	log.Debugf("base group %s, new group %s, sub group %v", base_grp, new_grp, sub_grp)
-
-	pf := cpu.GetMicroArch(cpu.GetSignature())
-	if pf == "" {
-		return AppErrorf(http.StatusInternalServerError,
-			"Unknow platform, please update the cpu_map.toml conf file.")
-	}
-
-	p, err := policy.GetPolicy(strings.ToLower(pf), w.Policy)
-	if err != nil {
-		return NewAppError(http.StatusInternalServerError,
-			"Could not find the Polciy.", err)
-	}
-
-	ways, err := strconv.Atoi(p["MaxCache"])
-	if err != nil {
-		return NewAppError(http.StatusInternalServerError,
-			"Error define MaxCache in Polciy.", err)
-	}
-
-	cacheinfo := &cache.CacheInfos{}
-	cacheinfo.GetByLevel(libcache.GetLLC())
-
-	cpunum := cpu.HostCpuNum()
-	if cpunum == 0 {
-		return AppErrorf(http.StatusInternalServerError,
-			"Unable to get Total CPU numbers on Host")
-	}
-
-	er := &EnforceRequest{Resall: resaall,
-		BaseGrp:   base_grp,
-		NewGrp:    new_grp,
-		SubGrps:   sub_grp,
-		MaxWays:   uint32(ways),
-		Cache_IDs: getCacheIDs(cpubitstr, cacheinfo, cpunum)}
+	log.Debugf("Enforce request %v", *er)
 
 	targetResAss, err := createOrGetResAss(er)
 	if err != nil {
@@ -167,11 +122,26 @@ func (w *RDTWorkLoad) Enforce() *AppError {
 			"Error to create resource group.", err)
 	}
 
+	// FIXME (eliqiao): populateEnforceRequest has calculated cpubitstr already,
+	// but it was not saved into workload, here calculate it again.
+	cpubitstr := ""
+	if len(w.CoreIDs) >= 0 {
+		bm, _ := CpuBitmaps(w.CoreIDs)
+		cpubitstr = bm.ToString()
+	}
 	targetResAss.Tasks = append(targetResAss.Tasks, w.TaskIDs...)
-	targetResAss.CPUs = cpubitstr
 
-	if base_grp != new_grp && base_grp != "." {
-		new_grp = base_grp + "-" + new_grp
+	if targetResAss.CPUs != "" && cpubitstr != "" {
+		return AppErrorf(http.StatusBadRequest,
+			"Can not over write existed cpu map")
+	} else {
+		targetResAss.CPUs = cpubitstr
+	}
+
+	// Commit targetResAss to resctrl
+	new_grp := er.NewGrp
+	if er.BaseGrp != er.NewGrp && er.BaseGrp != "." {
+		new_grp = er.BaseGrp + "-" + er.NewGrp
 	}
 
 	if err = targetResAss.Commit(new_grp); err != nil {
@@ -180,7 +150,7 @@ func (w *RDTWorkLoad) Enforce() *AppError {
 			"Error to commit resource group for workload.", err)
 	}
 
-	if base_grp == "." {
+	if er.BaseGrp == "." {
 		if err = resaall["."].Commit("."); err != nil {
 			log.Errorf("Error while try to commit resource group for default group")
 			resctrl.DestroyResAssociation(new_grp)
@@ -555,4 +525,66 @@ func inCacheList(cache uint32, cache_list []uint32) bool {
 		}
 	}
 	return false
+}
+
+// Construct an enforcement request from a workload.
+// Consider to refine getGroupNames method after resource pool added later.
+func populateEnforceRequest(req *EnforceRequest, w *RDTWorkLoad, m map[string]*resctrl.ResAssociation) *AppError {
+	w.Status = None
+
+	cpubitstr := ""
+	if len(w.CoreIDs) >= 0 {
+		bm, err := CpuBitmaps(w.CoreIDs)
+		if err != nil {
+			return NewAppError(http.StatusBadRequest,
+				"Failed to Parese workload coreIDs.", err)
+		}
+		cpubitstr = bm.ToString()
+	}
+
+	cacheinfo := &cache.CacheInfos{}
+	cacheinfo.GetByLevel(libcache.GetLLC())
+
+	cpunum := cpu.HostCpuNum()
+	if cpunum == 0 {
+		return AppErrorf(http.StatusInternalServerError,
+			"Unable to get Total CPU numbers on Host")
+	}
+
+	req.Cache_IDs = getCacheIDs(cpubitstr, cacheinfo, cpunum)
+
+	base_grp, new_grp, sub_grps := getGroupNames(w, m)
+	req.BaseGrp = base_grp
+	req.NewGrp = new_grp
+	req.SubGrps = sub_grps
+	req.Resall = m
+
+	if w.MinCache != nil {
+		req.MinWays = *w.MinCache
+	}
+	// MaxCache is required, return if workload has it set.
+	if w.MaxCache != nil {
+		req.MaxWays = *w.MaxCache
+		return nil
+	}
+	// else get max/min from policy
+	pf := cpu.GetMicroArch(cpu.GetSignature())
+	if pf == "" {
+		return AppErrorf(http.StatusInternalServerError,
+			"Unknow platform, please update the cpu_map.toml conf file.")
+	}
+
+	p, err := policy.GetPolicy(strings.ToLower(pf), w.Policy)
+	if err != nil {
+		return NewAppError(http.StatusInternalServerError,
+			"Could not find the Polciy.", err)
+	}
+
+	ways, err := strconv.Atoi(p["MaxCache"])
+	if err != nil {
+		return NewAppError(http.StatusInternalServerError,
+			"Error define MaxCache in Polciy.", err)
+	}
+	req.MaxWays = uint32(ways)
+	return nil
 }
