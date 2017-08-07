@@ -207,13 +207,41 @@ func (w *RDTWorkLoad) Release() error {
 // Patch a workload
 func (w *RDTWorkLoad) Update(patched *RDTWorkLoad) (*RDTWorkLoad, *AppError) {
 
-	// if we change policy, release current resource group and re-enforce it.
+	// if we change policy/max_cache/min_cache, release current resource group
+	// and re-enforce it.
+	reEnforce := false
+	if patched.MaxCache != nil {
+		if w.MaxCache == nil {
+			w.MaxCache = patched.MaxCache
+			reEnforce = true
+		}
+		if w.MaxCache != nil && *w.MaxCache != *patched.MaxCache {
+			*w.MaxCache = *patched.MaxCache
+			reEnforce = true
+		}
+	}
+
+	if patched.MinCache != nil {
+		if w.MinCache == nil {
+			w.MinCache = patched.MinCache
+			reEnforce = true
+		}
+		if w.MinCache != nil && *w.MinCache != *patched.MinCache {
+			*w.MinCache = *patched.MinCache
+			reEnforce = true
+		}
+	}
+
 	if patched.Policy != w.Policy {
+		w.Policy = patched.Policy
+		reEnforce = true
+	}
+
+	if reEnforce == true {
 		if err := w.Release(); err != nil {
 			return w, NewAppError(http.StatusInternalServerError, "Faild to release workload",
 				fmt.Errorf(""))
 		}
-		w.Policy = patched.Policy
 
 		if len(patched.TaskIDs) > 0 {
 			w.TaskIDs = patched.TaskIDs
