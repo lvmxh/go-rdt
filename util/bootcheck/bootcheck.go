@@ -11,8 +11,8 @@ import (
 	"openstackcore-rdtagent/db"
 	"openstackcore-rdtagent/lib/cpu"
 	"openstackcore-rdtagent/lib/resctrl"
-	"openstackcore-rdtagent/util/bootcheck/infragroup"
-	"openstackcore-rdtagent/util/bootcheck/osgroup"
+	"openstackcore-rdtagent/util/rdtpool/infragroup"
+	"openstackcore-rdtagent/util/rdtpool/osgroup"
 )
 
 func SanityCheck() {

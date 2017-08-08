@@ -12,8 +12,8 @@ import (
 	"openstackcore-rdtagent/lib/proc"
 	"openstackcore-rdtagent/lib/resctrl"
 	util "openstackcore-rdtagent/lib/util"
-	. "openstackcore-rdtagent/util/bootcheck/infragroup/config"
 	. "openstackcore-rdtagent/util/rdtpool/base"
+	. "openstackcore-rdtagent/util/rdtpool/infragroup/config"
 )
 
 var groupName string = "infra"

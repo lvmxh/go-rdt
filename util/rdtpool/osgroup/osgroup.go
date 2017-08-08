@@ -8,8 +8,8 @@ import (
 	"openstackcore-rdtagent/lib/cache"
 	"openstackcore-rdtagent/lib/resctrl"
 	util "openstackcore-rdtagent/lib/util"
-	. "openstackcore-rdtagent/util/bootcheck/osgroup/config"
 	. "openstackcore-rdtagent/util/rdtpool/base"
+	. "openstackcore-rdtagent/util/rdtpool/osgroup/config"
 )
 
 var osGroupReserve = &Reserved{}

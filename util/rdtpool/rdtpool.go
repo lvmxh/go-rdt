@@ -3,9 +3,9 @@ package rdtpool
 import (
 	"sync"
 
-	"openstackcore-rdtagent/util/bootcheck/infragroup"
-	"openstackcore-rdtagent/util/bootcheck/osgroup"
 	. "openstackcore-rdtagent/util/rdtpool/base"
+	"openstackcore-rdtagent/util/rdtpool/infragroup"
+	"openstackcore-rdtagent/util/rdtpool/osgroup"
 )
 
 // A map that contains all reserved resource information
