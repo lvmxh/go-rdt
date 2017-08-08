@@ -28,6 +28,17 @@ import (
 //         to this resource group. Need to count how many workload in this
 //         resource group when calculating hosptility score.
 //         Optional
+
+const (
+	// Resource group
+	OS    = "os"
+	Infra = "infra"
+	// Cache resource pool
+	Gurantee   = "gurantee"
+	Besteffort = "besteffort"
+	Shared     = "shared"
+)
+
 var ReservedInfo map[string]*Reserved
 var revinfoOnce sync.Once
 
@@ -38,12 +49,12 @@ func GetReservedInfo() map[string]*Reserved {
 
 		r, err := osgroup.GetOSGroupReserve()
 		if err == nil {
-			ReservedInfo["os"] = &r
+			ReservedInfo[OS] = &r
 		}
 
 		r, err = infragroup.GetInfraGroupReserve()
 		if err == nil {
-			ReservedInfo["infra"] = &r
+			ReservedInfo[Infra] = &r
 		}
 	})
 
