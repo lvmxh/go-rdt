@@ -2,13 +2,13 @@ package db
 
 import (
 	"fmt"
-	"reflect"
 
 	// from app import an config is really not a good idea.
 	// uncouple it from APP. Or we can add it in a rmd/config
 	. "openstackcore-rdtagent/db/config"
-	"openstackcore-rdtagent/lib/util"
+	libutil "openstackcore-rdtagent/lib/util"
 	"openstackcore-rdtagent/model/workload"
+	"openstackcore-rdtagent/util"
 )
 
 // workload table name
@@ -35,19 +35,6 @@ func NewDB() (DB, error) {
 	}
 }
 
-// Helper function to find if a elem in a slice
-func hasElem(s interface{}, elem interface{}) bool {
-	arrv := reflect.ValueOf(s)
-	if arrv.Kind() == reflect.Slice {
-		for i := 0; i < arrv.Len(); i++ {
-			if arrv.Index(i).Interface() == elem {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 // this function does 3 things to valicate a user request workload is
 // validate at data base layer
 func validateWorkload(w workload.RDTWorkLoad, ws []workload.RDTWorkLoad) error {
@@ -68,7 +55,7 @@ func validateWorkload(w workload.RDTWorkLoad, ws []workload.RDTWorkLoad) error {
 	// Validate if the task id of workload has existed.
 	for _, t := range w.TaskIDs {
 		for _, wi := range ws {
-			if hasElem(wi.TaskIDs, t) {
+			if util.HasElem(wi.TaskIDs, t) {
 				return fmt.Errorf("Taskid %s has existed in workload %s", t, wi.ID)
 			}
 		}
@@ -79,12 +66,12 @@ func validateWorkload(w workload.RDTWorkLoad, ws []workload.RDTWorkLoad) error {
 	}
 
 	// Validate if the core id of workload has overlap with crrent ones.
-	bm, _ := util.NewBitmap(w.CoreIDs)
-	bmsum, _ := util.NewBitmap("")
+	bm, _ := libutil.NewBitmap(w.CoreIDs)
+	bmsum, _ := libutil.NewBitmap("")
 
 	for _, c := range ws {
 		if len(c.CoreIDs) > 0 {
-			tmpbm, _ := util.NewBitmap(c.CoreIDs)
+			tmpbm, _ := libutil.NewBitmap(c.CoreIDs)
 			bmsum = bmsum.Or(tmpbm)
 		}
 	}
