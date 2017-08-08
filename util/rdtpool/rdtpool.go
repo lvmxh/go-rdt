@@ -1,11 +1,14 @@
 package rdtpool
 
 import (
+	"fmt"
+	"strconv"
 	"sync"
 
+	"openstackcore-rdtagent/lib/resctrl"
+	libutil "openstackcore-rdtagent/lib/util"
+	"openstackcore-rdtagent/util"
 	. "openstackcore-rdtagent/util/rdtpool/base"
-	"openstackcore-rdtagent/util/rdtpool/infragroup"
-	"openstackcore-rdtagent/util/rdtpool/osgroup"
 )
 
 // A map that contains all reserved resource information
@@ -47,16 +50,57 @@ func GetReservedInfo() map[string]*Reserved {
 	revinfoOnce.Do(func() {
 		ReservedInfo = make(map[string]*Reserved, 10)
 
-		r, err := osgroup.GetOSGroupReserve()
+		r, err := GetOSGroupReserve()
 		if err == nil {
 			ReservedInfo[OS] = &r
 		}
 
-		r, err = infragroup.GetInfraGroupReserve()
+		r, err = GetInfraGroupReserve()
 		if err == nil {
 			ReservedInfo[Infra] = &r
 		}
 	})
 
 	return ReservedInfo
+}
+
+// Return available schemata of caches from specific pool: gurantee,
+// besteffort, shared or just none
+func GetAvailableCacheSchemata(allres map[string]*resctrl.ResAssociation,
+	ignore_groups []string,
+	pool string,
+	cacheLevel string) (map[string]*libutil.Bitmap, error) {
+
+	GetReservedInfo()
+	// FIXME (Shaohe) A central util to generate schemata Bitmap
+	schemata := map[string]*libutil.Bitmap{}
+
+	if pool == "none" {
+		for k, _ := range ReservedInfo[OS].Schemata {
+			schemata[k], _ = CacheBitmaps(GetCosInfo().CbmMask)
+		}
+	} else {
+		resv, ok := ReservedInfo[pool]
+		if !ok {
+			return nil, fmt.Errorf("error doesn't support pool %s", pool)
+		}
+
+		for k, v := range resv.Schemata {
+			schemata[k] = v
+		}
+	}
+
+	for k, v := range allres {
+		if util.HasElem(k, ignore_groups) {
+			continue
+		}
+		if sv, ok := v.Schemata[cacheLevel]; ok {
+			for _, cv := range sv {
+				k := strconv.Itoa(int(cv.Id))
+				bm, _ := CacheBitmaps(cv.Mask)
+				schemata[k] = schemata[k].Axor(bm)
+			}
+		}
+	}
+	return schemata, nil
 }

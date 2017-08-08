@@ -1,4 +1,4 @@
-package osgroup
+package rdtpool
 
 import (
 	"fmt"
@@ -9,16 +9,16 @@ import (
 	"openstackcore-rdtagent/lib/resctrl"
 	util "openstackcore-rdtagent/lib/util"
 	. "openstackcore-rdtagent/util/rdtpool/base"
-	. "openstackcore-rdtagent/util/rdtpool/osgroup/config"
+	. "openstackcore-rdtagent/util/rdtpool/config"
 )
 
 var osGroupReserve = &Reserved{}
-var once sync.Once
+var osOnce sync.Once
 
 func GetOSGroupReserve() (Reserved, error) {
 	var return_err error
-	once.Do(func() {
-		conf := NewConfig()
+	osOnce.Do(func() {
+		conf := NewOSConfig()
 		osCPUbm, err := CpuBitmaps([]string{conf.CpuSet})
 		if err != nil {
 			return_err = err
@@ -70,30 +70,6 @@ func GetOSGroupReserve() (Reserved, error) {
 
 }
 
-func GetAvailableCaches(allres map[string]*resctrl.ResAssociation,
-	reserve Reserved,
-	cacheLevel string) map[string]*util.Bitmap {
-	// FIXME (Shaohe) A central util to generate schemata Bitmap
-
-	schemata := map[string]*util.Bitmap{}
-	for k, _ := range reserve.Schemata {
-		// "0-" + strconv.Itoa(int(ways))
-		schemata[k], _ = CacheBitmaps(GetCosInfo().CbmMask)
-	}
-	for k, v := range allres {
-		if k == "infra" || k == "." {
-			continue
-		}
-		if sv, ok := v.Schemata[cacheLevel]; ok {
-			for _, cv := range sv {
-				k := strconv.Itoa(int(cv.Id))
-				bm, _ := CacheBitmaps(cv.Mask)
-				schemata[k] = schemata[k].Axor(bm)
-			}
-		}
-	}
-	return schemata
-}
 func SetOSGroup() error {
 	reserve, err := GetOSGroupReserve()
 	if err != nil {
@@ -114,14 +90,14 @@ func SetOSGroup() error {
 	level := syscache.GetLLC()
 	target_lev := strconv.FormatUint(uint64(level), 10)
 	cacheLevel := "L" + target_lev
-	schemata := GetAvailableCaches(allres, reserve, cacheLevel)
+	schemata, _ := GetAvailableCacheSchemata(allres, []string{"infra", "."}, "none", cacheLevel)
 
 	for i, v := range osGroup.Schemata[cacheLevel] {
 		cacheId := strconv.Itoa(int(v.Id))
 		if !reserve.CPUsPerNode[cacheId].IsEmpty() {
 			// OSGroup is the first Group, use the edge cache ways.
 			// FIXME (Shaohe), left or right cache ways, need to be check.
-			conf := NewConfig()
+			conf := NewOSConfig()
 			request, _ := CacheBitmaps(strconv.FormatUint(1<<conf.CacheWays-1, 16))
 			// NOTE (Shaohe), simpleness, brutal. Reset Cache for OS Group,
 			// even the cache is occupied by other group.

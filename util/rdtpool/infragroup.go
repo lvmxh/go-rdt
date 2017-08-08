@@ -1,4 +1,4 @@
-package infragroup
+package rdtpool
 
 import (
 	"fmt"
@@ -13,16 +13,16 @@ import (
 	"openstackcore-rdtagent/lib/resctrl"
 	util "openstackcore-rdtagent/lib/util"
 	. "openstackcore-rdtagent/util/rdtpool/base"
-	. "openstackcore-rdtagent/util/rdtpool/infragroup/config"
+	. "openstackcore-rdtagent/util/rdtpool/config"
 )
 
 var groupName string = "infra"
 
 var infraGroupReserve = &Reserved{}
-var once sync.Once
+var infraOnce sync.Once
 
 func GetGlobTasks() []glob.Glob {
-	conf := NewConfig()
+	conf := NewInfraConfig()
 	l := len(conf.Tasks)
 	gs := make([]glob.Glob, l, l)
 	for i, v := range conf.Tasks {
@@ -35,8 +35,8 @@ func GetGlobTasks() []glob.Glob {
 // NOTE (Shaohe) This group can be merged into GetOSGroupReserve
 func GetInfraGroupReserve() (Reserved, error) {
 	var return_err error
-	once.Do(func() {
-		conf := NewConfig()
+	infraOnce.Do(func() {
+		conf := NewInfraConfig()
 		infraCPUbm, err := CpuBitmaps([]string{conf.CpuSet})
 		if err != nil {
 			return_err = err
@@ -94,7 +94,7 @@ func GetInfraGroupReserve() (Reserved, error) {
 
 }
 func SetInfraGroup() error {
-	conf := NewConfig()
+	conf := NewInfraConfig()
 	if conf == nil {
 		return nil
 	}

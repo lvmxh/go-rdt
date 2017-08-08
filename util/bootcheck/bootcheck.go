@@ -11,8 +11,7 @@ import (
 	"openstackcore-rdtagent/db"
 	"openstackcore-rdtagent/lib/cpu"
 	"openstackcore-rdtagent/lib/resctrl"
-	"openstackcore-rdtagent/util/rdtpool/infragroup"
-	"openstackcore-rdtagent/util/rdtpool/osgroup"
+	"openstackcore-rdtagent/util/rdtpool"
 )
 
 func SanityCheck() {
@@ -42,13 +41,13 @@ func SanityCheck() {
 		fmt.Println(msg)
 		os.Exit(1)
 	}
-	if err := osgroup.SetOSGroup(); err != nil {
+	if err := rdtpool.SetOSGroup(); err != nil {
 		msg := "Error, create OS groups failed! Reason: " + err.Error()
 		log.Fatalf(msg)
 		fmt.Println(msg)
 		os.Exit(1)
 	}
-	if err := infragroup.SetInfraGroup(); err != nil {
+	if err := rdtpool.SetInfraGroup(); err != nil {
 		msg := "Error, create infra groups failed! Reason: " + err.Error()
 		log.Fatalf(msg)
 		fmt.Println(msg)
