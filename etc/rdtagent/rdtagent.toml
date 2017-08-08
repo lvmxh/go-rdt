@@ -27,3 +27,8 @@ cacheways = 10
 cpuset = "2-3"
 # arrary or comma-separated values? RMD supports array instead of CSV.
 tasks = ["ovs*"] # Just support Wildcards. Do we need to support RE?
+
+[CachePool] # Cache Pool config is optional
+gurantee = 12
+besteffort = 7
+shared = 3

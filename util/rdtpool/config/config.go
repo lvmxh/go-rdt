@@ -18,11 +18,19 @@ type InfraGroup struct {
 	Tasks     []string `toml:"tasks"`
 }
 
+type CachePool struct {
+	Guarantee  uint `toml:"guarantee"`
+	Besteffort uint `toml:"besteffort"`
+	Shared     uint `toml:"shared"`
+}
+
 var infraConfigOnce sync.Once
 var osConfigOnce sync.Once
+var cachePoolConfigOnce sync.Once
 
 var infragroup = &InfraGroup{}
 var osgroup = &OSGroup{1, "0"}
+var cachepool = &CachePool{0, 0, 0}
 
 func NewInfraConfig() *InfraGroup {
 	infraConfigOnce.Do(func() {
@@ -36,10 +44,16 @@ func NewInfraConfig() *InfraGroup {
 	return infragroup
 }
 
-func NewOSConfig() OSGroup {
+func NewOSConfig() *OSGroup {
 	osConfigOnce.Do(func() {
 		viper.UnmarshalKey("OSGroup", osgroup)
 	})
+	return osgroup
+}
 
-	return *osgroup
+func NewCachePoolConfig() *CachePool {
+	cachePoolConfigOnce.Do(func() {
+		viper.UnmarshalKey("CachePool", cachepool)
+	})
+	return cachepool
 }

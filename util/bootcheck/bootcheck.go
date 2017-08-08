@@ -53,6 +53,14 @@ func SanityCheck() {
 		fmt.Println(msg)
 		os.Exit(1)
 	}
+	v, err := rdtpool.GetCachePoolLayout()
+	log.Debugf("Cache Pool layout %v", v)
+	if err != nil {
+		msg := "Error while get cache pool layout Reason: " + err.Error()
+		log.Fatalf(msg)
+		fmt.Println(msg)
+		os.Exit(1)
+	}
 }
 
 func DBCheck() error {
