@@ -76,12 +76,9 @@ func GetAvailableCaches(allres map[string]*resctrl.ResAssociation,
 	// FIXME (Shaohe) A central util to generate schemata Bitmap
 
 	schemata := map[string]*util.Bitmap{}
-	ways := GetCosInfo().CbmMaskLen
-	// fullMaks is really mask, just Pointer type cast.
-	fullMask := strconv.FormatUint(1<<uint(ways)-1, 16)
 	for k, _ := range reserve.Schemata {
 		// "0-" + strconv.Itoa(int(ways))
-		schemata[k], _ = CacheBitmaps(fullMask)
+		schemata[k], _ = CacheBitmaps(GetCosInfo().CbmMask)
 	}
 	for k, v := range allres {
 		if k == "infra" || k == "." {
@@ -134,11 +131,11 @@ func SetOSGroup() error {
 
 			osGroup.Schemata[cacheLevel][i].Mask = strconv.FormatUint(1<<uint(len(expect_ways))-1, 16)
 		} else {
-			request := strconv.FormatUint(1<<uint(ways)-1, 16)
-			// assume the caches ways less than 32.
-			osGroup.Schemata[cacheLevel][i].Mask = request
+			osGroup.Schemata[cacheLevel][i].Mask = GetCosInfo().CbmMask
 		}
 	}
-	osGroup.Commit(".")
+	if err := osGroup.Commit("."); err != nil {
+		return err
+	}
 	return nil
 }

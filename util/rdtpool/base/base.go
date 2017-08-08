@@ -16,9 +16,10 @@ type CosInfo struct {
 	CbmMaskLen int
 	MinCbmBits int
 	NumClosids int
+	CbmMask    string
 }
 
-var catCosInfo = &CosInfo{0, 0, 0}
+var catCosInfo = &CosInfo{0, 0, 0, ""}
 var infoOnce sync.Once
 
 // Schemata inforamtion
@@ -41,6 +42,7 @@ func GetCosInfo() CosInfo {
 		catCosInfo.CbmMaskLen = CbmLen(rcinfo[cacheLevel].CbmMask)
 		catCosInfo.MinCbmBits = rcinfo[cacheLevel].MinCbmBits
 		catCosInfo.NumClosids = rcinfo[cacheLevel].NumClosids
+		catCosInfo.CbmMask = rcinfo[cacheLevel].CbmMask
 	})
 	return *catCosInfo
 }
