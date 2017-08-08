@@ -114,7 +114,6 @@ func SetOSGroup() error {
 	level := syscache.GetLLC()
 	target_lev := strconv.FormatUint(uint64(level), 10)
 	cacheLevel := "L" + target_lev
-	ways := GetCosInfo().CbmMaskLen
 	schemata := GetAvailableCaches(allres, reserve, cacheLevel)
 
 	for i, v := range osGroup.Schemata[cacheLevel] {
