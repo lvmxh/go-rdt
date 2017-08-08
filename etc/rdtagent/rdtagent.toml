@@ -10,7 +10,7 @@ port = 8081
 path = "/var/log/rdagent.log"
 env = "dev"  # production or dev
 level = "debug"
-stdout = "false"
+stdout = true
 
 [database]
 backend = "bolt" # mgo
