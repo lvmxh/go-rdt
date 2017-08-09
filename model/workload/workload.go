@@ -21,6 +21,8 @@ import (
 	"openstackcore-rdtagent/model/cache"
 	"openstackcore-rdtagent/model/policy"
 	"openstackcore-rdtagent/util"
+	"openstackcore-rdtagent/util/rdtpool"
+	. "openstackcore-rdtagent/util/rdtpool/base"
 )
 
 // FIXME this is not a global lock
@@ -47,8 +49,6 @@ type RDTWorkLoad struct {
 	Policy string `json:"policy"`
 	// Status
 	Status string
-	// Group
-	Group []string `json:"group"`
 	// CosName
 	CosName string
 	// Max Cache ways, use pointer to distinguish 0 value and empty value
@@ -61,13 +61,6 @@ type RDTWorkLoad struct {
 type EnforceRequest struct {
 	// all resassociations on the host
 	Resall map[string]*resctrl.ResAssociation
-	// on which group we allocate cache
-	BaseGrp string
-	// new group name of the workload
-	NewGrp string
-	// sub group list in the base groups
-	// this will be used to calculate offset
-	SubGrps []string
 	// max cache ways
 	MaxWays uint32
 	// min cache ways, not used yet
@@ -76,6 +69,8 @@ type EnforceRequest struct {
 	Cache_IDs []uint32
 	// consume from base group or not
 	Consume bool
+	// request type
+	Type string
 }
 
 func (w *RDTWorkLoad) Validate() error {
@@ -90,80 +85,105 @@ func (w *RDTWorkLoad) Validate() error {
 			return fmt.Errorf("The task: %s does not exist", task)
 		}
 	}
-	// user don't need to provide group name anymore, if we configured
-	// infra_group, then let RDAgent append the group name
-	// e.g. w.Group = append(w.Group, "infra")
-	// e.g. w.Group = append(w.Group, "w.name")
-	if len(w.Group) > 2 {
-		return fmt.Errorf("Can not specified more then 2 group list name")
+
+	if w.Policy == "" {
+		if w.MaxCache == nil || w.MinCache == nil {
+			return fmt.Errorf("Need to provide max_cache and min_cache if no policy specified.")
+		}
 	}
 
 	return nil
 }
 
 func (w *RDTWorkLoad) Enforce() *AppError {
-	// status will be updated to successful if no errors
 	w.Status = Failed
 
 	l.Lock()
 	defer l.Unlock()
-
 	resaall := resctrl.GetResAssociation()
+
 	er := &EnforceRequest{}
-	if err := populateEnforceRequest(er, w, resaall); err != nil {
+	if err := populateEnforceRequest(er, w); err != nil {
 		return err
 	}
-	log.Debugf("Enforce request %v", *er)
 
-	targetResAss, err := createOrGetResAss(er)
+	targetLev := strconv.FormatUint(uint64(libcache.GetLLC()), 10)
+	av, err := rdtpool.GetAvailableCacheSchemata(resaall, []string{"infra", "."}, er.Type, "L"+targetLev)
 	if err != nil {
-		log.Errorf("Error while try to create resource group for workload %s", w.ID)
 		return NewAppError(http.StatusInternalServerError,
-			"Error to create resource group.", err)
+			"Error to get available cache", err)
 	}
 
-	// FIXME (eliqiao): populateEnforceRequest has calculated cpubitstr already,
-	// but it was not saved into workload, here calculate it again.
+	reserved := rdtpool.GetReservedInfo()
+
+	candidate := make(map[string]*libutil.Bitmap, 0)
+	for k, v := range av {
+		cacheId, _ := strconv.Atoi(k)
+		if !inCacheList(uint32(cacheId), er.Cache_IDs) {
+			candidate[k], _ = libutil.NewBitmap(GetCosInfo().CbmMaskLen, GetCosInfo().CbmMask)
+			continue
+		}
+		switch er.Type {
+		case rdtpool.Gurantee:
+			// TODO
+			// candidate[k] = v.GetBestMatchConnectiveBits(er.MaxWays, 0, true)
+			candidate[k] = v.GetConnectiveBits(er.MaxWays, 0, false)
+		case rdtpool.Besteffort:
+			candidate[k], _ = libutil.NewBitmap(GetCosInfo().CbmMaskLen, "")
+			tmp := v.GetConnectiveBits(er.MinWays, 0, true)
+			if !tmp.IsEmpty() {
+				candidate[k] = v.Or(reserved[rdtpool.Shared].Schemata[k]).GetConnectiveBits(er.MaxWays, 0, true)
+
+			} else {
+				tmp = v.GetConnectiveBits(er.MinWays, 0, false)
+				if !tmp.IsEmpty() {
+					candidate[k] = v.Or(reserved[rdtpool.Shared].Schemata[k]).GetConnectiveBits(er.MaxWays, 0, false)
+				}
+			}
+		case rdtpool.Shared:
+			candidate[k] = reserved[rdtpool.Shared].Schemata[k]
+		}
+
+		if candidate[k].IsEmpty() {
+			return AppErrorf(http.StatusBadRequest,
+				"Not enough cache left on cache_id %s", k)
+		}
+	}
+
+	resAss := newResAss(candidate, targetLev)
+	fmt.Println(resAss)
+
 	cpubitstr := ""
 	if len(w.CoreIDs) >= 0 {
 		bm, _ := CpuBitmaps(w.CoreIDs)
 		cpubitstr = bm.ToString()
 	}
-	targetResAss.Tasks = append(targetResAss.Tasks, w.TaskIDs...)
+	resAss.Tasks = append(resAss.Tasks, w.TaskIDs...)
+	resAss.CPUs = cpubitstr
 
-	if targetResAss.CPUs != "" && cpubitstr != "" {
-		return AppErrorf(http.StatusBadRequest,
-			"Can not over write existed cpu map")
-	} else {
-		targetResAss.CPUs = cpubitstr
+	var grpName string
+
+	if len(w.TaskIDs) > 0 {
+		grpName = w.TaskIDs[0] + "-" + er.Type
+	} else if len(w.CoreIDs) > 0 {
+		grpName = w.CoreIDs[0] + "-" + er.Type
 	}
 
-	// Commit targetResAss to resctrl
-	new_grp := er.NewGrp
-	if er.BaseGrp != er.NewGrp && er.BaseGrp != "." {
-		new_grp = er.BaseGrp + "-" + er.NewGrp
-	}
-
-	if err = targetResAss.Commit(new_grp); err != nil {
-		log.Errorf("Error while try to commit resource group for workload %s, group name %s", w.ID, new_grp)
+	if err = resAss.Commit(grpName); err != nil {
+		log.Errorf("Error while try to commit resource group for workload %s, group name %s", w.ID, grpName)
 		return NewAppError(http.StatusInternalServerError,
 			"Error to commit resource group for workload.", err)
 	}
 
-	if er.BaseGrp == "." {
-		if err = resaall["."].Commit("."); err != nil {
-			log.Errorf("Error while try to commit resource group for default group")
-			resctrl.DestroyResAssociation(new_grp)
-			return NewAppError(http.StatusInternalServerError,
-				"Error while try to commit resource group for default group.", err)
-		}
+	// reset os group
+	if err = rdtpool.SetOSGroup(); err != nil {
+		log.Errorf("Error while try to commit resource group for default group")
+		resctrl.DestroyResAssociation(grpName)
+		return NewAppError(http.StatusInternalServerError,
+			"Error while try to commit resource group for default group.", err)
 	}
 
-	if len(w.Group) == 0 {
-		w.Group = append(w.Group, new_grp)
-	}
-
-	w.CosName = new_grp
+	w.CosName = grpName
 	w.Status = Successful
 	return nil
 }
@@ -189,9 +209,9 @@ func (w *RDTWorkLoad) Release() error {
 		if err := resctrl.DestroyResAssociation(w.CosName); err != nil {
 			return err
 		}
-		delete(resaall, w.CosName)
-		newDefaultGrp := CalculateDefaultGroup(resaall, []string{"."}, true)
-		newDefaultGrp.Commit(".")
+		if err := rdtpool.SetOSGroup(); err != nil {
+			return err
+		}
 	}
 	// remove workload task ids from resource group
 	if len(w.TaskIDs) > 0 {
@@ -294,235 +314,12 @@ func (w *RDTWorkLoad) Update(patched *RDTWorkLoad) (*RDTWorkLoad, *AppError) {
 	return w, nil
 }
 
-// return base group name, new group name, sub group name list.
-// e.g.
-// CG1 L3:0=ffff;1=ffff
-// CG1-SUB1 L3:0=f;1=f
-// CG2 L3:0=f0000;1=f0000
-//
-// if w.Group is ["CG1", "SUB2"]
-// getGroupNames will return CG1, SUB2, [CG1-SUB1]
-func getGroupNames(w *RDTWorkLoad, m map[string]*resctrl.ResAssociation) (b, n string, s []string) {
-	var new_grp string
-	var base_grp string
-	sub_grp := []string{}
-	// no group specify
-	if len(w.Group) == 0 {
-		if len(w.TaskIDs) > 0 {
-			// use the first task id as gname
-			new_grp = w.TaskIDs[0]
-		} else {
-			// FIXME generate a better group name
-			new_grp = w.ID
-		}
-		return ".", new_grp, []string{}
-	}
-
-	if len(w.Group) == 1 {
-		_, ok := m[w.Group[0]]
-		if ok {
-			// find existed group
-			// new group and base group are same
-			return w.Group[0], w.Group[0], []string{}
-		} else {
-			// doesn't find one, create a new one
-			return ".", w.Group[0], []string{}
-		}
-	}
-
-	if len(w.Group) == 2 {
-		_, ok1 := m[w.Group[0]]
-		_, ok2 := m[w.Group[1]]
-		if ok1 && ok2 {
-			// FIXME error
-			return "", "", []string{}
-		}
-		if !ok1 && !ok2 {
-			// FIXME error
-			return "", "", []string{}
-		}
-
-		if ok1 {
-			base_grp = w.Group[0]
-			new_grp = w.Group[1]
-		} else {
-			base_grp = w.Group[1]
-			new_grp = w.Group[2]
-		}
-		for g, _ := range m {
-			// sub group names like base-sub
-			if strings.HasPrefix(g, base_grp+"-") {
-				sub_grp = append(sub_grp, g)
-			}
-		}
-		return base_grp, new_grp, sub_grp
-	}
-	// error
-	return "", "", []string{}
-}
-
-// return a Resassociation with proper mask set
-func createOrGetResAss(er *EnforceRequest) (t resctrl.ResAssociation, err error) {
-	if er.BaseGrp == er.NewGrp {
-		return *er.Resall[er.BaseGrp], nil
-	}
-	for _, sg := range er.SubGrps {
-		if er.BaseGrp+"-"+er.NewGrp == sg {
-			// new_grp has existed
-			return *er.Resall[sg], nil
-		}
-	}
-	// consider move consume checking to createNewResassociation
-	if er.BaseGrp == "." {
-		// sub_grp should be empty if the base group is "."
-		// or that should be an internal error.
-		er.Consume = true
-		er.SubGrps = []string{}
-	} else {
-		er.Consume = false
-	}
-	return createNewResassociation(er)
-}
-
-// return a new Resassociation based on the given resctrl.ResAssociation
-func createNewResassociation(er *EnforceRequest) (t resctrl.ResAssociation, err error) {
-	baseRes := er.Resall[er.BaseGrp]
-	if er.BaseGrp == "." {
-		// if infra group are created, should be added it to ignore group.
-		baseRes = CalculateDefaultGroup(er.Resall, []string{"."}, false)
-		er.Resall["."] = baseRes
-	}
-
-	rdtinfo := resctrl.GetRdtCosInfo()
-	// loop for each level 3 cache to construct new resassociation
-	newResAss := resctrl.ResAssociation{}
-	newResAss.Schemata = make(map[string][]resctrl.CacheCos)
-
-	for cattype, res := range baseRes.Schemata {
-		// construct ResAssociation for each cache id
-		catinfo, ok := rdtinfo[strings.ToLower(cattype)]
-		if !ok {
-			continue
-		}
-		for i, _ := range res {
-			var newcos resctrl.CacheCos
-			// fill the new mask with cbm_mask
-
-			bmbase, _ := libutil.NewBitmap(res[i].Mask)
-
-			if !inCacheList(uint32(i), er.Cache_IDs) {
-				newcos = resctrl.CacheCos{Id: uint8(i), Mask: catinfo.CbmMask}
-			} else {
-				// compute sub_grp's offset for the i(th) 'cattype'
-				offset := calculateOffset(er.Resall, er.SubGrps, cattype, uint32(i))
-				newbm := bmbase.GetConnectiveBits(er.MaxWays, offset, true)
-
-				if newbm.IsEmpty() {
-					return newResAss, fmt.Errorf("Not enough cache can be allocated")
-				}
-
-				if er.Consume {
-					bmbase = bmbase.Xor(newbm)
-				}
-				newcos = resctrl.CacheCos{Id: uint8(i), Mask: newbm.ToString()}
-			}
-			// CalculateDefaultGroup may return unconnected bits,
-			// We need to use connective bits anytime
-			tmpbm := bmbase.MaxConnectiveBits()
-			res[i].Mask = tmpbm.ToString()
-
-			newResAss.Schemata[cattype] = append(newResAss.Schemata[cattype], newcos)
-			log.Debugf("Newly created Mask for Cache %d is %s", i, newcos.Mask)
-			log.Debugf("Default Mask for Cache %d is %s", i, res[i].Mask)
-		}
-	}
-	return newResAss, nil
-}
-
-// calculate a new default group which can be consumed by
-// subtract bit mask in existed resource group
-// e.g.
-// r = ['.': [res1], 'group1': 'res2', 'infra': 'bla']
-// ignore_grp = ['.', 'infra']
-// CalculateDefaultGroup will create a new resctrl.ResAssociation, the mask
-// value is calculated by default mask subtract group1's schemata.
-func CalculateDefaultGroup(r map[string]*resctrl.ResAssociation, ignore_grp []string, consecutive bool) *resctrl.ResAssociation {
-
-	defaultGrp := r["."]
-
-	for _, v := range ignore_grp {
-		delete(r, v)
-	}
-
-	// FIXME rdtinfo could be a global variable
-	rdtinfo := resctrl.GetRdtCosInfo()
-	newRes := new(resctrl.ResAssociation)
-	newRes.Schemata = make(map[string][]resctrl.CacheCos)
-
-	for t, schemata := range defaultGrp.Schemata {
-		catinfo, ok := rdtinfo[strings.ToLower(t)]
-		if !ok {
-			continue
-		}
-		newRes.Schemata[t] = make([]resctrl.CacheCos, 0, 10)
-		for id, v := range schemata {
-			bm, _ := libutil.NewBitmap(catinfo.CbmMask)
-			// loop for all groups
-			for _, g := range r {
-				// ignore whole cbm
-				if g.Schemata[t][v.Id].Mask == catinfo.CbmMask {
-					continue
-				}
-				gbm, _ := libutil.NewBitmap(g.Schemata[t][v.Id].Mask)
-				bm = bm.Xor(gbm)
-			}
-
-			var newcbm string
-
-			if consecutive {
-				tmpbm := bm.MaxConnectiveBits()
-				newcbm = tmpbm.ToString()
-			} else {
-				newcbm = bm.ToString()
-			}
-			cacheCos := &resctrl.CacheCos{uint8(id), newcbm}
-			newRes.Schemata[t] = append(newRes.Schemata[t], *cacheCos)
-
-			log.Debugf("New default Mask for Cache %d is %s", cacheCos.Id, newcbm)
-		}
-	}
-
-	return newRes
-}
-
 // Calculate offset for the pos'th cache of cattype based on sub_grp
 // e.g.
 // sub_grp = [base-sub1]
 // base-sub1: L3:0=f;1=1
 // calculateOffset(r, sub_grp, L3, 0) = 4
 // calculateOffset(r, sub_grp, L3, 1) = 1
-func calculateOffset(r map[string]*resctrl.ResAssociation, sub_grp []string, cattype string, pos uint32) uint32 {
-	// len is used to avoid error prone. Though it is not so much time costing,
-	// we really do not need to query it every time. It can be a global variable.
-	// But it had better not to be sync.Once. It had better to be a singleton
-	// that depens on who enable resctrl.
-	// And we need a wrap for the NewBitmap with len. such as:
-	// func NewCosBitmap(v string) {
-	//     len := GetLenofCosOnce()
-	//     return NewBitmap(len, v)
-	// }
-	bm0, _ := libutil.NewBitmap("")
-	for _, g := range sub_grp {
-		b, _ := libutil.NewBitmap(r[g].Schemata[cattype][pos].Mask)
-		bm0 = bm0.Or(b)
-	}
-	if bm0.IsEmpty() {
-		return 0
-	} else {
-		return bm0.Maximum()
-	}
-}
-
 func getCacheIDs(cpubitmap string, cacheinfos *cache.CacheInfos, cpunum int) []uint32 {
 	var CacheIDs []uint32
 	cpubm, _ := libutil.NewBitmap(cpunum, cpubitmap)
@@ -555,11 +352,9 @@ func inCacheList(cache uint32, cache_list []uint32) bool {
 	return false
 }
 
-// Construct an enforcement request from a workload.
-// Consider to refine getGroupNames method after resource pool added later.
-func populateEnforceRequest(req *EnforceRequest, w *RDTWorkLoad, m map[string]*resctrl.ResAssociation) *AppError {
-	w.Status = None
+func populateEnforceRequest(req *EnforceRequest, w *RDTWorkLoad) *AppError {
 
+	w.Status = None
 	cpubitstr := ""
 	if len(w.CoreIDs) >= 0 {
 		bm, err := CpuBitmaps(w.CoreIDs)
@@ -581,38 +376,69 @@ func populateEnforceRequest(req *EnforceRequest, w *RDTWorkLoad, m map[string]*r
 
 	req.Cache_IDs = getCacheIDs(cpubitstr, cacheinfo, cpunum)
 
-	base_grp, new_grp, sub_grps := getGroupNames(w, m)
-	req.BaseGrp = base_grp
-	req.NewGrp = new_grp
-	req.SubGrps = sub_grps
-	req.Resall = m
+	populatePolicy := true
 
 	if w.MinCache != nil {
 		req.MinWays = *w.MinCache
 	}
-	// MaxCache is required, return if workload has it set.
 	if w.MaxCache != nil {
 		req.MaxWays = *w.MaxCache
-		return nil
+		populatePolicy = false
 	}
 	// else get max/min from policy
-	pf := cpu.GetMicroArch(cpu.GetSignature())
-	if pf == "" {
-		return AppErrorf(http.StatusInternalServerError,
-			"Unknow platform, please update the cpu_map.toml conf file.")
+	if populatePolicy {
+		pf := cpu.GetMicroArch(cpu.GetSignature())
+		if pf == "" {
+			return AppErrorf(http.StatusInternalServerError,
+				"Unknow platform, please update the cpu_map.toml conf file.")
+		}
+
+		p, err := policy.GetPolicy(strings.ToLower(pf), w.Policy)
+		if err != nil {
+			return NewAppError(http.StatusInternalServerError,
+				"Could not find the Polciy.", err)
+		}
+
+		maxWays, err := strconv.Atoi(p["MaxCache"])
+		if err != nil {
+			return NewAppError(http.StatusInternalServerError,
+				"Error define MaxCache in Polciy.", err)
+		}
+		req.MaxWays = uint32(maxWays)
+
+		minWays, err := strconv.Atoi(p["MinCache"])
+		if err != nil {
+			return NewAppError(http.StatusInternalServerError,
+				"Error define MinCache in Polciy.", err)
+		}
+		req.MinWays = uint32(minWays)
 	}
 
-	p, err := policy.GetPolicy(strings.ToLower(pf), w.Policy)
-	if err != nil {
-		return NewAppError(http.StatusInternalServerError,
-			"Could not find the Polciy.", err)
+	if req.MaxWays == 0 {
+		req.Type = rdtpool.Shared
+	} else if req.MaxWays > req.MinWays && req.MinWays != 0 {
+		req.Type = rdtpool.Besteffort
+	} else if req.MaxWays == req.MinWays {
+		req.Type = rdtpool.Gurantee
+	} else {
+		return AppErrorf(http.StatusBadRequest,
+			"Bad request, max_cache=%d, min_cache=%d", req.MaxWays, req.MinWays)
 	}
-
-	ways, err := strconv.Atoi(p["MaxCache"])
-	if err != nil {
-		return NewAppError(http.StatusInternalServerError,
-			"Error define MaxCache in Polciy.", err)
-	}
-	req.MaxWays = uint32(ways)
 	return nil
+}
+
+func newResAss(r map[string]*libutil.Bitmap, level string) *resctrl.ResAssociation {
+	newResAss := resctrl.ResAssociation{}
+	newResAss.Schemata = make(map[string][]resctrl.CacheCos)
+
+	targetLev := "L" + level
+
+	for k, v := range r {
+		cacheId, _ := strconv.Atoi(k)
+		newcos := resctrl.CacheCos{Id: uint8(cacheId), Mask: v.ToString()}
+		newResAss.Schemata[targetLev] = append(newResAss.Schemata[targetLev], newcos)
+
+		log.Debugf("Newly created Mask for Cache %s is %s", k, newcos.Mask)
+	}
+	return &newResAss
 }
