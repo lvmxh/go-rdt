@@ -1,12 +1,12 @@
 swagger: '2.0'
 info:
-  title: RDTagent API
-  description: RDTagent API specification
+  title: RMD API
+  description: Resource Management Daemon API specification
   version: "0.0.1"
   contact:
-    name: RDTagent API Support
-    url: http://www.openstack-core.team.org
-    email: opoenstack-core@intel.com
+    name: RMD API Support
+    url: http://www.rmd.org
+    email: rmd@intel.com
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -16,384 +16,242 @@ basePath: /v1
 produces:
   - application/json
 paths:
-  /cpuinfo:
+  /cache:
      get:
-      summary: Host CPU information
+      summary: Host cache information
       description: |
-        Get the CPU information, include level 2, level 3 cache information
+        Get the cache information, include level 2, level 3 cache information if has
       tags:
-        - cpuinfo
+        - cache
       responses:
         200:
-          description: CPU info
+          description: cache info
           schema:
             type: object
             properties:
               cpuinfo:
-                $ref: '#/definitions/CpuInfo'
-  /cpuinfo/topology:
+                $ref: '#/definitions/CachesSummary'
+  /cache/{cache_level}:
     get:
       summary: Host CPU topology
       description: |
-        Get the CPU topology information of sockets, core and thread in each core on the host machine.
+        Get the cache infor for specified cache level
       tags:
-        - cpuinfo
+        - cache
+      parameters:
+      - name: cache_level
+        in: path
+        description: cache level
+        required: true
+        type: string
+        enum: ['l3', 'l2']
       responses:
         200:
-          description: An array of CPU topology object
+          description: An array cache infor
           schema:
             type: array
             items:
-              $ref: '#/definitions/CpuSocket'
-  /cpuinfo/capabilities:
+              $ref: '#/definitions/CacheInfos'
+  /workloads:
     get:
-      summary: Get the capacities of host
+      summary: Get all work loads running on the host
       description: |
-        Get the capacities of the cache, memory
+        Get all work loads running on the host
       tags:
-        - cpuinfo
+        - workload
       responses:
         200:
-          description: CPU capacities object
-          schema:
-            type: object
-            properties:
-              caps:
-                $ref: '#/definitions/Caps'
-  /cache/cos:
-    get:
-      summary: Get all cos of the host
-      description: |
-        Get Class of service on host
-      tags:
-        - cat
-      responses:
-        200:
-          description: clos on specified socket
+          description: Workload object
           schema:
             type: array
             items:
-              type: string
-        400:
-          description: Bad request
-        404:
-          description: Not found
-  /cache/cos/{socket-id}:
-    get:
-      summary: Get cos on specified socket id
+              $ref: '#/definitions/Workload'
+    post:
+      summary: Create a workload
       description: |
-        Get Class of service on speicified socket id
+        Create a workload
       tags:
-        - cat
+        - workload
       parameters:
-      - name: socket-id
-        in: path
-        description: ID of Socket of clos to get
-        required: true
-        type: array
-        items:
-          type: integer
-          format: int32
-      responses:
-        200:
-          description: clos on specified socket
-          schema:
-            type: array
-            items:
-              type: string
-        400:
-          description: Bad request
-        404:
-          description: Not found
-  /cache/cos/{socket-id}/{cos-id}:
-    get:
-      summary: Get cos on specified socket id and cos id
-      description: |
-        Get Class of service on speicified socket id
-      tags:
-        - cat
-      parameters:
-      - name: socket-id
-        in: path
-        description: ID of Socket of clos to get
-        required: true
-        type: integer
-        format: int32
-      - name: cos-id
-        in: path
-        description: ID of COS
-        required: true
-        type: integer
-        format: int32
-      responses:
-        200:
-          description: cos on specified socket and cos ID
-          schema:
-            type: string
-        400:
-          description: Bad request
-        404:
-          description: Not found
-    put:
-      summary: Create cos
-      description: |
-        create cos on specificed socket
-      tags:
-        - cat
-      parameters:
-        - name: socket-id
-          in: path
-          description: ID of Socket of clos to get
-          required: true
-          type: integer
-          format: int32
-        - name: cos-id
-          in: path
-          description: ID of COS
-          required: true
-          type: integer
-          format: int32
         - name: body
           in: body
           required: true
           schema:
             type: string
             example:
-              mask: '0xfffff'
+              core_ids: ["22"]
+              max_cache: 4
+              min_cache: 2
       responses:
         200:
-          description: created
-        400:
-          description: bad request
-        404:
-          description: socket id not found on host
-  /cache/cos/cpu:
-    get:
-      summary: Get all cpu cos association of host
-      description: |
-        Get all cpu cos association of hos
-      tags:
-        - cat
-      responses:
-        200:
-          description: list of cpu cos association
+          description: Workload object
           schema:
             type: array
             items:
-              type: string
-  /cache/cos/cpu/{cpu-id}:
+              $ref: '#/definitions/Workload'
+  /workloads/{workload_id}:
     get:
-      summary: Get cpu cos association of host
+      summary: Get workload by id
       description: |
-        Get cpu cos association of host by cpu-id
-      tags:
-        - cat
+        Get workload by id
       parameters:
-      - name: cpu-id
+      - name: workload_id
         in: path
-        description: ID of CPU
+        description: workload id 
         required: true
-        type: integer
-        format: int32
+        type: string
+      tags:
+        - workload
       responses:
         200:
-          description: list of cpu cos association
+          description: Workload object
           schema:
-            type: array
-            items:
-              type: string
-    put:
-      summary: Update association of specified cpu
+            $ref: '#/definitions/Workload'
+    delete:
+      summary: Delete workload by id
       description: |
-        Update association of specified cpu
-      tags:
-        - cat
+        Delete workload by id
       parameters:
-      - name: cpu-id
+      - name: workload_id
         in: path
-        description: ID of CPU
+        description: workload id 
         required: true
-        type: integer
-        format: int32
+        type: string
+      tags:
+        - workload
+      responses:
+        200:
+          description: delete workload
+    patch:
+      summary: Update policy or cache ways of a workload
+      description: |
+        Update policy or cache ways of a workload
+      tags:
+        - workload
+      parameters:
+      - name: workload_id
+        in: path
+        description: workload id 
+        required: true
+        type: string
       - name: body
         in: body
         required: true
         schema:
           type: string
           example:
-            Cos_id: 0
+            max_cache: 4
+            min_cache: 2
       responses:
         200:
-          description: list of cpu cos association
+          description: Workload object
           schema:
-            type: array
-            items:
-              type: string
-  /cache/l3/usage:
-    get:
-      summary: Get the l3 cache usage of specified processes
-      description: |
-        Get the l3 cache usage of specified processes
-      tags:
-        - cmt
-      parameters:
-        - name: process-list
-          in: query
-          description: process list of cache usage
-          required: false
-          type: string
-        - name: core-list
-          in: query
-          description: core list of cache usage
-          required: false
-          type: string
-      responses:
-        200:
-          description: l3 cache size usage in KiB
-          schema:
-            type: integer
-            format: int32
+            $ref: '#/definitions/Workload'
         400:
           description: Bad request
         404:
           description: Not found
-  /memory/usage:
-    get:
-      summary: Get Memory bandwidth specified processes or cores
-      description: |
-        Get the l3 cache usage of specified processes
-      tags:
-        - mbm
-      parameters:
-        - name: process-id
-          in: query
-          description: process list of memory bandwidth
-          required: false
-          type: string
-        - name: core-list
-          in: query
-          description: core list of memory bandwidth
-          required: false
-          type: string
-        - name: interval
-          in: query
-          description: query interval
-          type: integer
-          format: int32
-      responses:
-        200:
-          description: Memory bandwidth thought interval
-          schema:
-            type: integer
-            format: int32
-        400:
-          description: Bad request
-        404:
-          description: Not found
-  /cache/l3/alloc:
+  /hospitality:
     post:
-      summary: Create l3 cache allocation
+      summary: Get hospitality for a request
       description: |
-        create l3 cache allocation for specified process
+        Get hospitality for a request
       tags:
-        - cat
+        - hospitality
       parameters:
-        - name: body
-          in: body
-          required: true
-          schema:
-            type: string
-            example:
-              process-id: 1234
-              cache-size: 1024
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: string
+          example:
+            max_cache: 4
+            min_cache: 2
       responses:
-        202:
-          description: accepted
-        400:
-          description: bad request
+        200:
+          description: Score of hospitality
+          schema:
+            $ref: '#/definitions/Score'
 definitions:
-  Cacheinfo:
+  CacheSummary:
     type: object
     properties:
-      cache_level:
-        type: string
-        enum: ['l3', 'l2']
-        description: cache level, could be l3/l2
-      cache_size:
+      number:
         type: integer
         format: int32
-        description: cache size in B
-      cache_way:
-        type: integer
-        format: int32
-        description: cache way
-  CpuInfo:
-    type: object
-    properties:
-      cpu_num:
-        description: How many cpu on the host
-        type: integer
-        format: int32
-      l2_cache:
-        $ref: '#/definitions/Cacheinfo'
-      l3_cache:
-        $ref: '#/definitions/Cacheinfo'
-  Cpu:
-    type: object
-    properties:
-      cpu_id:
-        type: integer
-        format: uint32
-        description: Cpu id
-      core_id:
-        type: integer
-        format: uint32
-        description: Core id
-  Core:
-    type: object
-    properties:
-      core_id:
-        type: integer
-        format: uint32
-        description: Core id
-      socket_id:
-        type: integer
-        format: uint32
-        description: Socket id
-      cpus:
+        description: number of cache
+      cache_id:
         type: array
         items:
-          $ref: '#/definitions/Cpu'
-  CpuSocket:
+          type: string
+  CachesSummary:
     type: object
     properties:
-      socket_id:
-        type: integer
-        format: uint16
-        description: Socket id of the physical CPU
-      cores:
-        type: array
-        description: Core list located on the physical CPU
-        items:
-          $ref: '#/definitions/Core'
-  Capability:
+      rdt:
+        type: boolean
+        description: rdt supported
+      cqm:
+        type: boolean
+        description: cache mointoring suppported
+      cdp:
+        type: boolean
+        description: cache mointoring suppported
+      caches:
+        $ref: '#/definitions/CacheSummary'
+  CacheInfo:
     type: object
-    description: RDT capabilitiy
     properties:
-      cap_type:
+      cache_id:
         type: string
-        description: capablities type
-      meta:
-        description: This is a string, each type of capability may different, we will format it later
+        description: cache id
+      total_size:
         type: string
-  Caps:
+        description: total size of the cache
+      cdp:
+        type: boolean
+        description: cache mointoring suppported
+  CacheInfos:
     type: object
     properties:
-      num_cap:
-        description: how many capabilies can be discovered
+      number:
         type: integer
         format: int32
-      capabilities:
+        description: number of cache infor
+      Caches:
+        $ref: '#/definitions/CacheInfo'
+  Workload:
+    type: object
+    properties:
+      id:
+        description: Id of the workload
+        type: integer
+        format: int32
+      core_ids:
+        description: CPU core ids the workload running on
         type: array
         items:
-          $ref: '#/definitions/Capability'
+          type: string
+      task_ids:
+        description: Task ids of the workload
+        type: array
+        items:
+          type: string
+      policy:
+        description: Workload priority tier
+        type: string
+      Status:
+        description: Workload priority tier
+        type: string
+      CosName:
+        description: Workload priority tier
+        type: string
+  CacheScore:
+    type: object
+    properties:
+      l3:
+        type: object
+  Score:
+    type: object
+    properties:
+      score:
+        $ref: '#/definitions/CacheScore'
