@@ -91,7 +91,7 @@ func GetAvailableCacheSchemata(allres map[string]*resctrl.ResAssociation,
 	}
 
 	for k, v := range allres {
-		if util.HasElem(k, ignore_groups) {
+		if util.HasElem(ignore_groups, k) {
 			continue
 		}
 		if sv, ok := v.Schemata[cacheLevel]; ok {
