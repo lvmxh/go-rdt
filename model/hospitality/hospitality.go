@@ -18,8 +18,8 @@ import (
 	"openstackcore-rdtagent/lib/resctrl"
 	libutil "openstackcore-rdtagent/lib/util"
 	"openstackcore-rdtagent/model/policy"
-	modelutil "openstackcore-rdtagent/model/util"
 	"openstackcore-rdtagent/model/workload"
+	. "openstackcore-rdtagent/util/rdtpool/base"
 )
 
 /*
@@ -219,14 +219,13 @@ func (h *HospitalityRaw) GetByRequestMaxMin(max, min uint32, cache_id *uint32, t
 
 	// ignore "." and "infra" group for now
 	grp := workload.CalculateDefaultGroup(resaall, []string{".", "infra"}, false)
-	catinfo, ok := rdtinfo[strings.ToLower("l"+target_lev)]
 
-	numWays := uint32(modelutil.CbmLen(catinfo.CbmMask))
-
-	if !ok {
+	if _, ok := rdtinfo[strings.ToLower("l"+target_lev)]; !ok {
 		err := fmt.Errorf("Don't support cache level l%s", target_lev)
 		return NewAppError(http.StatusBadRequest, "Bad request", err)
 	}
+
+	numWays := uint32(GetCosInfo().CbmMaskLen)
 
 	for _, schemata := range grp.Schemata["L"+target_lev] {
 		id := strconv.FormatUint(uint64(schemata.Id), 10)

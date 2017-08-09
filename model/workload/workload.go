@@ -20,7 +20,7 @@ import (
 	. "openstackcore-rdtagent/api/error"
 	"openstackcore-rdtagent/model/cache"
 	"openstackcore-rdtagent/model/policy"
-	modelutil "openstackcore-rdtagent/model/util"
+	"openstackcore-rdtagent/util"
 )
 
 // FIXME this is not a global lock
@@ -181,7 +181,7 @@ func (w *RDTWorkLoad) Release() error {
 		return nil
 	}
 
-	r.Tasks = modelutil.SubtractStringSlice(r.Tasks, w.TaskIDs)
+	r.Tasks = util.SubtractStringSlice(r.Tasks, w.TaskIDs)
 
 	// safely remove resource group if no tasks and cpu bit map is empty
 	if len(r.Tasks) < 1 {
