@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
 	. "openstackcore-rdtagent/api/error"
 	"openstackcore-rdtagent/lib/cache"
 	libcache "openstackcore-rdtagent/lib/cache"
@@ -18,7 +19,7 @@ import (
 	"openstackcore-rdtagent/lib/resctrl"
 	libutil "openstackcore-rdtagent/lib/util"
 	"openstackcore-rdtagent/model/policy"
-	"openstackcore-rdtagent/model/workload"
+	"openstackcore-rdtagent/util/rdtpool"
 	. "openstackcore-rdtagent/util/rdtpool/base"
 )
 
@@ -198,55 +199,106 @@ func (h *HospitalityRaw) GetByRequest(req *HospitalityRequest) *AppError {
 
 func (h *HospitalityRaw) GetByRequestMaxMin(max, min uint32, cache_id *uint32, target_lev string) *AppError {
 
-	// TODO: for max > min > 0 we need to wait for besteffort pool get implemented.
-	if max != min {
-		err := fmt.Errorf("Don't support max != mix case yet!")
-		return NewAppError(http.StatusBadRequest, "Bad request", err)
+	var reqType string
+
+	if max == 0 {
+		reqType = rdtpool.Shared
+	} else if max > min && min != 0 {
+		reqType = rdtpool.Besteffort
+	} else if max == min {
+		reqType = rdtpool.Gurantee
+	} else {
+		return AppErrorf(http.StatusBadRequest,
+			"Bad request, max_cache=%d, min_cache=%d", max, min)
 	}
+
+	// TODO: Need to calculate how many for this kinds workload already
+	// running. For now treat it as max = 1 to avoid devided by zero. The
+	// score is not accruate for max = min = 0
+	if max == 0 {
+		max = 1
+	}
+
+	resaall := resctrl.GetResAssociation()
+
+	av, _ := rdtpool.GetAvailableCacheSchemata(resaall, []string{"infra", "."}, reqType, "L"+target_lev)
 
 	cacheS := make(map[string]uint32)
 	h.SC = map[string]CacheScoreRaw{"l" + target_lev: cacheS}
 
-	// TODO: Need to calculate how many workload for this kinds already
-	// running. For now treat it as max = min = 1
-	if max == min && max == 0 {
-		max = 1
-		min = 1
-	}
-
-	resaall := resctrl.GetResAssociation()
-	rdtinfo := resctrl.GetRdtCosInfo()
-
-	// ignore "." and "infra" group for now
-	grp := workload.CalculateDefaultGroup(resaall, []string{".", "infra"}, false)
-
-	if _, ok := rdtinfo[strings.ToLower("l"+target_lev)]; !ok {
-		err := fmt.Errorf("Don't support cache level l%s", target_lev)
-		return NewAppError(http.StatusBadRequest, "Bad request", err)
-	}
-
 	numWays := uint32(GetCosInfo().CbmMaskLen)
 
-	for _, schemata := range grp.Schemata["L"+target_lev] {
-		id := strconv.FormatUint(uint64(schemata.Id), 10)
-		freeb, _ := libutil.NewBitmap(schemata.Mask)
-		fbs := freeb.ToBinStrings()
+	if reqType == rdtpool.Besteffort {
+		reserved := rdtpool.GetReservedInfo()
 
-		cacheS[id] = 0
-		for _, v := range fbs {
-			if v[0] == '1' {
-				cacheS[id] += uint32(len(v) / int(max))
+		for k, v := range av {
+			var totalCount = 0
+			cacheS[k] = 0
+			cacheId, _ := strconv.Atoi(k)
+			sharedBm := reserved[rdtpool.Shared].Schemata[k]
+			besteffortBm := reserved[rdtpool.Besteffort].Schemata[k]
+			// Please read it and to understand it
+			// Hard to describe it in human English.
+			if besteffortBm.Axor(sharedBm).IsEmpty() ||
+				sharedBm.GetConnectiveBits(max-min, 0, true).IsEmpty() {
+				log.Infof("No cache way left in besteffort pool on cache id %s", k)
+				continue
+			}
+
+			fbs := besteffortBm.Axor(sharedBm).ToBinStrings()
+			// Calculate total supported
+			for _, val := range fbs {
+				if val[0] == '1' {
+					totalCount += len(val) / int(min)
+				}
+			}
+			if totalCount == 0 {
+				continue
+			}
+
+			log.Debugf("Free overlap bitmask on cache [%s] is [%s]", k, v.ToBinStrings())
+			fbs = v.Axor(sharedBm).ToBinStrings()
+			// Scan no-overlap ways
+			log.Debugf("Free executive bitmask on cache [%s] is [%s]", k, fbs)
+			for _, val := range fbs {
+				if val[0] == '1' {
+					cacheS[k] += uint32(len(val) / int(min))
+				}
+			}
+
+			cacheS[k] = cacheS[k] * 100 / uint32(totalCount)
+			if cache_id != nil {
+				// We only care about specific cache_id
+				if *cache_id != uint32(cacheId) {
+					delete(cacheS, k)
+				}
+			}
+		}
+		return nil
+	}
+
+	// Notes that av is a map, so we are not sure about the cache id order
+	for k, v := range av {
+		log.Debugf("Free bitmask on cache [%s] is [%s]", k, v.ToBinString())
+		fbs := v.ToBinStrings()
+		cacheS[k] = 0
+		cacheId, _ := strconv.Atoi(k)
+
+		for _, val := range fbs {
+			if val[0] == '1' {
+				cacheS[k] += uint32(len(val) / int(max))
 			}
 		}
 		// Conver to percentage
-		cacheS[id] = (cacheS[id]*uint32(max)*100 + numWays/2) / numWays
+		cacheS[k] = (cacheS[k]*uint32(max)*100 + numWays/2) / numWays
 
 		if cache_id != nil {
 			// We only care about specific cache_id
-			if *cache_id != uint32(schemata.Id) {
-				delete(cacheS, id)
+			if *cache_id != uint32(cacheId) {
+				delete(cacheS, k)
 			}
 		}
 	}
+
 	return nil
 }

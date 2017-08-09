@@ -59,6 +59,13 @@ func GetReservedInfo() map[string]*Reserved {
 		if err == nil {
 			ReservedInfo[Infra] = &r
 		}
+
+		poolinfo, err := GetCachePoolLayout()
+		if err == nil {
+			for k, v := range poolinfo {
+				ReservedInfo[k] = v
+			}
+		}
 	})
 
 	return ReservedInfo
