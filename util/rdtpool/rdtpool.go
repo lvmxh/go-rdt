@@ -105,6 +105,10 @@ func GetAvailableCacheSchemata(allres map[string]*resctrl.ResAssociation,
 			for _, cv := range sv {
 				k := strconv.Itoa(int(cv.Id))
 				bm, _ := CacheBitmaps(cv.Mask)
+				// And check cpu list is empty
+				if cv.Mask == GetCosInfo().CbmMask {
+					continue
+				}
 				schemata[k] = schemata[k].Axor(bm)
 			}
 		}
