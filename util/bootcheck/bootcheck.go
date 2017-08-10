@@ -14,52 +14,45 @@ import (
 	"openstackcore-rdtagent/util/rdtpool"
 )
 
+func errorOut(msg string) {
+	fmt.Println(msg)
+	log.Fatalf(msg)
+	os.Exit(1)
+}
+
 func SanityCheck() {
 	pf := cpu.GetMicroArch(cpu.GetSignature())
 	if pf == "" {
 		msg := "Unknow platform, please update the cpu_map.toml conf file."
-		log.Fatalf(msg)
-		fmt.Println(msg)
-		os.Exit(1)
+		errorOut(msg)
 	}
 	cpunum := cpu.HostCpuNum()
 	if cpunum == 0 {
 		msg := "Unable to get Total CPU numbers on Host."
-		log.Fatalf(msg)
-		fmt.Println(msg)
-		os.Exit(1)
+		errorOut(msg)
 	}
 	if !resctrl.IsIntelRdtMounted() {
 		msg := "resctrl does not enable."
-		log.Fatalf(msg)
-		fmt.Println(msg)
-		os.Exit(1)
+		errorOut(msg)
 	}
 	if err := DBCheck(); err != nil {
 		msg := "Check db error. Reason: " + err.Error()
-		log.Fatalf(msg)
-		fmt.Println(msg)
-		os.Exit(1)
+		errorOut(msg)
 	}
 	if err := rdtpool.SetOSGroup(); err != nil {
 		msg := "Error, create OS groups failed! Reason: " + err.Error()
-		log.Fatalf(msg)
-		fmt.Println(msg)
-		os.Exit(1)
+		errorOut(msg)
 	}
 	if err := rdtpool.SetInfraGroup(); err != nil {
 		msg := "Error, create infra groups failed! Reason: " + err.Error()
-		log.Fatalf(msg)
-		fmt.Println(msg)
+		errorOut(msg)
 		os.Exit(1)
 	}
 	v, err := rdtpool.GetCachePoolLayout()
 	log.Debugf("Cache Pool layout %v", v)
 	if err != nil {
 		msg := "Error while get cache pool layout Reason: " + err.Error()
-		log.Fatalf(msg)
-		fmt.Println(msg)
-		os.Exit(1)
+		errorOut(msg)
 	}
 }
 

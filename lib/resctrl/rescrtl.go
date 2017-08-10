@@ -353,7 +353,7 @@ func getIntelRdtRoot() (string, error) {
 func IsIntelRdtMounted() bool {
 	_, err := getIntelRdtRoot()
 	if err != nil {
-		if !IsNotFound(err) {
+		if IsNotFound(err) {
 			return false
 		}
 	}
