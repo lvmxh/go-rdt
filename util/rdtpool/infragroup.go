@@ -3,6 +3,7 @@ package rdtpool
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/gobwas/glob"
@@ -138,7 +139,7 @@ func SetInfraGroup() error {
 			if g.Match(v.CmdLine) {
 				tasks = append(tasks, k)
 				log.Infof("Add task: %d to infra group. Command line: %s",
-					v.Pid, v.CmdLine)
+					v.Pid, strings.TrimSpace(v.CmdLine))
 			}
 		}
 	}
