@@ -12,7 +12,7 @@ type AppError struct {
 	Err     error
 }
 
-func (e *AppError) Error() string {
+func (e AppError) Error() string {
 	if e.Message != "" && e.Err != nil {
 		return fmt.Sprintf("%s. Details: %v\n", e.Message, e.Err)
 	}

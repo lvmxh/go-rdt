@@ -2,10 +2,12 @@ package v1
 
 import (
 	_ "fmt"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 
 	"github.com/emicklei/go-restful"
+	log "github.com/sirupsen/logrus"
+
+	. "openstackcore-rdtagent/api/error"
 	m_hospitality "openstackcore-rdtagent/model/hospitality"
 )
 
@@ -59,7 +61,8 @@ func (hospitality HospitalityResource) HospitalityGetByRequest(request *restful.
 	h := &m_hospitality.HospitalityRaw{}
 	e := h.GetByRequest(hr)
 	if e != nil {
-		response.WriteErrorString(e.Code, e.Error())
+		err := e.(AppError)
+		response.WriteErrorString(err.Code, err.Error())
 		return
 	}
 	response.WriteEntity(h)

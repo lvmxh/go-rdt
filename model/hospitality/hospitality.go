@@ -168,7 +168,7 @@ type HospitalityRaw struct {
 	SC map[string]CacheScoreRaw `json:"score"`
 }
 
-func (h *HospitalityRaw) GetByRequest(req *HospitalityRequest) *AppError {
+func (h *HospitalityRaw) GetByRequest(req *HospitalityRequest) error {
 	level := libcache.GetLLC()
 	target_lev := strconv.FormatUint(uint64(level), 10)
 	cacheLevel := "l" + target_lev
@@ -197,7 +197,7 @@ func (h *HospitalityRaw) GetByRequest(req *HospitalityRequest) *AppError {
 	return h.GetByRequestMaxMin(max, min, req.CacheId, target_lev)
 }
 
-func (h *HospitalityRaw) GetByRequestMaxMin(max, min uint32, cache_id *uint32, target_lev string) *AppError {
+func (h *HospitalityRaw) GetByRequestMaxMin(max, min uint32, cache_id *uint32, target_lev string) error {
 
 	var reqType string
 
