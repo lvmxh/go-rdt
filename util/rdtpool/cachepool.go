@@ -21,9 +21,9 @@ func GetCachePoolLayout() (map[string]*Reserved, error) {
 		osConf := NewOSConfig()
 		ways := GetCosInfo().CbmMaskLen
 
-		if osConf.CacheWays+poolConf.Guarantee+poolConf.Besteffort > uint(ways) {
+		if osConf.CacheWays+poolConf.Gurantee+poolConf.Besteffort > uint(ways) {
 			return_err = fmt.Errorf(
-				"Error config: Guarantee + Besteffort + OS reserved ways should be less or equal to %d.", ways)
+				"Error config: Gurantee + Besteffort + OS reserved ways should be less or equal to %d.", ways)
 			return
 		}
 
@@ -45,7 +45,7 @@ func GetCachePoolLayout() (map[string]*Reserved, error) {
 		}
 
 		// FIXME: improve this logic
-		if poolConf.Guarantee > 0 {
+		if poolConf.Gurantee > 0 {
 			schemata := map[string]*util.Bitmap{}
 			osCPUs := map[string]*util.Bitmap{}
 
@@ -53,7 +53,7 @@ func GetCachePoolLayout() (map[string]*Reserved, error) {
 				bm, _ := CpuBitmaps([]string{sc.SharedCpuList})
 				osCPUs[sc.Id] = osCPUbm.And(bm)
 
-				wayCandidate := 1<<poolConf.Guarantee - 1
+				wayCandidate := 1<<poolConf.Gurantee - 1
 				// no os group on this cache id
 				if !osCPUs[sc.Id].IsEmpty() {
 					wayCandidate = wayCandidate << osConf.CacheWays
@@ -80,7 +80,7 @@ func GetCachePoolLayout() (map[string]*Reserved, error) {
 				osCPUs[sc.Id] = osCPUbm.And(bm)
 
 				wayCandidate := 1<<poolConf.Besteffort - 1
-				wayCandidate = wayCandidate << poolConf.Guarantee
+				wayCandidate = wayCandidate << poolConf.Gurantee
 				// no os group on this cache id
 				if !osCPUs[sc.Id].IsEmpty() {
 					wayCandidate = wayCandidate << osConf.CacheWays
@@ -107,7 +107,7 @@ func GetCachePoolLayout() (map[string]*Reserved, error) {
 				osCPUs[sc.Id] = osCPUbm.And(bm)
 				wayCandidate := 1<<poolConf.Shared - 1
 				offset := (poolConf.Besteffort - poolConf.Shared) / 2
-				wayToMove := poolConf.Guarantee + poolConf.Besteffort - poolConf.Shared - offset
+				wayToMove := poolConf.Gurantee + poolConf.Besteffort - poolConf.Shared - offset
 				wayCandidate = wayCandidate << wayToMove
 				if !osCPUs[sc.Id].IsEmpty() {
 					wayCandidate = wayCandidate << osConf.CacheWays
