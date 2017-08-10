@@ -8,33 +8,38 @@ import (
 )
 
 // flock acquires an advisory lock on a file descriptor.
-func Flock(file *os.File, mode os.FileMode, exclusive bool, timeout time.Duration) error {
-	var t time.Time
-	for {
-		// If we're beyond our timeout then return an error.
-		// This can only occur after we've attempted a flock once.
-		if t.IsZero() {
-			t = time.Now()
-		} else if timeout > 0 && time.Since(t) > timeout {
-			// FIXME(Shaohe, Feng) uniform error.
-			return fmt.Errorf("Timeout to get flock!")
-		}
-		flag := syscall.LOCK_SH
-		if exclusive {
-			flag = syscall.LOCK_EX
-		}
+func Flock(file *os.File, timeout time.Duration, exclusive ...bool) error {
 
+	lock_states := map[bool]int{true: syscall.LOCK_EX, false: syscall.LOCK_SH}
+	flag := syscall.LOCK_SH
+	if len(exclusive) > 0 {
+		flag = lock_states[exclusive[0]]
+	}
+
+	s := time.Now()
+	t := s
+	// timeout <= 0 means loop forever.
+	if timeout > 0 {
+		t = s.Add(time.Duration(timeout))
+	}
+
+	// A Duration represents the elapsed time between two instants as an int64 nanosecond count.
+	// The representation limits the largest representable duration to approximately 290 years.
+	// So here we use time Before/After
+	for time.Duration(timeout) <= 0 || s.Before(t) {
 		// Otherwise attempt to obtain an exclusive lock.
 		err := syscall.Flock(int(file.Fd()), flag|syscall.LOCK_NB)
-		if err == nil {
-			return nil
-		} else if err != syscall.EWOULDBLOCK {
+		if err == syscall.EWOULDBLOCK {
+			// Wait for a bit and try again.
+			time.Sleep(time.Millisecond * 50)
+			s = time.Now()
+		} else {
 			return err
 		}
-
-		// Wait for a bit and try again.
-		time.Sleep(50 * time.Millisecond)
 	}
+
+	// FIXME(Shaohe, Feng) uniform error.
+	return fmt.Errorf("Timeout to get flock!")
 }
 
 // funlock releases an advisory lock on a file descriptor.

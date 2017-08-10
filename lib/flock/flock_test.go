@@ -17,7 +17,8 @@ func ExampleFlock() {
 
 	// FIXME(Shaohe, Feng): does not find to run a process to flock the file.
 	// such as: exec.Command("flock", "-x", fname, "-c", "cat")
-	fmt.Println(Flock(f, 0600, true, 0))
+	// flock -x test.txt -c cat
+	fmt.Println(Flock(f, 1000*1000*1000, true))
 	fmt.Println(Funlock(f))
 	// Output:
 	// <nil>
