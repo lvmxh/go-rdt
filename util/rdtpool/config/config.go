@@ -19,7 +19,7 @@ type InfraGroup struct {
 }
 
 type CachePool struct {
-	Gurantee   uint `toml:"gurantee"`
+	Guarantee   uint `toml:"guarantee"`
 	Besteffort uint `toml:"besteffort"`
 	Shared     uint `toml:"shared"`
 }

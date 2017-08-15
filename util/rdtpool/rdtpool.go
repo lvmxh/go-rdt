@@ -20,7 +20,7 @@ import (
 //        Optional.
 // GUARANTEE: guarantee cache pool information, it's a pool instead of a
 //            resource group. When try to allocate max_cache = min_cache,
-//            use the mask in gurantee pool.
+//            use the mask in guarantee pool.
 //            Optional.
 // BESTEFFORT: besteffort pool information, it's a pool instead of a resource
 //             group. When try to allocate max_cache > min_cache, allocate
@@ -37,7 +37,7 @@ const (
 	OS    = "os"
 	Infra = "infra"
 	// Cache resource pool
-	Gurantee   = "gurantee"
+	Guarantee   = "guarantee"
 	Besteffort = "besteffort"
 	Shared     = "shared"
 )
@@ -71,7 +71,7 @@ func GetReservedInfo() map[string]*Reserved {
 	return ReservedInfo
 }
 
-// Return available schemata of caches from specific pool: gurantee,
+// Return available schemata of caches from specific pool: guarantee,
 // besteffort, shared or just none
 func GetAvailableCacheSchemata(allres map[string]*resctrl.ResAssociation,
 	ignore_groups []string,

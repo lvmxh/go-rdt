@@ -206,7 +206,7 @@ func (h *HospitalityRaw) GetByRequestMaxMin(max, min uint32, cache_id *uint32, t
 	} else if max > min && min != 0 {
 		reqType = rdtpool.Besteffort
 	} else if max == min {
-		reqType = rdtpool.Gurantee
+		reqType = rdtpool.Guarantee
 	} else {
 		return AppErrorf(http.StatusBadRequest,
 			"Bad request, max_cache=%d, min_cache=%d", max, min)

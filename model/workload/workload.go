@@ -124,7 +124,7 @@ func (w *RDTWorkLoad) Enforce() *AppError {
 			continue
 		}
 		switch er.Type {
-		case rdtpool.Gurantee:
+		case rdtpool.Guarantee:
 			// TODO
 			// candidate[k] = v.GetBestMatchConnectiveBits(er.MaxWays, 0, true)
 			candidate[k] = v.GetConnectiveBits(er.MaxWays, 0, false)
@@ -419,7 +419,7 @@ func populateEnforceRequest(req *EnforceRequest, w *RDTWorkLoad) *AppError {
 	} else if req.MaxWays > req.MinWays && req.MinWays != 0 {
 		req.Type = rdtpool.Besteffort
 	} else if req.MaxWays == req.MinWays {
-		req.Type = rdtpool.Gurantee
+		req.Type = rdtpool.Guarantee
 	} else {
 		return AppErrorf(http.StatusBadRequest,
 			"Bad request, max_cache=%d, min_cache=%d", req.MaxWays, req.MinWays)
