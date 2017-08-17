@@ -6,8 +6,10 @@ import (
 
 // Server options
 type ServerRunOptions struct {
-	Port string
-	Addr string
+	Port     string
+	Addr     string
+	TLSPort  string
+	UnixSock string
 }
 
 // NewServerRunOptions creates a new ServerRunOptions object with default parameters

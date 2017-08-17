@@ -5,6 +5,8 @@ title = "RDTagent Config"
 [default]
 address = "localhost"
 port = 8081
+# tlsport = 443
+# unixsock = "./rmd.sock"
 
 [log]
 path = "/var/log/rdagent.log"

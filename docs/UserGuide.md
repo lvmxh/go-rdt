@@ -111,3 +111,11 @@ curl -H "Content-Type: application/json" --request POST --data '{"max_cache": 2,
     }
 }
 ```
+
+## Access RMD by unix socket:
+
+If the unix socket is enable, and you want to access the RMD server by unix socket, you can access the server by:
+
+sudo curl --unix-socket /your/socket/path http:/your/resource/url
+
+And you should also make suer the version of curl is above v7.40.0

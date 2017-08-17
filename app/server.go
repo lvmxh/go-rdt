@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"net"
 	"net/http"
 	"strconv"
 
@@ -35,12 +36,18 @@ func BuildServerConfig(s *options.ServerRunOptions) *Config {
 	// FIXME (cmd line options does not override the config file options)
 	appconfig := appConf.NewConfig()
 
+	s.UnixSock = appconfig.Def.UnixSock
+
 	if s.Addr == "" {
 		s.Addr = appconfig.Def.Address
 	}
 
 	if s.Port == "" {
 		s.Port = strconv.FormatUint(uint64(appconfig.Def.Port), 10)
+	}
+
+	if appconfig.Def.TLSPort != 0 {
+		s.TLSPort = strconv.FormatUint(uint64(appconfig.Def.TLSPort), 10)
 	}
 
 	genericconfig := GenericConfig{
@@ -74,7 +81,7 @@ func InitializeDB(c *Config) (db.DB, error) {
 }
 
 // Initialize server from config
-func Initialize(c *Config) (*http.Server, error) {
+func Initialize(c *Config) (*restful.Container, error) {
 	db, err := InitializeDB(c)
 	if err != nil {
 		return nil, err
@@ -101,17 +108,57 @@ func Initialize(c *Config) (*http.Server, error) {
 	swagger.RegisterSwaggerService(*(c.Swagger), wsContainer)
 
 	// TODO error handle
-	return &http.Server{Addr: c.Generic.APIServerServiceIP + ":" + c.Generic.APIServerServicePort, Handler: wsContainer}, nil
+	return wsContainer, nil
 }
 
 // RunServer uses the provided options to run the apiserver.
 func RunServer(s *options.ServerRunOptions) {
 
+	var server *http.Server
 	config := BuildServerConfig(s)
-	server, err := Initialize(config)
+	container, err := Initialize(config)
 	if err != nil {
 		log.Fatal(err)
-	} else {
-		log.Fatal(server.ListenAndServe())
 	}
+
+	if s.TLSPort == "" {
+		server = &http.Server{
+			Addr:    s.Addr + ":" + s.Port,
+			Handler: container}
+	} else {
+		// TODO We need to config server.TLSConfig
+		log.Fatal("Sorry, do not support TLS listener at present!")
+		server = &http.Server{
+			Addr:    s.Addr + ":" + s.TLSPort,
+			Handler: container}
+	}
+
+	server_start := func() {
+		if s.TLSPort == "" {
+			log.Fatal(server.ListenAndServe())
+		} else {
+			log.Fatal(server.ListenAndServeTLS("", "")) // Use certs from TLSConfig.
+		}
+	}
+	if s.UnixSock == "" {
+		server_start()
+	} else {
+		go func() {
+			server_start()
+		}()
+	}
+
+	config = BuildServerConfig(s)
+	container, err = Initialize(config)
+	if err != nil {
+		log.Fatal(err)
+	}
+	userver := &http.Server{
+		Handler: container}
+	// TODO need to check, should defer unixListener.Close()
+	unixListener, err := net.Listen("unix", s.UnixSock)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Fatal(userver.Serve(unixListener))
 }

@@ -7,8 +7,10 @@ import (
 )
 
 type Default struct {
-	Address string `toml:"address"`
-	Port    uint   `toml:"port"`
+	Address  string `toml:"address"`
+	Port     uint   `toml:"port"`
+	TLSPort  uint   `toml:"tlsport"`
+	UnixSock string `toml:"unixsock"`
 }
 
 type Database struct {
@@ -23,7 +25,7 @@ type Config struct {
 }
 
 var configOnce sync.Once
-var def = &Default{"localhost", 8081}
+var def = &Default{"localhost", 8081, 0, ""}
 var db = &Database{}
 var config = &Config{def, db}
 
