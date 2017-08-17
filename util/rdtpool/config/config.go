@@ -19,9 +19,10 @@ type InfraGroup struct {
 }
 
 type CachePool struct {
-	Guarantee   uint `toml:"guarantee"`
-	Besteffort uint `toml:"besteffort"`
-	Shared     uint `toml:"shared"`
+	MaxAllowedShared uint `toml:"max_allowed_shared"`
+	Guarantee        uint `toml:"guarantee"`
+	Besteffort       uint `toml:"besteffort"`
+	Shared           uint `toml:"shared"`
 }
 
 var infraConfigOnce sync.Once
@@ -30,7 +31,7 @@ var cachePoolConfigOnce sync.Once
 
 var infragroup = &InfraGroup{}
 var osgroup = &OSGroup{1, "0"}
-var cachepool = &CachePool{0, 0, 0}
+var cachepool = &CachePool{10, 0, 0, 0}
 
 func NewInfraConfig() *InfraGroup {
 	infraConfigOnce.Do(func() {

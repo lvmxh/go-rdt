@@ -37,7 +37,7 @@ const (
 	OS    = "os"
 	Infra = "infra"
 	// Cache resource pool
-	Guarantee   = "guarantee"
+	Guarantee  = "guarantee"
 	Besteffort = "besteffort"
 	Shared     = "shared"
 )

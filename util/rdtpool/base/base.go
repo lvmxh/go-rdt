@@ -29,6 +29,7 @@ type Reserved struct {
 	Name        string             // Resource group name if it is a resource group instead of pool
 	Schemata    map[string]*Bitmap // Schema list
 	CPUsPerNode map[string]*Bitmap // CPU bitmap
+	Quota       uint               // Max allowed usage for this resource
 }
 
 // Concurrency-safe.
