@@ -82,6 +82,10 @@ func GetAvailableCacheSchemata(allres map[string]*resctrl.ResAssociation,
 	// FIXME (Shaohe) A central util to generate schemata Bitmap
 	schemata := map[string]*libutil.Bitmap{}
 
+	if len(allres) >= GetCosInfo().NumClosids {
+		return nil, fmt.Errorf("error, not enough CLOS on host, %d used", len(allres))
+	}
+
 	if pool == "none" {
 		for k, _ := range ReservedInfo[OS].Schemata {
 			schemata[k], _ = CacheBitmaps(GetCosInfo().CbmMask)
