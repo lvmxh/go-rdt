@@ -119,7 +119,7 @@ func (w *RDTWorkLoad) Enforce() *AppError {
 	candidate := make(map[string]*libutil.Bitmap, 0)
 	for k, v := range av {
 		cacheId, _ := strconv.Atoi(k)
-		if !inCacheList(uint32(cacheId), er.Cache_IDs) {
+		if !inCacheList(uint32(cacheId), er.Cache_IDs) && er.Type != rdtpool.Shared {
 			candidate[k], _ = libutil.NewBitmap(GetCosInfo().CbmMaskLen, GetCosInfo().CbmMask)
 			continue
 		}
@@ -150,24 +150,36 @@ func (w *RDTWorkLoad) Enforce() *AppError {
 		}
 	}
 
-	resAss := newResAss(candidate, targetLev)
-	fmt.Println(resAss)
-
-	cpubitstr := ""
-	if len(w.CoreIDs) >= 0 {
-		bm, _ := CpuBitmaps(w.CoreIDs)
-		cpubitstr = bm.ToString()
-	}
-	resAss.Tasks = append(resAss.Tasks, w.TaskIDs...)
-	resAss.CPUs = cpubitstr
-
+	var resAss *resctrl.ResAssociation
 	var grpName string
 
-	if len(w.TaskIDs) > 0 {
-		grpName = w.TaskIDs[0] + "-" + er.Type
-	} else if len(w.CoreIDs) > 0 {
-		grpName = w.CoreIDs[0] + "-" + er.Type
+	if er.Type == rdtpool.Shared {
+		grpName = reserved[rdtpool.Shared].Name
+		if res, ok := resaall[grpName]; !ok {
+			resAss = newResAss(candidate, targetLev)
+		} else {
+			resAss = res
+		}
+	} else {
+		resAss = newResAss(candidate, targetLev)
+		if len(w.TaskIDs) > 0 {
+			grpName = w.TaskIDs[0] + "-" + er.Type
+		} else if len(w.CoreIDs) > 0 {
+			grpName = w.CoreIDs[0] + "-" + er.Type
+		}
 	}
+
+	if len(w.CoreIDs) >= 0 {
+		bm, _ := CpuBitmaps(w.CoreIDs)
+		oldbm, _ := CpuBitmaps(resAss.CPUs)
+		bm = bm.Or(oldbm)
+		resAss.CPUs = bm.ToString()
+	} else {
+		if len(resAss.CPUs) == 0 {
+			resAss.CPUs = ""
+		}
+	}
+	resAss.Tasks = append(resAss.Tasks, w.TaskIDs...)
 
 	if err = resAss.Commit(grpName); err != nil {
 		log.Errorf("Error while try to commit resource group for workload %s, group name %s", w.ID, grpName)
@@ -198,13 +210,20 @@ func (w *RDTWorkLoad) Release() error {
 	r, ok := resaall[w.CosName]
 
 	if !ok {
+		log.Warningf("Could not find COS %s.", w.CosName)
 		return nil
 	}
 
 	r.Tasks = util.SubtractStringSlice(r.Tasks, w.TaskIDs)
+	cpubm, _ := CpuBitmaps(r.CPUs)
+
+	if len(w.CoreIDs) > 0 {
+		wcpubm, _ := CpuBitmaps(w.CoreIDs)
+		cpubm = cpubm.Axor(wcpubm)
+	}
 
 	// safely remove resource group if no tasks and cpu bit map is empty
-	if len(r.Tasks) < 1 {
+	if len(r.Tasks) < 1 && cpubm.IsEmpty() {
 		log.Printf("Remove resource group: %s", w.CosName)
 		if err := resctrl.DestroyResAssociation(w.CosName); err != nil {
 			return err
@@ -220,7 +239,10 @@ func (w *RDTWorkLoad) Release() error {
 			return nil
 		}
 	}
-
+	if len(w.CoreIDs) > 0 {
+		r.CPUs = cpubm.ToString()
+		return r.Commit(w.CosName)
+	}
 	return nil
 }
 

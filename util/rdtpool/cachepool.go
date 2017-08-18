@@ -122,6 +122,7 @@ func GetCachePoolLayout() (map[string]*Reserved, error) {
 
 			sharedPoolReserved := &Reserved{Quota: poolConf.MaxAllowedShared}
 			sharedPoolReserved.Schemata = schemata
+			sharedPoolReserved.Name = Shared
 
 			cachePoolReserved[Shared] = sharedPoolReserved
 		}
