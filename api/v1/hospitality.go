@@ -61,7 +61,7 @@ func (hospitality HospitalityResource) HospitalityGetByRequest(request *restful.
 	h := &m_hospitality.HospitalityRaw{}
 	e := h.GetByRequest(hr)
 	if e != nil {
-		err := e.(AppError)
+		err := e.(*AppError)
 		response.WriteErrorString(err.Code, err.Error())
 		return
 	}
