@@ -22,6 +22,7 @@ type DB interface {
 	GetAllWorkload() ([]workload.RDTWorkLoad, error)
 	GetWorkloadById(id string) (workload.RDTWorkLoad, error)
 	ValidateWorkload(w *workload.RDTWorkLoad) error
+	QueryWorkload(query map[string]interface{}) ([]workload.RDTWorkLoad, error)
 }
 
 func NewDB() (DB, error) {

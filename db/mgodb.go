@@ -121,3 +121,8 @@ func (m *MgoDB) GetWorkloadById(id string) (workload.RDTWorkLoad, error) {
 	return w, nil
 
 }
+
+func (m *MgoDB) QueryWorkload(query map[string]interface{}) ([]workload.RDTWorkLoad, error) {
+	// not implement yet
+	return []workload.RDTWorkLoad{}, nil
+}

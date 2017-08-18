@@ -12,6 +12,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	. "openstackcore-rdtagent/api/error"
+	"openstackcore-rdtagent/db"
 	"openstackcore-rdtagent/lib/cache"
 	libcache "openstackcore-rdtagent/lib/cache"
 	"openstackcore-rdtagent/lib/cpu"
@@ -212,13 +213,6 @@ func (h *HospitalityRaw) GetByRequestMaxMin(max, min uint32, cache_id *uint32, t
 			"Bad request, max_cache=%d, min_cache=%d", max, min)
 	}
 
-	// TODO: Need to calculate how many for this kinds workload already
-	// running. For now treat it as max = 1 to avoid devided by zero. The
-	// score is not accruate for max = min = 0
-	if max == 0 {
-		max = 1
-	}
-
 	resaall := resctrl.GetResAssociation()
 
 	av, _ := rdtpool.GetAvailableCacheSchemata(resaall, []string{"infra", "."}, reqType, "L"+target_lev)
@@ -228,13 +222,23 @@ func (h *HospitalityRaw) GetByRequestMaxMin(max, min uint32, cache_id *uint32, t
 
 	numWays := uint32(GetCosInfo().CbmMaskLen)
 
-	if reqType == rdtpool.Besteffort {
-		reserved := rdtpool.GetReservedInfo()
+	reserved := rdtpool.GetReservedInfo()
 
+	if reqType == rdtpool.Shared {
+		dbc, _ := db.NewDB()
+		ws, _ := dbc.QueryWorkload(map[string]interface{}{"CosName": "shared", "Status": "Successful"})
+		totalCount := reserved[rdtpool.Shared].Quota
+		for k, _ := range av {
+			cacheS[k] = uint32((totalCount - uint(len(ws))) * 100 / totalCount)
+			retrimCache(k, cache_id, &cacheS)
+		}
+		return nil
+	}
+
+	if reqType == rdtpool.Besteffort {
 		for k, v := range av {
 			var totalCount = 0
 			cacheS[k] = 0
-			cacheId, _ := strconv.Atoi(k)
 			sharedBm := reserved[rdtpool.Shared].Schemata[k]
 			besteffortBm := reserved[rdtpool.Besteffort].Schemata[k]
 			// Please read it and to understand it
@@ -267,12 +271,7 @@ func (h *HospitalityRaw) GetByRequestMaxMin(max, min uint32, cache_id *uint32, t
 			}
 
 			cacheS[k] = cacheS[k] * 100 / uint32(totalCount)
-			if cache_id != nil {
-				// We only care about specific cache_id
-				if *cache_id != uint32(cacheId) {
-					delete(cacheS, k)
-				}
-			}
+			retrimCache(k, cache_id, &cacheS)
 		}
 		return nil
 	}
@@ -282,8 +281,6 @@ func (h *HospitalityRaw) GetByRequestMaxMin(max, min uint32, cache_id *uint32, t
 		log.Debugf("Free bitmask on cache [%s] is [%s]", k, v.ToBinString())
 		fbs := v.ToBinStrings()
 		cacheS[k] = 0
-		cacheId, _ := strconv.Atoi(k)
-
 		for _, val := range fbs {
 			if val[0] == '1' {
 				cacheS[k] += uint32(len(val) / int(max))
@@ -291,14 +288,18 @@ func (h *HospitalityRaw) GetByRequestMaxMin(max, min uint32, cache_id *uint32, t
 		}
 		// Conver to percentage
 		cacheS[k] = (cacheS[k]*uint32(max)*100 + numWays/2) / numWays
+		retrimCache(k, cache_id, &cacheS)
+	}
+	return nil
+}
 
-		if cache_id != nil {
-			// We only care about specific cache_id
-			if *cache_id != uint32(cacheId) {
-				delete(cacheS, k)
-			}
+func retrimCache(cacheId string, cache_id *uint32, cacheS *map[string]uint32) {
+
+	icacheId, _ := strconv.Atoi(cacheId)
+	if cache_id != nil {
+		// We only care about specific cache_id
+		if *cache_id != uint32(icacheId) {
+			delete(*cacheS, cacheId)
 		}
 	}
-
-	return nil
 }

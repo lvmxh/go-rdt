@@ -2,6 +2,7 @@ package db
 
 import (
 	"encoding/json"
+	"reflect"
 	"strconv"
 	"sync"
 
@@ -11,7 +12,6 @@ import (
 	"openstackcore-rdtagent/model/workload"
 )
 
-var db *bolt.DB
 var boltSession *bolt.DB
 
 var boltSessionOnce sync.Once
@@ -132,4 +132,31 @@ func (b *BoltDB) GetWorkloadById(id string) (workload.RDTWorkLoad, error) {
 		return json.Unmarshal(v, &w)
 	})
 	return w, err
+}
+
+func (b *BoltDB) QueryWorkload(query map[string]interface{}) ([]workload.RDTWorkLoad, error) {
+	ws, err := b.GetAllWorkload()
+	if err != nil {
+		return []workload.RDTWorkLoad{}, err
+	}
+
+	rws := []workload.RDTWorkLoad{}
+
+	for _, w := range ws {
+		find := true
+		for k, v := range query {
+			if _, ok := reflect.TypeOf(w).FieldByName(k); ok {
+				if !reflect.DeepEqual(reflect.ValueOf(w).FieldByName(k).Interface(), v) {
+					find = false
+					break
+				}
+			} else {
+				find = false
+			}
+		}
+		if find {
+			rws = append(rws, w)
+		}
+	}
+	return rws, nil
 }
