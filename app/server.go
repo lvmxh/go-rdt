@@ -1,16 +1,22 @@
 package app
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	"errors"
 	"fmt"
-	log "github.com/sirupsen/logrus"
+	"io/ioutil"
 	"net"
 	"net/http"
+	"path/filepath"
 	"strconv"
+	"strings"
 
 	appConf "openstackcore-rdtagent/app/config"
 
 	"github.com/emicklei/go-restful"
 	"github.com/emicklei/go-restful-swagger12"
+	log "github.com/sirupsen/logrus"
 	"openstackcore-rdtagent/api/v1"
 	"openstackcore-rdtagent/db"
 	"openstackcore-rdtagent/util/options"
@@ -111,6 +117,64 @@ func Initialize(c *Config) (*restful.Container, error) {
 	return wsContainer, nil
 }
 
+// TODO an individual go file for TLS. And move these functions to this file.
+func genTLSConfig() (*tls.Config, error) {
+	roots := x509.NewCertPool()
+	tlsfiles := map[string]string{}
+	appconf := appConf.NewConfig()
+	files, err := filepath.Glob(appconf.Def.CertPath + "/*.pem")
+	if err != nil {
+		return nil, err
+	}
+	// avoid to check whether files exist.
+	for _, f := range files {
+		switch filepath.Base(f) {
+		case appConf.CAFile:
+			tlsfiles["ca"] = f
+			// Should we get SystemCertPool ?
+			data, err := ioutil.ReadFile(f)
+			if err != nil {
+				return nil, err
+			}
+			ok := roots.AppendCertsFromPEM(data)
+			if !ok {
+				return nil, errors.New("failed to parse root certificate!")
+			}
+		case appConf.CertFile:
+			tlsfiles["cert"] = f
+		case appConf.KeyFile:
+			tlsfiles["key"] = f
+		}
+	}
+	if len(tlsfiles) < 3 {
+		missing := []string{}
+		for _, k := range []string{"cert", "ca", "key"} {
+			_, ok := tlsfiles[k]
+			if !ok {
+				missing = append(missing, k)
+			}
+		}
+		return nil, fmt.Errorf("Missing enough files for tls config: %s.", strings.Join(missing, ", "))
+	}
+
+	// In product env, ClientAuth should >= challenge_given
+	clientauth, ok := appConf.ClientAuth[appconf.Def.ClientAuth]
+	if !ok {
+		return nil, errors.New(
+			"Unknow ClientAuth config setting: " + appconf.Def.CertPath)
+	}
+
+	tlsCert, err := tls.LoadX509KeyPair(tlsfiles["cert"], tlsfiles["key"])
+	if err != nil {
+		return nil, err
+	}
+
+	return &tls.Config{
+		RootCAs:      roots,
+		ClientAuth:   clientauth,
+		Certificates: []tls.Certificate{tlsCert}}, nil
+}
+
 // RunServer uses the provided options to run the apiserver.
 func RunServer(s *options.ServerRunOptions) {
 
@@ -127,10 +191,17 @@ func RunServer(s *options.ServerRunOptions) {
 			Handler: container}
 	} else {
 		// TODO We need to config server.TLSConfig
+		// TODO Support self-sign CA. self-sign CA can be in development evn.
 		log.Fatal("Sorry, do not support TLS listener at present!")
+		tlsconf, err := genTLSConfig()
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		server = &http.Server{
-			Addr:    s.Addr + ":" + s.TLSPort,
-			Handler: container}
+			Addr:      s.Addr + ":" + s.TLSPort,
+			Handler:   container,
+			TLSConfig: tlsconf}
 	}
 
 	server_start := func() {

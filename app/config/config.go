@@ -1,16 +1,35 @@
 package config
 
 import (
+	"crypto/tls"
+	"sync"
+
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"sync"
 )
 
+var ClientAuth = map[string]tls.ClientAuthType{
+	"noneed":          tls.NoClientCert,
+	"require":         tls.RequestClientCert,
+	"require_any":     tls.RequireAnyClientCert,
+	"challenge_given": tls.VerifyClientCertIfGiven,
+	"challenge":       tls.RequireAndVerifyClientCert,
+}
+
+const (
+	CAFile   = "ca.pem"
+	CertFile = "rmd-cert.pem"
+	KeyFile  = "rmd-key.pem"
+)
+
+// TODO consider create a new struct for TLSConfig
 type Default struct {
-	Address  string `toml:"address"`
-	Port     uint   `toml:"port"`
-	TLSPort  uint   `toml:"tlsport"`
-	UnixSock string `toml:"unixsock"`
+	Address    string `toml:"address"`
+	Port       uint   `toml:"port"`
+	TLSPort    uint   `toml:"tlsport"`
+	CertPath   string `toml:"certpath"`
+	ClientAuth string `toml:"clientauth"`
+	UnixSock   string `toml:"unixsock"`
 }
 
 type Database struct {
@@ -25,7 +44,7 @@ type Config struct {
 }
 
 var configOnce sync.Once
-var def = &Default{"localhost", 8081, 0, ""}
+var def = &Default{"localhost", 8081, 0, "etc/rdtagent/cert", "challenge", ""}
 var db = &Database{}
 var config = &Config{def, db}
 
