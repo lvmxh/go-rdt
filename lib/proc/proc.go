@@ -107,7 +107,7 @@ type Process struct {
 	CmdLine string
 }
 
-func ListProcesses() map[string]Process {
+var ListProcesses = func() map[string]Process {
 	processes := make(map[string]Process)
 	files, _ := filepath.Glob("/proc/[0-9]*/cmdline")
 	for _, file := range files {

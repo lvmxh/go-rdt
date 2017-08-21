@@ -3,6 +3,9 @@ package workload
 import (
 	"testing"
 
+	. "github.com/prashantv/gostub"
+	. "github.com/smartystreets/goconvey/convey"
+	"openstackcore-rdtagent/lib/proc"
 	"openstackcore-rdtagent/model/cache"
 )
 
@@ -38,4 +41,48 @@ func TestGetCacheIDs(t *testing.T) {
 		t.Errorf("cache_ids should be [], but we get %v", cache_ids)
 	}
 
+}
+
+func TestValidateWorkLoad(t *testing.T) {
+	Convey("Test Validate workload", t, func() {
+		Convey("Validate with empty workload", func() {
+			subs := StubFunc(&proc.ListProcesses, map[string]proc.Process{"1": proc.Process{1, "cmdline"}})
+			defer subs.Reset()
+			var cache uint32 = 1
+			var wl *RDTWorkLoad = &RDTWorkLoad{}
+			err := wl.Validate()
+			So(err, ShouldNotBeNil)
+
+			wl.TaskIDs = []string{"1"}
+			Convey("Validate with task ids", func() {
+				err := wl.Validate()
+				So(err, ShouldNotBeNil)
+
+				wl.Policy = "gold"
+				Convey("Validate with task ids and Policy", func() {
+					err := wl.Validate()
+					So(err, ShouldBeNil)
+				})
+			})
+
+			wl.MaxCache = &cache
+			Convey("Validate with MaxCache is not nil but MinCache is nil", func() {
+				err := wl.Validate()
+				So(err, ShouldNotBeNil)
+
+				wl.MinCache = &cache
+				Convey("Validate with MaxCache & MinCache are not nil", func() {
+
+					err := wl.Validate()
+					So(err, ShouldBeNil)
+				})
+			})
+
+			wl.TaskIDs = []string{"2"}
+			Convey("Validate with task ids does not existed", func() {
+				err := wl.Validate()
+				So(err, ShouldNotBeNil)
+			})
+		})
+	})
 }
