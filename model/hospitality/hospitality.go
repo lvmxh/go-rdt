@@ -201,7 +201,7 @@ func (h *HospitalityRaw) GetByRequestMaxMin(max, min uint32, cache_id *uint32, t
 
 	var reqType string
 
-	if max == 0 {
+	if max == 0 && min == 0 {
 		reqType = rdtpool.Shared
 	} else if max > min && min != 0 {
 		reqType = rdtpool.Besteffort
