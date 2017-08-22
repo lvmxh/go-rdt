@@ -21,7 +21,6 @@ import (
 	libutil "openstackcore-rdtagent/lib/util"
 	"openstackcore-rdtagent/model/policy"
 	"openstackcore-rdtagent/util/rdtpool"
-	. "openstackcore-rdtagent/util/rdtpool/base"
 )
 
 /*
@@ -220,8 +219,6 @@ func (h *HospitalityRaw) GetByRequestMaxMin(max, min uint32, cache_id *uint32, t
 	cacheS := make(map[string]uint32)
 	h.SC = map[string]CacheScoreRaw{"l" + target_lev: cacheS}
 
-	numWays := uint32(GetCosInfo().CbmMaskLen)
-
 	reserved := rdtpool.GetReservedInfo()
 
 	if reqType == rdtpool.Shared {
@@ -235,12 +232,16 @@ func (h *HospitalityRaw) GetByRequestMaxMin(max, min uint32, cache_id *uint32, t
 		return nil
 	}
 
-	if reqType == rdtpool.Besteffort {
-		for k, v := range av {
-			var totalCount = 0
-			cacheS[k] = 0
-			sharedBm := reserved[rdtpool.Shared].Schemata[k]
-			besteffortBm := reserved[rdtpool.Besteffort].Schemata[k]
+	for k, v := range av {
+		var totalCount = 0
+		var fbs []string
+		var totalbs []string
+		cacheS[k] = 0
+		sharedBm := reserved[rdtpool.Shared].Schemata[k]
+		besteffortBm := reserved[rdtpool.Besteffort].Schemata[k]
+		guaranteeBm := reserved[rdtpool.Guarantee].Schemata[k]
+
+		if reqType == rdtpool.Besteffort {
 			// Please read it and to understand it
 			// Hard to describe it in human English.
 			if besteffortBm.Axor(sharedBm).IsEmpty() ||
@@ -248,46 +249,30 @@ func (h *HospitalityRaw) GetByRequestMaxMin(max, min uint32, cache_id *uint32, t
 				log.Infof("No cache way left in besteffort pool on cache id %s", k)
 				continue
 			}
-
-			fbs := besteffortBm.Axor(sharedBm).ToBinStrings()
-			// Calculate total supported
-			for _, val := range fbs {
-				if val[0] == '1' {
-					totalCount += len(val) / int(min)
-				}
-			}
-			if totalCount == 0 {
-				continue
-			}
-
-			log.Debugf("Free overlap bitmask on cache [%s] is [%s]", k, v.ToBinStrings())
+			totalbs = besteffortBm.Axor(sharedBm).ToBinStrings()
 			fbs = v.Axor(sharedBm).ToBinStrings()
-			// Scan no-overlap ways
-			log.Debugf("Free executive bitmask on cache [%s] is [%s]", k, fbs)
-			for _, val := range fbs {
-				if val[0] == '1' {
-					cacheS[k] += uint32(len(val) / int(min))
-				}
-			}
-
-			cacheS[k] = cacheS[k] * 100 / uint32(totalCount)
-			retrimCache(k, cache_id, &cacheS)
+		} else {
+			totalbs = guaranteeBm.ToBinStrings()
+			fbs = v.ToBinStrings()
 		}
-		return nil
-	}
 
-	// Notes that av is a map, so we are not sure about the cache id order
-	for k, v := range av {
-		log.Debugf("Free bitmask on cache [%s] is [%s]", k, v.ToBinString())
-		fbs := v.ToBinStrings()
-		cacheS[k] = 0
+		log.Debugf("Total bitmask on cache [%s] is [%s]", k, totalbs)
+		log.Debugf("Free bitmask on cache [%s] is [%s]", k, fbs)
+		// Calculate total supported
+		for _, val := range totalbs {
+			if val[0] == '1' {
+				totalCount += len(val) / int(min)
+			}
+		}
+		if totalCount == 0 {
+			continue
+		}
 		for _, val := range fbs {
 			if val[0] == '1' {
-				cacheS[k] += uint32(len(val) / int(max))
+				cacheS[k] += uint32(len(val) / int(min))
 			}
 		}
-		// Conver to percentage
-		cacheS[k] = (cacheS[k]*uint32(max)*100 + numWays/2) / numWays
+		cacheS[k] = cacheS[k] * 100 / uint32(totalCount)
 		retrimCache(k, cache_id, &cacheS)
 	}
 	return nil
