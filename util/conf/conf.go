@@ -8,7 +8,12 @@ import (
 )
 
 func Init() error {
-	viper.SetConfigName("rdtagent")        // no need to include file extension
+	viper.SetConfigName("rdtagent") // no need to include file extension
+	// TODO (Shaohe) consider to introduce Cobra. let Viper work with Cobra.
+	conf_dir := pflag.Lookup("conf-dir").Value.String()
+	if conf_dir != "" {
+		viper.AddConfigPath(conf_dir)
+	}
 	viper.AddConfigPath("/etc/rdtagent/")  // path to look for the config file in
 	viper.AddConfigPath("$HOME/rdtagent")  // call multiple times to add many search paths
 	viper.AddConfigPath("./etc/rdtagent/") // set the path of your config file
