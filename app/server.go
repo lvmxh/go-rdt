@@ -8,9 +8,12 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 
 	appConf "openstackcore-rdtagent/app/config"
 
@@ -219,17 +222,47 @@ func RunServer(s *options.ServerRunOptions) {
 		}()
 	}
 
+	// Unix Socket.
 	config = BuildServerConfig(s)
 	container, err = Initialize(config)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	userver := &http.Server{
 		Handler: container}
-	// TODO need to check, should defer unixListener.Close()
+
 	unixListener, err := net.Listen("unix", s.UnixSock)
+	if err != nil {
+		log.Info(err, unixListener)
+		return
+	}
+	// TODO need to check, should defer unixListener.Close()
+	defer func() {
+		if unixListener != nil {
+			log.Infof("Close Unix socket listener. RMD exits!")
+			unixListener.Close()
+		}
+	}()
+
+	sigchan := make(chan os.Signal, 1)
+	signal.Notify(sigchan, os.Interrupt, syscall.SIGTERM)
+	go func(l net.Listener, c chan os.Signal) {
+		sig := <-c
+		if l != nil {
+			log.Infof("Close Unix socket listener.")
+			l.Close()
+		}
+		log.Infof("Caught signal %s: RMD exits!", sig)
+		os.Exit(0)
+	}(unixListener, sigchan)
+
+	//REMOVE these 2 line codes, if we want to support Unix Socket!
+	unixListener.Close()
+	log.Fatal("Sorry, do not support Unix listener at present!")
+
+	err = userver.Serve(unixListener)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Fatal(userver.Serve(unixListener))
 }
