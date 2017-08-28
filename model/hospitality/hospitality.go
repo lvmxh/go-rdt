@@ -223,56 +223,48 @@ func (h *HospitalityRaw) GetByRequestMaxMin(max, min uint32, cache_id *uint32, t
 
 	if reqType == rdtpool.Shared {
 		dbc, _ := db.NewDB()
-		ws, _ := dbc.QueryWorkload(map[string]interface{}{"CosName": "shared", "Status": "Successful"})
+		ws, _ := dbc.QueryWorkload(map[string]interface{}{
+			"CosName": reserved[rdtpool.Shared].Name,
+			"Status":  "Successful"})
 		totalCount := reserved[rdtpool.Shared].Quota
 		for k, _ := range av {
-			cacheS[k] = uint32((totalCount - uint(len(ws))) * 100 / totalCount)
+			if uint(len(ws)) < totalCount {
+				cacheS[k] = 100
+			} else {
+				cacheS[k] = 0
+			}
 			retrimCache(k, cache_id, &cacheS)
 		}
 		return nil
 	}
 
 	for k, v := range av {
-		var totalCount = 0
 		var fbs []string
-		var totalbs []string
 		cacheS[k] = 0
-		sharedBm := reserved[rdtpool.Shared].Schemata[k]
-		besteffortBm := reserved[rdtpool.Besteffort].Schemata[k]
-		guaranteeBm := reserved[rdtpool.Guarantee].Schemata[k]
 
-		if reqType == rdtpool.Besteffort {
-			// Please read it and to understand it
-			// Hard to describe it in human English.
-			if besteffortBm.Axor(sharedBm).IsEmpty() ||
-				sharedBm.GetConnectiveBits(max-min, 0, true).IsEmpty() {
-				log.Infof("No cache way left in besteffort pool on cache id %s", k)
-				continue
-			}
-			totalbs = besteffortBm.Axor(sharedBm).ToBinStrings()
-			fbs = v.Axor(sharedBm).ToBinStrings()
-		} else {
-			totalbs = guaranteeBm.ToBinStrings()
-			fbs = v.ToBinStrings()
-		}
+		fbs = v.ToBinStrings()
 
-		log.Debugf("Total bitmask on cache [%s] is [%s]", k, totalbs)
 		log.Debugf("Free bitmask on cache [%s] is [%s]", k, fbs)
 		// Calculate total supported
-		for _, val := range totalbs {
-			if val[0] == '1' {
-				totalCount += len(val) / int(min)
-			}
-		}
-		if totalCount == 0 {
-			continue
-		}
 		for _, val := range fbs {
 			if val[0] == '1' {
-				cacheS[k] += uint32(len(val) / int(min))
+				valLen := len(val)
+				if (valLen/int(min) > 0) && cacheS[k] < uint32(valLen) {
+					cacheS[k] = uint32(valLen)
+				}
 			}
 		}
-		cacheS[k] = cacheS[k] * 100 / uint32(totalCount)
+		if cacheS[k] > 0 {
+			// (NOTES): Gurantee will return 0|100
+			// Besteffort will return (max continious ways) / max
+			cacheS[k] = (cacheS[k] * 100) / max
+			if cacheS[k] > 100 {
+				cacheS[k] = 100
+			}
+		} else {
+			cacheS[k] = 0
+		}
+
 		retrimCache(k, cache_id, &cacheS)
 	}
 	return nil
