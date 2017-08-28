@@ -18,7 +18,7 @@ func Flock(file *os.File, timeout time.Duration, exclusive ...bool) error {
 
 	s := time.Now()
 	t := s
-	// timeout <= 0 means loop forever.
+	// timeout < 0 means loop forever. timeout = 0 means just once.
 	if timeout > 0 {
 		t = s.Add(time.Duration(timeout))
 	}
@@ -29,6 +29,9 @@ func Flock(file *os.File, timeout time.Duration, exclusive ...bool) error {
 	for time.Duration(timeout) <= 0 || s.Before(t) {
 		// Otherwise attempt to obtain an exclusive lock.
 		err := syscall.Flock(int(file.Fd()), flag|syscall.LOCK_NB)
+		if timeout == 0 {
+			return err
+		}
 		if err == syscall.EWOULDBLOCK {
 			// Wait for a bit and try again.
 			time.Sleep(time.Millisecond * 50)

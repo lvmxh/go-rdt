@@ -11,16 +11,23 @@ import (
 	"openstackcore-rdtagent/db"
 	"openstackcore-rdtagent/lib/cpu"
 	"openstackcore-rdtagent/lib/resctrl"
+	"openstackcore-rdtagent/util/pidfile"
 	"openstackcore-rdtagent/util/rdtpool"
 )
 
 func errorOut(msg string) {
 	fmt.Println(msg)
+	pidfile.ClosePID()
 	log.Fatalf(msg)
+	// TODO (Shaohe), remove os.Exit, Fatalf can exit.
 	os.Exit(1)
 }
 
 func SanityCheck() {
+	if err := pidfile.CreatePID(); err != nil {
+		msg := "Create PID file fail. Reason: " + err.Error()
+		errorOut(msg)
+	}
 	pf := cpu.GetMicroArch(cpu.GetSignature())
 	if pf == "" {
 		msg := "Unknow platform, please update the cpu_map.toml conf file."
