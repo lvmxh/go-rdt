@@ -231,6 +231,7 @@ func (w *RDTWorkLoad) Release() error {
 		if err := rdtpool.SetOSGroup(); err != nil {
 			return err
 		}
+		return nil
 	}
 	// remove workload task ids from resource group
 	if len(w.TaskIDs) > 0 {
