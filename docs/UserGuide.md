@@ -4,13 +4,17 @@
 
 ## Query cache information on the host
 
-    curl -i http://127.0.0.1:8888/v1/cache/
-    curl -i http://127.0.0.1:8888/v1/cache/l3
-    curl -i http://127.0.0.1:8888/v1/cache/l3/0
+```
+curl -i http://127.0.0.1:8888/v1/cache/
+curl -i http://127.0.0.1:8888/v1/cache/l3
+curl -i http://127.0.0.1:8888/v1/cache/l3/0
+```
 
 ## Query pre-fedefined policy in RDTAgent
 
-    curl http://127.0.0.1:8888/v1/policy
+```
+curl http://127.0.0.1:8888/v1/policy
+```
 
 The backend for policy is a yaml file: /etc/rdtagent/policy.yaml, it pre-defines
 some `policy` on specific intel platform. This file can be changed.
@@ -31,31 +35,34 @@ tasks = ["ovs*"] # Just support Wildcards. Do we need to support RE?
 
 [CachePool]
 guarantee = 10
-besteffort = 9
-shared = 7
+besteffort = 7
+shared = 2
 ```
 
-OSGroup: cache ways reserved for operate system usage.
-InfraGroup: infrastructure tasks group, user can specify task binary name
-            the cache ways will be shared with other worklaod
+- OSGroup: cache ways reserved for operate system usage.
+- InfraGroup: infrastructure tasks group, user can specify task binary name
+              the cache ways will be shared with other worklaod
 
 Besides, define cache pool, cache allocation will happened in the pools.
 
-guarantee: allocate cache for workload max_cache == min_cache > 0
-besteffort: allocate cache for workload max_cache > min_cache > 0
-shared: allocate cache for workload max_cache == min_cache = 0
+- guarantee: allocate cache for workload max_cache == min_cache > 0
+- besteffort: allocate cache for workload max_cache > min_cache > 0
+- shared: allocate cache for workload max_cache == min_cache = 0
 
 On a host which support max 20 cache ways, for this configuration file,
 we will have follow cache bit mask layout:
 
+```
+
 OSGroup:    0000 0000 0000 0000 0001
 InfraGroup: 1111 1111 1111 1111 1110
-
-Cache Pools:
+```
+Available CBM in Cache Pools initially:
+```
 guarantee:  0000 0000 0111 1111 1110
-besteffort: 1111 1111 1000 0000 0000
-shared:     0111 1111 0000 0000 0000
-
+besteffort: 0011 1111 1000 0000 0000
+shared:     1100 0000 0000 0000 0000
+```
 
 ## Create a workload
 
@@ -100,13 +107,24 @@ Hospitality score API will give a score for scheduling workload on a host for ca
 
 Admin can ether give the max_cache/min_cache or a policy to query if the hospitality score.
 
+The score will be calculate as following:
+
+| request | hospitality score | cahce pool |
+| :-----: | :---------------: | :--------: |
+| max_cache == min_cache > 0 | `[0 | 100]` | Guarantee |
+| max_cache == min_cache == 0 | `[0 | 100]` | Shared |
+| max_cache > min_cache > 0 |  `[0, 100]` | Besteffort |
+
+
+To get hospitality score:
+
 ```
 curl -H "Content-Type: application/json" --request POST --data '{"max_cache": 2, "min_cache": 2}' http://127.0.0.1:8888/v1/hospitality
 {
     "score": {
         "l3": {
-            "0": 50,
-            "1": 50
+            "0": 100,
+            "1": 100
         }
     }
 }
@@ -114,8 +132,9 @@ curl -H "Content-Type: application/json" --request POST --data '{"max_cache": 2,
 
 ## Access RMD by unix socket:
 
-If the unix socket is enable, and you want to access the RMD server by unix socket, you can access the server by:
+Access RMD by unit socket if it is enabled.
 
+Requires curl >= v7.40.0
+```
 sudo curl --unix-socket /your/socket/path http:/your/resource/url
-
-And you should also make suer the version of curl is above v7.40.0
+```

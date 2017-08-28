@@ -129,17 +129,30 @@ func (w *RDTWorkLoad) Enforce() *AppError {
 			// candidate[k] = v.GetBestMatchConnectiveBits(er.MaxWays, 0, true)
 			candidate[k] = v.GetConnectiveBits(er.MaxWays, 0, false)
 		case rdtpool.Besteffort:
-			candidate[k], _ = libutil.NewBitmap(GetCosInfo().CbmMaskLen, "")
-			tmp := v.GetConnectiveBits(er.MinWays, 0, true)
-			if !tmp.IsEmpty() {
-				candidate[k] = v.Or(reserved[rdtpool.Shared].Schemata[k]).GetConnectiveBits(er.MaxWays, 0, true)
+			// Always to try to allocate max cache ways, if fail try to
+			// get the most available ones
 
-			} else {
-				tmp = v.GetConnectiveBits(er.MinWays, 0, false)
-				if !tmp.IsEmpty() {
-					candidate[k] = v.Or(reserved[rdtpool.Shared].Schemata[k]).GetConnectiveBits(er.MaxWays, 0, false)
+			freeBitmaps := v.ToBinStrings()
+			var maxWays uint32
+			maxWays = 0
+			for _, val := range freeBitmaps {
+				if val[0] == '1' {
+					valLen := len(val)
+					if (valLen/int(er.MinWays) > 0) && maxWays < uint32(valLen) {
+						maxWays = uint32(valLen)
+					}
 				}
 			}
+			if maxWays <= 0 {
+				return AppErrorf(http.StatusBadRequest,
+					"Not enough cache left on cache_id %s", k)
+			} else {
+				if maxWays > er.MaxWays {
+					maxWays = er.MaxWays
+				}
+				candidate[k] = v.GetConnectiveBits(maxWays, 0, false)
+			}
+
 		case rdtpool.Shared:
 			candidate[k] = reserved[rdtpool.Shared].Schemata[k]
 		}
