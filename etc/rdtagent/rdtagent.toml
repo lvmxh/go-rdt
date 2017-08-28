@@ -27,13 +27,13 @@ cacheways = 1
 cpuset = "0-1"
 
 [InfraGroup] # InfraGroup is optional
-cacheways = 10
+cacheways = 19
 cpuset = "2-3"
 # arrary or comma-separated values? RMD supports array instead of CSV.
 tasks = ["ovs*"] # Just support Wildcards. Do we need to support RE?
 
 [CachePool] # Cache Pool config is optional
 max_allowed_shared = 10 # max allowed workload in shared pool, default is 10
-guarantee = 12
+guarantee = 10
 besteffort = 7
-shared = 3
+shared = 2
