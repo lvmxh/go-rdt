@@ -64,4 +64,5 @@ sed -i -e 's/\(shared = \)\(.*\)/\11/g' $CONFFILE
 
 sudo go run rdtagent.go --conf-dir "/tmp" --log-dir "/tmp/rdagent.log" &
 
+sleep 1
 go test -v ./test/integration/...
