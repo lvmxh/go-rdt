@@ -14,6 +14,20 @@ if [ "$1" != "-i" ]; then
     go test -short -v -cover $(go list ./... | grep -v /vendor/ )
 fi
 
+
+GOROOT=`go env |grep "GOROOT" |cut -d "=" -f2`
+GOROOT=${GOROOT#\"}
+GOROOT=${GOROOT%\"}
+
+GOPATH=`go env |grep GOPATH |cut -d "=" -f 2`
+GOPATH=${GOPATH%\"}
+GOPATH=${GOPATH#\"}
+
+export GOROOT
+export GOPATH
+export PATH=${PATH}:${GOROOT}/bin:${GOPATH}/bin
+
+
 RESDIR="/sys/fs/resctrl"
 PID="/var/run/rmd.pid"
 CONFFILE="/tmp/rdtagent.toml"
@@ -62,7 +76,8 @@ sed -i -e 's/\(besteffort = \)\(.*\)/\13/g' $CONFFILE
 # set shared pool = 1
 sed -i -e 's/\(shared = \)\(.*\)/\11/g' $CONFFILE
 
-sudo go run rdtagent.go --conf-dir "/tmp" --log-dir "/tmp/rdagent.log" &
+
+sudo go run rdtagent.go --conf-dir ${CONFFILE%/*} --log-dir "/tmp/rdagent.log" &
 
 sleep 1
-go test -v ./test/integration/...
+CONF=$CONFFILE go test -v ./test/integration/...

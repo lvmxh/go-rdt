@@ -1,9 +1,12 @@
 package testhelpers
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"strconv"
+
+	"github.com/spf13/viper"
 )
 
 // CreateNewProcess Create a new background running process by command string
@@ -67,4 +70,39 @@ func AssembleRequest(processes []*os.Process, coreIds []string, maxCache, minCac
 	}
 
 	return data
+}
+
+func ConfigInit(path string) error {
+	viper.SetConfigType("toml")
+	viper.SetConfigName("rdtagent") // name of config file (without extension)
+	viper.AddConfigPath("/tmp")     // path to look for the config file in
+	err := viper.ReadInConfig()     // Find and read the config file
+	return err
+}
+
+// just simple wraper for config Unmarshal
+func GetConfigOptions(rawVal interface{}) error {
+	return viper.Unmarshal(rawVal)
+}
+
+// just simple wraper for config UnmarshalKey
+func GetConfigOption(key string, rawVal interface{}) error {
+	return viper.UnmarshalKey(key, rawVal)
+}
+
+func GetConfigPort() int {
+	var port int
+	GetConfigOption("default.port", &port)
+	return port
+}
+
+func GetConfigAddr() string {
+	var addr string
+	GetConfigOption("default.address", &addr)
+	return addr
+}
+
+func GetV1URL() string {
+	return fmt.Sprintf(
+		"http://%s:%d/v1/", GetConfigAddr(), GetConfigPort())
 }
