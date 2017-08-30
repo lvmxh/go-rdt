@@ -32,33 +32,27 @@ $ $GOPATH/bin/openstackcore-rdtagent --help
 $ $GOPATH/bin/openstackcore-rdtagent
 ```
 
-## Unit test
+## Commit code
 
-Only few package has unit test case for now. But be sure run unit testing
-before submiting new patch.
+There's a bash shell script `hacking.sh` will help to checking coding style
+by `go fmt` and `golint`.
 
-$ go test -v ./...
+After you commit your changes, run `./hacking.sh` and address errors before
+push your changes.
 
-## Testing
+## Test
 
-In another terminal :
+There's a bash shell script `test.sh`, a helper scirpt to do uint testing and
+functional testing.
 
-```
-$ curl -i localhost:8081/v1/cache
+`./test.sh -u` to run all unit test cases.
+`./test.sh -i` to run all functional test cases.
 
-```
-
+To read test.sh to understand what functional test case do.
 
 ## Godep
 
 Check [ Godep ](https://github.com/tools/godep) for how to add/update dependencies.
-
-## Unit Test
-
-TODO
-
-
-Happy hacking!
 
 ## Swagger
 
