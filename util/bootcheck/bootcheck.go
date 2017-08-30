@@ -1,7 +1,5 @@
 package bootcheck
 
-//SanityCheck
-
 import (
 	"fmt"
 	"os"
@@ -23,6 +21,7 @@ func errorOut(msg string) {
 	os.Exit(1)
 }
 
+// SanityCheck to check if I am the only RMD process
 func SanityCheck() {
 	if err := pidfile.CreatePID(); err != nil {
 		msg := "Create PID file fail. Reason: " + err.Error()
@@ -63,6 +62,7 @@ func SanityCheck() {
 	}
 }
 
+// DBCheck Do some cleanup in DB
 func DBCheck() error {
 	d, err := db.NewDB()
 	if err != nil {

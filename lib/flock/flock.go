@@ -7,13 +7,13 @@ import (
 	"time"
 )
 
-// flock acquires an advisory lock on a file descriptor.
+// Flock acquires an advisory lock on a file descriptor.
 func Flock(file *os.File, timeout time.Duration, exclusive ...bool) error {
 
-	lock_states := map[bool]int{true: syscall.LOCK_EX, false: syscall.LOCK_SH}
+	lockStates := map[bool]int{true: syscall.LOCK_EX, false: syscall.LOCK_SH}
 	flag := syscall.LOCK_SH
 	if len(exclusive) > 0 {
-		flag = lock_states[exclusive[0]]
+		flag = lockStates[exclusive[0]]
 	}
 
 	s := time.Now()
@@ -42,10 +42,10 @@ func Flock(file *os.File, timeout time.Duration, exclusive ...bool) error {
 	}
 
 	// FIXME(Shaohe, Feng) uniform error.
-	return fmt.Errorf("Timeout to get flock!")
+	return fmt.Errorf("Timeout to get flock")
 }
 
-// funlock releases an advisory lock on a file descriptor.
+// Funlock releases an advisory lock on a file descriptor.
 func Funlock(file *os.File) error {
 	return syscall.Flock(int(file.Fd()), syscall.LOCK_UN)
 }

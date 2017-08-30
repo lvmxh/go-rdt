@@ -9,8 +9,10 @@ import (
 	"strings"
 )
 
+// PIDFile Pid file of rmd process
 const PIDFile = "/var/run/rmd.pid"
 
+// CreatePID Create pid file and write my pid into that file
 func CreatePID() error {
 	// FIXME one edge case does not handle, that is the process exist,
 	// but pidfile is removed. Beside call shell command "lsof", I have no idea.
@@ -22,7 +24,7 @@ func CreatePID() error {
 		pidstr := strings.TrimSpace(string(dat))
 		files, _ := filepath.Glob("/proc/" + pidstr)
 		if len(files) > 0 {
-			return fmt.Errorf("RMD %s is already running, exit!", pidstr)
+			return fmt.Errorf("RMD %s is already running, exit", pidstr)
 		}
 		// From golang doc, os.FindProcess always return successful.
 		// err == nil and process.Pid > 0
@@ -45,7 +47,7 @@ func CreatePID() error {
 	// return Flock(f, 0, true)
 }
 
-// Force remove pid file
+// ClosePID Force remove pid file
 func ClosePID() {
 	dat, err := ioutil.ReadFile(PIDFile)
 	if err == nil {
