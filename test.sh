@@ -76,8 +76,18 @@ sed -i -e 's/\(besteffort = \)\(.*\)/\13/g' $CONFFILE
 # set shared pool = 1
 sed -i -e 's/\(shared = \)\(.*\)/\11/g' $CONFFILE
 
+cat $CONFFILE
 
-sudo go run rdtagent.go --conf-dir ${CONFFILE%/*} --log-dir "/tmp/rdagent.log" &
+# Use godep to build rmd binary instead of using dependicies of user's
+# GOPATH
+# TODO change it to rmd
+godep go install openstackcore-rdtagent
+sudo ${GOPATH}/bin/openstackcore-rdtagent --conf-dir ${CONFFILE%/*} --log-dir "/tmp/rdagent.log" &
 
 sleep 1
 CONF=$CONFFILE go test -v ./test/integration/...
+
+# cleanup
+sudo kill -9 `cat $PID`
+unmount /sys/fs/resctrl
+rm ${GOPATH}/bin/openstackcore-rdtagent
