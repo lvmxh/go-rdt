@@ -35,3 +35,21 @@ func TestAssembleRequestMultipleProcess(t *testing.T) {
 func TestAssembleRequestCPUs(t *testing.T) {
 	fmt.Println(AssembleRequest([]*os.Process{}, []string{"1-2"}, 10, 10, ""))
 }
+
+func TestFormatByKey(t *testing.T) {
+	m := map[string]interface{}{"w": "world"}
+	s := "Hello {{.w}}!"
+	r, _ := FormatByKey(s, m)
+	fmt.Println(r)
+	if r != "Hello world!" {
+		t.Errorf("error for format string: %s", s)
+	}
+
+	m = map[string]interface{}{"age": "47", "name": "John", "key": "no use"}
+	s = "Hi {{.name}}. Your age is {{.age}}\n"
+	r, _ = FormatByKey(s, m)
+	fmt.Println(r)
+	if r != "Hi John. Your age is 47\n" {
+		t.Errorf("error for format string: %s", s)
+	}
+}

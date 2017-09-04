@@ -1,10 +1,12 @@
 package testhelpers
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
 	"strconv"
+	"text/template"
 
 	"github.com/spf13/viper"
 )
@@ -105,4 +107,23 @@ func GetConfigAddr() string {
 func GetV1URL() string {
 	return fmt.Sprintf(
 		"http://%s:%d/v1/", GetConfigAddr(), GetConfigPort())
+}
+
+// usage:
+//       m := map[string]interface{}{"name": "John", "age": 47}
+//       s := "Hi {{.name}}. Your age is {{.age}}\n"
+//		 result, err := FormatByKey(s, m)
+// use go native template.
+// If you do not like go template, you can use mustache
+//       import "github.com/hoisie/mustache"
+//       m := map[string]interface{}{"name": "John", "age": 47}
+//       s := "Hi {{name}}. Your age is {{age}}\n"
+//       result := mustache.Render("hello {{c}}, {{age}}", m)
+func FormatByKey(f string, m map[string]interface{}) (string, error) {
+	var tpl bytes.Buffer
+	t := template.Must(template.New("").Parse(f))
+	if err := t.Execute(&tpl, m); err != nil {
+		return f, err
+	}
+	return tpl.String(), nil
 }
