@@ -44,7 +44,7 @@ if [ -f "$PID" ]; then
 fi
 
 # clean up, force remove resctrl
-if [ -d "$RESDIR" ]; then
+if [ -d "$RESDIR" ] && mountpoint $RESDIR; then
     sudo umount /sys/fs/resctrl
     if [ $? -ne 0 ]; then
         echo "--------------------------------------------------"
@@ -59,8 +59,8 @@ sudo mount -t resctrl resctrl /sys/fs/resctrl
 
 # FIXME will change to use template. Sed is not readable.
 cp etc/rdtagent/rdtagent.toml /tmp/
-# Set tcp port 8088
-sed -i -e 's/\(port = \)\(.*\)/\18088/g' $CONFFILE
+# Set tcp port 8888
+sed -i -e 's/\(port = \)\(.*\)/\18888/g' $CONFFILE
 # Set DB transport to avoid change the system DB
 sed -i -e 's/\(transport = \)\(.*\)/\1"\/tmp\/rmd.db"/g' $CONFFILE
 # Set log stdout
@@ -87,7 +87,16 @@ sudo ${GOPATH}/bin/openstackcore-rdtagent --conf-dir ${CONFFILE%/*} --log-dir "/
 sleep 1
 CONF=$CONFFILE go test -v ./test/integration/...
 
+rev=$?
+
 # cleanup
 sudo kill -9 `cat $PID`
-unmount /sys/fs/resctrl
+sudo umount /sys/fs/resctrl
 rm ${GOPATH}/bin/openstackcore-rdtagent
+
+if [[ $rev -ne 0 ]]; then
+    echo ":( <<< Functional testing fail, retual value $rev ."
+else
+    echo ":) >>> Functional testing passed ."
+fi
+exit $rev

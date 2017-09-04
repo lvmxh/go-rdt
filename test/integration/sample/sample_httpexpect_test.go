@@ -60,7 +60,7 @@ var _ = Describe("Sample", func() {
 	Describe("Gevin a really RMD runtime evn.", func() {
 		Context("Configure file is generated with hard code", func() {
 			It("The server should set v1url correctly", func() {
-				Expect(v1url).To(Equal("http://localhost:8088/v1/"))
+				Expect(v1url).To(Equal("http://localhost:8888/v1/"))
 			})
 		})
 	})
