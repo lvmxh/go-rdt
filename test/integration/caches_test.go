@@ -1,7 +1,6 @@
 package integration_test
 
 import (
-	"fmt"
 	"net/http"
 
 	. "github.com/onsi/ginkgo"
@@ -13,27 +12,27 @@ import (
 var cacheSchemaTemplate string = `{
 	"type": "object",
 	"properties": {
-		"rdt": %s,
-		"cqm": %s,
-		"cdp": %s,
-		"cdp_enable": %s,
-		"cat": %s,
-		"cat_enable": %s,
+		"rdt": {{.bool}},
+		"cqm": {{.bool}},
+		"cdp": {{.bool}},
+		"cdp_enable": {{.bool}},
+		"cat": {{.bool}},
+		"cat_enable": {{.bool}},
 		"caches": {
 			"type": "object",
 			"properties": {
 				"l3": {
 					"type": "object",
 					"properties": {
-						"number": %s,
-						"cache_ids": {"type": "array", "items": %s}
+						"number": {{.pint}},
+						"cache_ids": {"type": "array", "items": {{.uint}}}
 					}
 				},
 				"l2": {
 					"type": "object",
 					"properties": {
-						"number": %s,
-						"cache_ids": {"type": "array", "items": %s}
+						"number": {{.pint}},
+						"cache_ids": {"type": "array", "items": {{.uint}}}
 					}
 				}
 			}
@@ -42,29 +41,23 @@ var cacheSchemaTemplate string = `{
 	"required": ["rdt", "cqm", "cdp", "cdp_enable", "cat", "cat_enable", "caches"]
 }`
 
-var cacheSchema string = fmt.Sprintf(cacheSchemaTemplate,
-	testhelpers.BoolSchema,
-	testhelpers.BoolSchema,
-	testhelpers.BoolSchema,
-	testhelpers.BoolSchema,
-	testhelpers.BoolSchema,
-	testhelpers.BoolSchema,
-	testhelpers.PositiveInteger,
-	testhelpers.NonNegativeInteger,
-	testhelpers.PositiveInteger,
-	testhelpers.NonNegativeInteger)
-
 var _ = Describe("Caches", func() {
 
 	var (
-		v1url string
-		he    *httpexpect.Expect
+		v1url       string
+		he          *httpexpect.Expect
+		cacheSchema string
 	)
 
 	BeforeEach(func() {
 		By("set url")
 		v1url = testhelpers.GetV1URL()
 		he = httpexpect.New(GinkgoT(), v1url)
+		cacheSchema, _ = testhelpers.FormatByKey(cacheSchemaTemplate,
+			map[string]interface{}{
+				"bool": testhelpers.BoolSchema,
+				"pint": testhelpers.PositiveInteger,
+				"uint": testhelpers.NonNegativeInteger})
 	})
 
 	AfterEach(func() {
