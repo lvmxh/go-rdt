@@ -15,6 +15,8 @@ import (
 	"openstackcore-rdtagent/lib/resctrl"
 	libutil "openstackcore-rdtagent/lib/util"
 	"openstackcore-rdtagent/model/policy"
+	"openstackcore-rdtagent/util/rdtpool"
+	"openstackcore-rdtagent/util/rdtpool/base"
 )
 
 var SizeMap = map[string]uint32{
@@ -26,20 +28,22 @@ var SizeMap = map[string]uint32{
    CacheInfo with details
 */
 type CacheInfo struct {
-	ID              uint32 `json:"cache_id"`
-	NumWays         uint32
-	NumSets         uint32
-	NumPartitions   uint32
-	LineSize        uint32
-	TotalSize       uint32 `json:"total_size"`
-	WaySize         uint32
-	NumClasses      uint32
-	WayContention   uint64
-	CacheLevel      uint32
-	Location        string            `json:"location_on_socket"`
-	ShareCpuList    string            `json:"share_cpu_list"`
-	AvaliableWays   string            `json:"avaliable_ways"`
-	AvaliablePolicy map[string]uint32 `json:"avaliable_policy"` // should move out here
+	ID               uint32 `json:"cache_id"`
+	NumWays          uint32
+	NumSets          uint32
+	NumPartitions    uint32
+	LineSize         uint32
+	TotalSize        uint32 `json:"total_size"`
+	WaySize          uint32
+	NumClasses       uint32
+	WayContention    uint64
+	CacheLevel       uint32
+	Location         string            `json:"location_on_socket"`
+	ShareCpuList     string            `json:"share_cpu_list"`
+	AvaliableWays    string            `json:"avaliable_ways"`
+	AvaliableCPUs    string            `json:"avaliable_cpus"`
+	AvaliableIsoCPUs string            `json:"avaliable_isolated_cpus"`
+	AvaliablePolicy  map[string]uint32 `json:"avaliable_policy"` // should move out here
 }
 
 type CacheInfos struct {
@@ -223,6 +227,10 @@ func (c *CacheInfos) GetByLevel(level uint32) error {
 				freeb = freeb.Axor(v)
 			}
 			new_cacheinfo.AvaliableWays = freeb.ToBinString()
+			cpuPools, _ := rdtpool.GetCPUPools()
+			defaultCpus, _ := base.CpuBitmaps(resctrl.GetResAssociation()["."].CPUs)
+			new_cacheinfo.AvaliableCPUs = cpuPools["all"][sc.Id].And(defaultCpus).ToBinString()
+			new_cacheinfo.AvaliableIsoCPUs = cpuPools["isolated"][sc.Id].And(defaultCpus).ToBinString()
 
 			pf := cpu.GetMicroArch(cpu.GetSignature())
 			if pf == "" {
