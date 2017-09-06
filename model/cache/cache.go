@@ -13,20 +13,18 @@ import (
 	"openstackcore-rdtagent/lib/cpu"
 	"openstackcore-rdtagent/lib/proc"
 	"openstackcore-rdtagent/lib/resctrl"
-	libutil "openstackcore-rdtagent/lib/util"
 	"openstackcore-rdtagent/model/policy"
 	"openstackcore-rdtagent/util/rdtpool"
 	"openstackcore-rdtagent/util/rdtpool/base"
 )
 
+// SizeMap is the map to bits of unit
 var SizeMap = map[string]uint32{
 	"K": 1024,
 	"M": 1024 * 1024,
 }
 
-/*
-   CacheInfo with details
-*/
+// CacheInfo with details
 type CacheInfo struct {
 	ID               uint32 `json:"cache_id"`
 	NumWays          uint32
@@ -151,6 +149,13 @@ func ConvertCacheSize(size string) uint32 {
 
 func (c *CacheInfos) GetByLevel(level uint32) error {
 
+	llc := syscache.GetLLC()
+
+	if llc != level {
+		err := fmt.Errorf("Don't support cache level %d, Only expose last level cache %d", level, llc)
+		return err
+	}
+
 	target_lev := strconv.FormatUint(uint64(level), 10)
 
 	// syscache.AvailableCacheLevel return []string
@@ -168,6 +173,10 @@ func (c *CacheInfos) GetByLevel(level uint32) error {
 	if err != nil {
 		return err
 	}
+
+	cacheLevel := "L" + target_lev
+	allres := resctrl.GetResAssociation()
+	av, _ := rdtpool.GetAvailableCacheSchemata(allres, []string{"infra"}, "none", cacheLevel)
 
 	c.Caches = make(map[uint32]CacheInfo)
 
@@ -199,34 +208,8 @@ func (c *CacheInfos) GetByLevel(level uint32) error {
 			new_cacheinfo.ShareCpuList = sc.SharedCpuList
 			new_cacheinfo.CacheLevel = level
 
-			inf := resctrl.GetRdtCosInfo()
-			freeM := ""
-			var sb []*libutil.Bitmap
-			if _, ok := inf["l"+target_lev]; ok {
-				freeM = inf["l"+target_lev].CbmMask
-				resaall := resctrl.GetResAssociation()
+			new_cacheinfo.AvaliableWays = av[sc.Id].ToBinString()
 
-				for k, v := range resaall {
-					if k == "infra" {
-						continue
-					}
-					for _, sv := range v.Schemata {
-						for _, cv := range sv {
-							if cv.Id == uint8(id) {
-								// FIXME we assume number of ways == length of cbm mask
-								bm, _ := libutil.NewBitmap(int(new_cacheinfo.NumWays), cv.Mask)
-								sb = append(sb, bm)
-							}
-						}
-					}
-				}
-
-			}
-			freeb, _ := libutil.NewBitmap(int(new_cacheinfo.NumWays), freeM)
-			for _, v := range sb {
-				freeb = freeb.Axor(v)
-			}
-			new_cacheinfo.AvaliableWays = freeb.ToBinString()
 			cpuPools, _ := rdtpool.GetCPUPools()
 			defaultCpus, _ := base.CpuBitmaps(resctrl.GetResAssociation()["."].CPUs)
 			new_cacheinfo.AvaliableCPUs = cpuPools["all"][sc.Id].And(defaultCpus).ToBinString()
@@ -239,32 +222,77 @@ func (c *CacheInfos) GetByLevel(level uint32) error {
 			// FIXME add error check. This code is just for China Open days.
 			p, _ := policy.GetPlatformPolicy(strings.ToLower(pf))
 			ap := make(map[string]uint32)
-			ap_counter := make(map[string]int)
+			//ap_counter := make(map[string]int)
 			for _, pv := range p {
-				for k, v := range pv {
-					ap[k] = 0
-					for _, cv := range v[0] {
-						iv, err := strconv.Atoi(cv)
-						if err != nil {
-							return err
-						}
-						ap_counter[k] = iv
-						break
+				// pv is policy.CATConfig.Catpolicy
+				for t, _ := range pv {
+					// t is the policy tier name
+					tier, err := policy.GetPolicy(strings.ToLower(pf), t)
+					if err != nil {
+						return err
 					}
-				}
-			}
-			fbs := freeb.ToBinStrings()
-			for ak, av := range ap_counter {
-				for _, v := range fbs {
-					if v[0] == '1' {
-						ap[ak] += uint32(len(v) / av)
+
+					iMax, err := strconv.Atoi(tier["MaxCache"])
+					if err != nil {
+						return err
 					}
+					iMin, err := strconv.Atoi(tier["MinCache"])
+					if err != nil {
+						return err
+					}
+
+					getAvailablePolicyCount(ap, iMax, iMin, allres, t, cacheLevel, sc.Id)
+
 				}
+
 			}
 			new_cacheinfo.AvaliablePolicy = ap
 
 			c.Caches[uint32(id)] = new_cacheinfo
 			c.Num = c.Num + 1
+		}
+	}
+
+	return nil
+}
+
+func getAvailablePolicyCount(ap map[string]uint32,
+	iMax, iMin int,
+	allres map[string]*resctrl.ResAssociation,
+	tier, cacheLevel, cId string) error {
+
+	var pool string
+	var ways int
+
+	reserved := rdtpool.GetReservedInfo()
+
+	// TODO: Add a util to calculate cache pool type
+	if iMax == iMin {
+		if iMax > 0 {
+
+			pool = rdtpool.Guarantee
+			ways = iMax
+
+		} else {
+			// TODO get live count ?
+			ap[tier] = uint32(reserved[rdtpool.Shared].Quota)
+			return nil
+		}
+	} else {
+
+		pool = rdtpool.Besteffort
+		ways = iMin
+
+	}
+
+	pav, _ := rdtpool.GetAvailableCacheSchemata(allres, []string{"infra", "."}, pool, cacheLevel)
+	ap[tier] = 0
+	freeBitmapStrs := pav[cId].ToBinStrings()
+
+	for _, val := range freeBitmapStrs {
+		if val[0] == '1' {
+			valLen := len(val)
+			ap[tier] += uint32(valLen / ways)
 		}
 	}
 
