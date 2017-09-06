@@ -4,18 +4,21 @@
 echo "calling go fmt"
 go fmt
 
-files=$(git diff HEAD~1 --stat | awk '{if ($1 ~ /\.go$/) {print $1}}')
+ret=$?
+files=$(git diff HEAD --stat | awk '{if ($1 ~ /\.go$/) {print $1}}')
 
 arr=($files)
 
-ret=0
 echo "calling golint on all changed files"
 for f in "${arr[@]}"
 do
-    echo "calling golint $f ..."
-    rev=$(golint "$f")
-    if [[ ! -z $rev ]]; then
-        ret=-1
+    if [ -f "${f}" ]; then
+        echo "calling golint $f ..."
+        rev=$(golint "$f")
+        if [[ ! -z $rev ]]; then
+            echo "$rev"
+            ret=-1
+        fi
     fi
 done
 
@@ -24,3 +27,5 @@ if [[ $ret -ne 0 ]]; then
 else
     echo ":) >>> No errors for coding style"
 fi
+
+exit $ret
