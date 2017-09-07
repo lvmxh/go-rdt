@@ -450,15 +450,12 @@ func populateEnforceRequest(req *EnforceRequest, w *RDTWorkLoad) *AppError {
 		req.MinWays = uint32(minWays)
 	}
 
-	if req.MaxWays == 0 {
-		req.Type = rdtpool.Shared
-	} else if req.MaxWays > req.MinWays && req.MinWays != 0 {
-		req.Type = rdtpool.Besteffort
-	} else if req.MaxWays == req.MinWays {
-		req.Type = rdtpool.Guarantee
-	} else {
-		return AppErrorf(http.StatusBadRequest,
-			"Bad request, max_cache=%d, min_cache=%d", req.MaxWays, req.MinWays)
+	var err error
+	req.Type, err = rdtpool.GetCachePoolName(req.MaxWays, req.MinWays)
+	if err != nil {
+		return NewAppError(http.StatusBadRequest,
+			"Bad cache ways request",
+			err)
 	}
 	return nil
 }

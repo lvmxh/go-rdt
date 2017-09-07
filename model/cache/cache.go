@@ -261,28 +261,21 @@ func getAvailablePolicyCount(ap map[string]uint32,
 	allres map[string]*resctrl.ResAssociation,
 	tier, cacheLevel, cId string) error {
 
-	var pool string
 	var ways int
 
 	reserved := rdtpool.GetReservedInfo()
 
-	// TODO: Add a util to calculate cache pool type
-	if iMax == iMin {
-		if iMax > 0 {
+	pool, _ := rdtpool.GetCachePoolName(uint32(iMax), uint32(iMin))
 
-			pool = rdtpool.Guarantee
-			ways = iMax
-
-		} else {
-			// TODO get live count ?
-			ap[tier] = uint32(reserved[rdtpool.Shared].Quota)
-			return nil
-		}
-	} else {
-
-		pool = rdtpool.Besteffort
+	switch pool {
+	case rdtpool.Guarantee:
+		ways = iMax
+	case rdtpool.Besteffort:
 		ways = iMin
-
+	case rdtpool.Shared:
+		// TODO get live count ?
+		ap[tier] = uint32(reserved[rdtpool.Shared].Quota)
+		return nil
 	}
 
 	pav, _ := rdtpool.GetAvailableCacheSchemata(allres, []string{"infra", "."}, pool, cacheLevel)

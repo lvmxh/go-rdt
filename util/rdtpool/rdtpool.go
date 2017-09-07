@@ -119,3 +119,16 @@ func GetAvailableCacheSchemata(allres map[string]*resctrl.ResAssociation,
 	}
 	return schemata, nil
 }
+
+// GetCachePoolName will return pool name based on MaxCache, MinCache
+func GetCachePoolName(MaxWays, MinWays uint32) (string, error) {
+	if MaxWays == 0 {
+		return Shared, nil
+	} else if MaxWays > MinWays && MinWays != 0 {
+		return Besteffort, nil
+	} else if MaxWays == MinWays {
+		return Guarantee, nil
+	} else {
+		return "", fmt.Errorf("max_cache=%d, min_cache=%d, doens't support", MaxWays, MinWays)
+	}
+}
