@@ -22,6 +22,11 @@
 			"Rev": "e9cf4fae01b5a8ff89d0ec6b32f0d9c9f79aefdd"
 		},
 		{
+			"ImportPath": "github.com/casbin/casbin",
+			"Comment": "v1.0.0",
+			"Rev": "24e651819005cf57777db7f9028b7b79724d0983"
+		},
+		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
 			"Comment": "v1.1.0-7-ga476722",
 			"Rev": "a476722483882dd40b8111f0eb64e1d7f43f56e4"
@@ -246,6 +251,11 @@
 			"ImportPath": "github.com/klauspost/crc32",
 			"Comment": "v1.1-5-gbab58d7",
 			"Rev": "bab58d77464aa9cf4e84200c3276da0831fe0c03"
+		},
+		{
+			"ImportPath": "github.com/Knetic/govaluate",
+			"Comment": "v3.0.0-23-g89a078c",
+			"Rev": "89a078c30383b31e1b72bec86907910914227d9f"
 		},
 		{
 			"ImportPath": "github.com/labstack/echo",
