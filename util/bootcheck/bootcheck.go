@@ -9,6 +9,7 @@ import (
 	"openstackcore-rdtagent/db"
 	"openstackcore-rdtagent/lib/cpu"
 	"openstackcore-rdtagent/lib/resctrl"
+	"openstackcore-rdtagent/util/acl"
 	"openstackcore-rdtagent/util/pidfile"
 	"openstackcore-rdtagent/util/rdtpool"
 )
@@ -30,6 +31,10 @@ func SanityCheck() {
 	pf := cpu.GetMicroArch(cpu.GetSignature())
 	if pf == "" {
 		msg := "Unknow platform, please update the cpu_map.toml conf file."
+		errorOut(msg)
+	}
+	if _, err := acl.NewEnforcer(); err != nil {
+		msg := "Error to generate an Enforcer! Reason: " + err.Error()
 		errorOut(msg)
 	}
 	cpunum := cpu.HostCpuNum()
