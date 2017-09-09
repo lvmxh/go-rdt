@@ -59,7 +59,11 @@ sudo mount -t resctrl resctrl /sys/fs/resctrl
 
 # FIXME will change to use template. Sed is not readable.
 # cp etc/rdtagent/rdtagent.toml /tmp/
-go run ./cmd/gen_conf.go /tmp/rdtagent.toml
+go run ./cmd/gen_conf.go -path /tmp/rdtagent.toml
+if [ $? -ne 0 ]; then
+    echo "Failed to generate configure file. Exit."
+    exit 1
+fi
 # Set tcp port 8888
 sed -i -e 's/\(port = \)\(.*\)/\18888/g' $CONFFILE
 # Set DB transport to avoid change the system DB
