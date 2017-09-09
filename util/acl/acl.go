@@ -20,7 +20,7 @@ type Enforcer struct {
 	protocol *casbin.Enforcer
 }
 
-var VERSION_TRIM = regexp.MustCompile(`^/v\d+`)
+var VERSION_TRIM = regexp.MustCompile(`^/v\d+/`)
 var enforcer = &Enforcer{}
 var once sync.Once
 
@@ -56,7 +56,7 @@ func NewEnforcer() (*Enforcer, error) {
 
 func (e *Enforcer) Enforce(request *restful.Request, sub string) bool {
 	allow := false
-	obj := VERSION_TRIM.ReplaceAllString(path.Clean(request.Request.RequestURI), "")
+	obj := VERSION_TRIM.ReplaceAllString(path.Clean(request.Request.RequestURI), "/")
 	act := request.Request.Method
 	if e.url != nil {
 		allow = e.url.Enforce(sub, obj, act)
