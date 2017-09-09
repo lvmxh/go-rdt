@@ -58,23 +58,14 @@ fi
 sudo mount -t resctrl resctrl /sys/fs/resctrl
 
 # FIXME will change to use template. Sed is not readable.
-cp etc/rdtagent/rdtagent.toml /tmp/
+# cp etc/rdtagent/rdtagent.toml /tmp/
+go run ./cmd/gen_conf.go /tmp/rdtagent.toml
 # Set tcp port 8888
 sed -i -e 's/\(port = \)\(.*\)/\18888/g' $CONFFILE
 # Set DB transport to avoid change the system DB
 sed -i -e 's/\(transport = \)\(.*\)/\1"\/tmp\/rmd.db"/g' $CONFFILE
 # Set log stdout
 sed -i -e 's/\(stdout = \)\(.*\)/\1false/g' $CONFFILE
-# Set OSGroup cacheways = 1
-sed -i -e '/\[OSGroup\]*/{$!{N;s/\(cacheways = \)\(.*\)/\11/}}' $CONFFILE
-# Set InfraGroup cacheways = 10
-sed -i -e '/\[InfraGroup\]*/{$!{N;s/\(cacheways = \)\(.*\)/\110/}}' $CONFFILE
-# set guarantee pool = 6
-sed -i -e 's/\(guarantee = \)\(.*\)/\16/g' $CONFFILE
-# set besteffort pool = 3
-sed -i -e 's/\(besteffort = \)\(.*\)/\13/g' $CONFFILE
-# set shared pool = 1
-sed -i -e 's/\(shared = \)\(.*\)/\11/g' $CONFFILE
 
 cat $CONFFILE
 
