@@ -77,19 +77,17 @@ func (cache CachesResource) CachesGet(request *restful.Request, response *restfu
 	response.WriteEntity(c)
 }
 
-// GET /v1/cache/l[2, 3]
+// GET /v1/cache/l[2|3|lc]
 func (cache CachesResource) CachesLevelGet(request *restful.Request, response *restful.Response) {
 	c := &m_cache.CacheInfos{}
 
 	ilev := getCacheLevelFromUrl(request)
 	log.Printf("Request Level %d", ilev)
 	err := c.GetByLevel(ilev)
-	// FIXME (Shaohe): We should classify the error.
 	if err != nil {
-		response.WriteError(http.StatusInternalServerError, err)
+		response.WriteErrorString(err.Code, err.Error())
 		return
 	}
-
 	response.WriteEntity(c)
 }
 

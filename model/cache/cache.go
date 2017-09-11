@@ -5,10 +5,12 @@ package cache
 
 import (
 	"fmt"
+	"net/http"
 	"sort"
 	"strconv"
 	"strings"
 
+	. "openstackcore-rdtagent/api/error"
 	"openstackcore-rdtagent/lib/cache"
 	"openstackcore-rdtagent/lib/cpu"
 	"openstackcore-rdtagent/lib/proc"
@@ -147,13 +149,14 @@ func ConvertCacheSize(size string) uint32 {
 	return uint32(isize) * SizeMap[unit]
 }
 
-func (c *CacheInfos) GetByLevel(level uint32) error {
+func (c *CacheInfos) GetByLevel(level uint32) *AppError {
 
 	llc := syscache.GetLLC()
 
 	if llc != level {
 		err := fmt.Errorf("Don't support cache level %d, Only expose last level cache %d", level, llc)
-		return err
+		return NewAppError(http.StatusBadRequest,
+			"Error to get available cache", err)
 	}
 
 	target_lev := strconv.FormatUint(uint64(level), 10)
@@ -161,17 +164,11 @@ func (c *CacheInfos) GetByLevel(level uint32) error {
 	// syscache.AvailableCacheLevel return []string
 	levs := syscache.AvailableCacheLevel()
 	sort.Strings(levs)
-	i := sort.SearchStrings(levs, target_lev)
-	if i < len(levs) && levs[i] == target_lev {
-
-	} else {
-		err := fmt.Errorf("Could not found cache level %s on host", target_lev)
-		return err
-	}
 
 	syscaches, err := syscache.GetSysCaches(int(level))
 	if err != nil {
-		return err
+		return NewAppError(http.StatusInternalServerError,
+			"Error to get available cache", err)
 	}
 
 	cacheLevel := "L" + target_lev
@@ -217,7 +214,8 @@ func (c *CacheInfos) GetByLevel(level uint32) error {
 
 			pf := cpu.GetMicroArch(cpu.GetSignature())
 			if pf == "" {
-				return fmt.Errorf("Unknow platform, please update the cpu_map.toml conf file.")
+				return AppErrorf(http.StatusInternalServerError,
+					"Unknow platform, please update the cpu_map.toml conf file")
 			}
 			// FIXME add error check. This code is just for China Open days.
 			p, _ := policy.GetPlatformPolicy(strings.ToLower(pf))
@@ -229,16 +227,19 @@ func (c *CacheInfos) GetByLevel(level uint32) error {
 					// t is the policy tier name
 					tier, err := policy.GetPolicy(strings.ToLower(pf), t)
 					if err != nil {
-						return err
+						return NewAppError(http.StatusInternalServerError,
+							"Error to get policy", err)
 					}
 
 					iMax, err := strconv.Atoi(tier["MaxCache"])
 					if err != nil {
-						return err
+						return NewAppError(http.StatusInternalServerError,
+							"Error to get max cache", err)
 					}
 					iMin, err := strconv.Atoi(tier["MinCache"])
 					if err != nil {
-						return err
+						return NewAppError(http.StatusInternalServerError,
+							"Error to get min cache", err)
 					}
 
 					getAvailablePolicyCount(ap, iMax, iMin, allres, t, cacheLevel, sc.Id)
