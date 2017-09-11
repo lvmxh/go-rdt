@@ -19,7 +19,7 @@ const (
 )
 
 func genDefaultPlatForm() string {
-	dpf := cpu.GetMicroArch(cpu.GetSignature())
+	dpf := strings.Title(cpu.GetMicroArch(cpu.GetSignature()))
 	if dpf == "" {
 		dpf = defPlatform
 	}

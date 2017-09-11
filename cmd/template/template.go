@@ -17,7 +17,7 @@ const Templ = `# This is a rdtagent config.
 title = "RDTagent Config"
 
 [default]
-address = {{.address}}
+address = "{{.address}}"
 port = {{.tcpport}}
 # tlsport = 443
 # certpath = "etc/rdtagent/cert" # Only support pem format, hard code that CAFile is ca.pem, CertFile is rmd-cert.pem, KeyFile is rmd-key.pem
@@ -55,5 +55,5 @@ shared = {{.shared}}
 [acl]
 path = "etc/rdtagent/acl/"  #
 # use CSV format
-filter =  "url" # at present just support "url", will support "url,ip,proto"
+filter = "url" # at present just support "url", will support "url,ip,proto"
 `

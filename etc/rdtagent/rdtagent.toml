@@ -41,4 +41,4 @@ shared = 2
 [acl]
 path = "etc/rdtagent/acl/"  #
 # use CSV format
-filter =  "url" # at present just support "url", will support "url,ip,proto"
+filter = "url" # at present just support "url", will support "url,ip,proto"

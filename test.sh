@@ -59,7 +59,7 @@ sudo mount -t resctrl resctrl /sys/fs/resctrl
 
 # FIXME will change to use template. Sed is not readable.
 # cp etc/rdtagent/rdtagent.toml /tmp/
-go run ./cmd/gen_conf.go -path /tmp/rdtagent.toml
+sudo go run ./cmd/gen_conf.go -path /tmp/rdtagent.toml
 if [ $? -ne 0 ]; then
     echo "Failed to generate configure file. Exit."
     exit 1
