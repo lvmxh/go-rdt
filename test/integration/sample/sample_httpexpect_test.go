@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"gopkg.in/gavv/httpexpect.v1"
 	"gopkg.in/gavv/httpexpect.v1/_examples"
 
@@ -53,14 +52,6 @@ var _ = Describe("Sample", func() {
 				hexpect.GET("/fruits").
 					Expect().
 					Status(http.StatusOK).JSON().Array().Empty()
-			})
-		})
-	})
-
-	Describe("Gevin a really RMD runtime evn.", func() {
-		Context("Configure file is generated with hard code", func() {
-			It("The server should set v1url correctly", func() {
-				Expect(v1url).To(Equal("http://localhost:8888/v1/"))
 			})
 		})
 	})
