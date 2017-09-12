@@ -5,7 +5,10 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"strings"
 	"sync"
+
+	"openstackcore-rdtagent/lib/cpu"
 )
 
 // FIXME move this to configure file
@@ -65,7 +68,17 @@ func GetPlatformPolicy(cpu string) ([]Policy, error) {
 	return p, nil
 }
 
-// return a map of the policy has
+// GetdefaultPlatformPolicy, wrapper for GetPlatformPolicy
+func GetDefaultPlatformPolicy() ([]Policy, error) {
+	cpu := cpu.GetMicroArch(cpu.GetSignature())
+	if cpu == "" {
+		return []Policy{}, fmt.Errorf("Unknow platform, please update the cpu_map.toml conf file")
+	}
+
+	return GetPlatformPolicy(strings.ToLower(cpu))
+}
+
+// GetPolicy return a map of the policy of the host
 func GetPolicy(cpu, policy string) (map[string]string, error) {
 	m := make(map[string]string)
 
@@ -94,4 +107,13 @@ func GetPolicy(cpu, policy string) (map[string]string, error) {
 	} else {
 		return m, fmt.Errorf("Can not find specified policy %s", policy)
 	}
+}
+
+// GetDefaultPolicy return a map of the default policy of the host
+func GetDefaultPolicy(policy string) (map[string]string, error) {
+	cpu := cpu.GetMicroArch(cpu.GetSignature())
+	if cpu == "" {
+		return map[string]string{}, fmt.Errorf("Unknow platform, please update the cpu_map.toml conf file")
+	}
+	return GetPolicy(cpu, policy)
 }

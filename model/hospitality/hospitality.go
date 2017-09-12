@@ -8,14 +8,12 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 	. "openstackcore-rdtagent/api/error"
 	"openstackcore-rdtagent/db"
 	"openstackcore-rdtagent/lib/cache"
 	libcache "openstackcore-rdtagent/lib/cache"
-	"openstackcore-rdtagent/lib/cpu"
 	_ "openstackcore-rdtagent/lib/proc"
 	"openstackcore-rdtagent/lib/resctrl"
 	libutil "openstackcore-rdtagent/lib/util"
@@ -93,14 +91,11 @@ func (h *Hospitality) getScoreByLevel(level uint32) error {
 				freeb = freeb.Axor(v)
 			}
 
-			// avaliableWays = freeb.ToBinString()
-
-			pf := cpu.GetMicroArch(cpu.GetSignature())
-			if pf == "" {
-				return fmt.Errorf("Unknow platform, please update the cpu_map.toml conf file.")
+			p, err := policy.GetDefaultPlatformPolicy()
+			if err != nil {
+				return err
 			}
-			// FIXME add error check. This code is just for China Open days.
-			p, _ := policy.GetPlatformPolicy(strings.ToLower(pf))
+
 			ap := make(map[string]uint32)
 			ap_counter := make(map[string]int)
 			for _, pv := range p {
@@ -108,7 +103,7 @@ func (h *Hospitality) getScoreByLevel(level uint32) error {
 				for k, _ := range pv {
 					// k is the policy tier name
 					ap[k] = 0
-					tier, err := policy.GetPolicy(strings.ToLower(pf), k)
+					tier, err := policy.GetDefaultPolicy(k)
 					if err != nil {
 						return err
 					}
@@ -179,12 +174,7 @@ func (h *HospitalityRaw) GetByRequest(req *HospitalityRequest) error {
 	min := req.MinCache
 
 	if req.Policy != "" {
-		pf := cpu.GetMicroArch(cpu.GetSignature())
-		if pf == "" {
-			return AppErrorf(http.StatusInternalServerError,
-				"Unknow platform, please update the cpu_map.toml conf file.")
-		}
-		tier, err := policy.GetPolicy(strings.ToLower(pf), req.Policy)
+		tier, err := policy.GetDefaultPolicy(req.Policy)
 		if err != nil {
 			return NewAppError(http.StatusInternalServerError,
 				"Can not find Policy", err)

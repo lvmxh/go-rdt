@@ -22,25 +22,15 @@ func (c PolicyResource) Register(container *restful.Container) {
 		Doc("Get the policy on the host").
 		Operation("PolicyGet"))
 
-	ws.Route(ws.PATCH("/").To(c.PolicyUpdate).
-		Doc("Update the policy").
-		Operation("PolicyUpdate"))
 	container.Add(ws)
 }
 
 // GET /v1/policy
 func (c PolicyResource) PolicyGet(request *restful.Request, response *restful.Response) {
-	// TODO get host's platform
-	p, err := policy.GetPlatformPolicy("broadwell")
+	p, err := policy.GetDefaultPlatformPolicy()
 	if err != nil {
 		response.WriteError(http.StatusNotFound, err)
 		return
 	}
-	response.WriteEntity(p)
-}
-
-func (c PolicyResource) PolicyUpdate(request *restful.Request, response *restful.Response) {
-	// TODO
-	p := PolicyResource{}
 	response.WriteEntity(p)
 }

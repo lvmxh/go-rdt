@@ -423,13 +423,7 @@ func populateEnforceRequest(req *EnforceRequest, w *RDTWorkLoad) *AppError {
 	}
 	// else get max/min from policy
 	if populatePolicy {
-		pf := cpu.GetMicroArch(cpu.GetSignature())
-		if pf == "" {
-			return AppErrorf(http.StatusInternalServerError,
-				"Unknow platform, please update the cpu_map.toml conf file.")
-		}
-
-		p, err := policy.GetPolicy(strings.ToLower(pf), w.Policy)
+		p, err := policy.GetDefaultPolicy(w.Policy)
 		if err != nil {
 			return NewAppError(http.StatusInternalServerError,
 				"Could not find the Polciy.", err)

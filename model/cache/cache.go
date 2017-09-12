@@ -12,7 +12,6 @@ import (
 
 	. "openstackcore-rdtagent/api/error"
 	"openstackcore-rdtagent/lib/cache"
-	"openstackcore-rdtagent/lib/cpu"
 	"openstackcore-rdtagent/lib/proc"
 	"openstackcore-rdtagent/lib/resctrl"
 	"openstackcore-rdtagent/model/policy"
@@ -212,20 +211,18 @@ func (c *CacheInfos) GetByLevel(level uint32) *AppError {
 			new_cacheinfo.AvaliableCPUs = cpuPools["all"][sc.Id].And(defaultCpus).ToBinString()
 			new_cacheinfo.AvaliableIsoCPUs = cpuPools["isolated"][sc.Id].And(defaultCpus).ToBinString()
 
-			pf := cpu.GetMicroArch(cpu.GetSignature())
-			if pf == "" {
-				return AppErrorf(http.StatusInternalServerError,
-					"Unknow platform, please update the cpu_map.toml conf file")
+			p, err := policy.GetDefaultPlatformPolicy()
+			if err != nil {
+				return NewAppError(http.StatusInternalServerError,
+					"Error to get policy", err)
 			}
-			// FIXME add error check. This code is just for China Open days.
-			p, _ := policy.GetPlatformPolicy(strings.ToLower(pf))
 			ap := make(map[string]uint32)
 			//ap_counter := make(map[string]int)
 			for _, pv := range p {
 				// pv is policy.CATConfig.Catpolicy
 				for t, _ := range pv {
 					// t is the policy tier name
-					tier, err := policy.GetPolicy(strings.ToLower(pf), t)
+					tier, err := policy.GetDefaultPolicy(t)
 					if err != nil {
 						return NewAppError(http.StatusInternalServerError,
 							"Error to get policy", err)
