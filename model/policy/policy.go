@@ -1,12 +1,15 @@
 package policy
 
 import (
+	"bytes"
 	"fmt"
-	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"path/filepath"
 	"strings"
 	"sync"
+
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 
 	appConf "openstackcore-rdtagent/app/config"
 	"openstackcore-rdtagent/lib/cpu"
@@ -20,19 +23,49 @@ type CATConfig struct {
 	Catpolicy map[string][]Policy `yaml:"catpolicy"`
 }
 
+var supportedConfigType = map[string]int{
+	"yaml": 1,
+	"toml": 1,
+}
 var config *CATConfig
 var lock sync.Mutex
 
 func LoadPolicy() (*CATConfig, error) {
 	appconf := appConf.NewConfig()
-	r, err := ioutil.ReadFile(appconf.Def.PolicyPath)
-	if err != nil {
+	configFileExt := filepath.Ext(appconf.Def.PolicyPath)
+
+	if !strings.HasPrefix(configFileExt, ".") {
+		err := fmt.Errorf("Unknow policy file type extension %s", configFileExt)
 		log.Fatalf("error: %v", err)
 		return nil, err
 	}
 
+	configType := strings.TrimPrefix(configFileExt, ".")
+
+	if _, ok := supportedConfigType[configType]; !ok {
+		err := fmt.Errorf("Unsupported policy file type extension %s", configType)
+		log.Fatalf("error: %v", err)
+		return nil, err
+	}
+
+	r, err := ioutil.ReadFile(appconf.Def.PolicyPath)
+	if err != nil { // Handle errors reading the config file
+		err := fmt.Errorf("Fatal error config file: %s \n", err)
+		log.Fatalf("error: %v", err)
+		return nil, err
+	}
+	runtime_viper := viper.New()
+	runtime_viper.SetConfigType(configType)
+	err = runtime_viper.ReadConfig(bytes.NewBuffer(r)) // Find and read the config file
+	if err != nil {                                    // Handle errors reading the config file
+		err := fmt.Errorf("Fatal error config file: %s \n", err)
+		log.Fatalf("error: %v", err)
+		return nil, err
+
+	}
+
 	c := CATConfig{}
-	err = yaml.Unmarshal(r, &c)
+	err = runtime_viper.Unmarshal(&c)
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
