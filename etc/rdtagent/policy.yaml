@@ -3,14 +3,8 @@ catpolicy:
         - gold:
             - MaxCache: 4
             - MinCache: 4
-        - silver:
+        - silver-bf:
             - MaxCache: 2
-            - MinCache: 2
-        - silver-shared:
-            - MaxCache: 3
-            - MinCache: 2
-        - bronze:
-            - MaxCache: 1
             - MinCache: 1
         - bronze-shared:
             - MaxCache: 0
@@ -19,14 +13,8 @@ catpolicy:
         - gold:
             - MaxCache: 3
             - MinCache: 3
-        - silver:
+        - silver-bf:
             - MaxCache: 2
-            - MinCache: 2
-        - silver-shared:
-            - MaxCache: 3
-            - MinCache: 2
-        - bronze:
-            - MaxCache: 1
             - MinCache: 1
         - bronze-shared:
             - MaxCache: 0
