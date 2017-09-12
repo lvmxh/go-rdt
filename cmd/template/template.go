@@ -29,7 +29,7 @@ policypath = "/etc/rdtagent/policy.yaml"
 path = "/var/log/rdagent.log"
 env = "dev"  # production or dev
 level = "debug"
-stdout = "true"
+stdout = true
 
 [database]
 backend = "bolt" # mgo
