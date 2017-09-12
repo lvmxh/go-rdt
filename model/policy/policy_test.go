@@ -1,14 +1,14 @@
 package policy
 
 import (
+	"github.com/spf13/viper"
 	"testing"
 )
 
 func TestGetPolicy(t *testing.T) {
 	t.Log("Testing get policy for broadwell cpu ... ")
 
-	SetPolicyFilePath("../../etc/rdtagent/policy.yaml")
-
+	viper.Set("default.policypath", "../../etc/rdtagent/policy.yaml")
 	_, err := GetPolicy("broadwell", "gold")
 
 	if err != nil {

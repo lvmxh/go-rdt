@@ -8,11 +8,9 @@ import (
 	"strings"
 	"sync"
 
+	appConf "openstackcore-rdtagent/app/config"
 	"openstackcore-rdtagent/lib/cpu"
 )
-
-// FIXME move this to configure file
-var yaml_path = "/etc/rdtagent/policy.yaml"
 
 type Attr map[string]string
 
@@ -25,13 +23,9 @@ type CATConfig struct {
 var config *CATConfig
 var lock sync.Mutex
 
-// For testing
-func SetPolicyFilePath(path string) {
-	yaml_path = path
-}
-
 func LoadPolicy() (*CATConfig, error) {
-	r, err := ioutil.ReadFile(yaml_path)
+	appconf := appConf.NewConfig()
+	r, err := ioutil.ReadFile(appconf.Def.PolicyPath)
 	if err != nil {
 		log.Fatalf("error: %v", err)
 		return nil, err

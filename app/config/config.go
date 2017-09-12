@@ -30,6 +30,7 @@ type Default struct {
 	CertPath   string `toml:"certpath"`
 	ClientAuth string `toml:"clientauth"`
 	UnixSock   string `toml:"unixsock"`
+	PolicyPath string `toml:"policypath"`
 }
 
 type Database struct {
@@ -44,7 +45,14 @@ type Config struct {
 }
 
 var configOnce sync.Once
-var def = &Default{"localhost", 8081, 0, "etc/rdtagent/cert", "challenge", ""}
+var def = &Default{
+	"localhost",
+	8081,
+	0,
+	"etc/rdtagent/cert",
+	"challenge",
+	"",
+	"etc/rdtagent/policy.yaml"}
 var db = &Database{}
 var config = &Config{def, db}
 

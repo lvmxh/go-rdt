@@ -19,6 +19,7 @@ title = "RDTagent Config"
 [default]
 address = "{{.address}}"
 port = {{.tcpport}}
+policypath = "/etc/rdtagent/policy.yaml"
 # tlsport = 443
 # certpath = "etc/rdtagent/cert" # Only support pem format, hard code that CAFile is ca.pem, CertFile is rmd-cert.pem, KeyFile is rmd-key.pem
 # clientauth = "challenge"  # can be "noneed, require, require_any, challenge_given, challenge", challenge means require and verify.
@@ -34,7 +35,6 @@ stdout = "true"
 backend = "bolt" # mgo
 transport = "/var/run/rdtagent.db" # mongodb://localhost
 dbname = "bolt" # RDTPolicy
-
 
 [OSGroup] # OSGroup is mandatory
 cacheways = {{.os_cacheways}}
