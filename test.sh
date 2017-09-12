@@ -64,12 +64,6 @@ if [ $? -ne 0 ]; then
     echo "Failed to generate configure file. Exit."
     exit 1
 fi
-# Set tcp port 8888
-sed -i -e 's/\(port = \)\(.*\)/\18888/g' $CONFFILE
-# Set DB transport to avoid change the system DB
-sed -i -e 's/\(transport = \)\(.*\)/\1"\/tmp\/rmd.db"/g' $CONFFILE
-# Set log stdout
-sed -i -e 's/\(stdout = \)\(.*\)/\1false/g' $CONFFILE
 
 cat $CONFFILE
 
