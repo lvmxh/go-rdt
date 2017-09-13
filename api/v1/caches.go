@@ -105,10 +105,10 @@ func (cache CachesResource) CacheGet(request *restful.Request, response *restful
 	}
 	log.Printf("Request Level%d, id: %d\n", ilev, id)
 
-	err = c.GetByLevel(ilev)
+	e := c.GetByLevel(ilev)
 	// FIXME (Shaohe): We should classify the error.
-	if err != nil {
-		response.WriteError(http.StatusInternalServerError, err)
+	if e != nil {
+		response.WriteErrorString(e.Code, e.Error())
 		return
 	}
 	ci, ok := c.Caches[uint32(id)]
