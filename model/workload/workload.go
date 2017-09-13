@@ -42,15 +42,15 @@ type RDTWorkLoad struct {
 	// ID
 	ID string `json:"id,omitempty"`
 	// core ids, the work load run on top of cores/cpus
-	CoreIDs []string `json:"core_ids"`
+	CoreIDs []string `json:"core_ids,omitempty"`
 	// task ids, the work load's task ids
-	TaskIDs []string `json:"task_ids"`
+	TaskIDs []string `json:"task_ids,omitempty"`
 	// policy the workload want to apply
-	Policy string `json:"policy"`
+	Policy string `json:"policy,omitempty"`
 	// Status
-	Status string
-	// CosName
-	CosName string
+	Status string `json:"status"`
+	// CosNamej
+	CosName string `json:"cos_name"`
 	// Max Cache ways, use pointer to distinguish 0 value and empty value
 	MaxCache *uint32 `json:"max_cache,omitempty"`
 	// Min Cache ways, use pointer to distinguish 0 value and empty value
