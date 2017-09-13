@@ -67,8 +67,15 @@ fi
 
 cp etc/rdtagent/policy.yaml /tmp/
 
-# Set tcp port 8888
-sed -i -e 's/\(port = \)\(.*\)/\18888/g' $CONFFILE
+CHECK="do while"
+
+while [[ ! -z $CHECK ]]; do
+    PORT=$(( ( RANDOM % 60000 )  + 1025 ))
+    CHECK=$(sudo netstat -ap | grep $PORT)
+done
+
+# Set a unused random port
+sed -i -e 's/\(^port = \)\(.*\)/\1'$PORT'/g' $CONFFILE
 # Set DB transport to avoid change the system DB
 sed -i -e 's/\(transport = \)\(.*\)/\1"\/tmp\/rmd.db"/g' $CONFFILE
 # Set log stdout
