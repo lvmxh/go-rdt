@@ -25,10 +25,10 @@ func getReservedCache(
 
 	schemata := map[string]*util.Bitmap{}
 	osCPUs := map[string]*util.Bitmap{}
-	wc := wayCandidate
 	var err error
 
 	for _, sc := range sysc {
+		wc := wayCandidate
 		bm, _ := CpuBitmaps([]string{sc.SharedCpuList})
 		osCPUs[sc.Id] = osCPUbm.And(bm)
 		// no os group on this cache id
