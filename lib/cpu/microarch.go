@@ -13,6 +13,8 @@ var m = map[uint32]string{
 	0x50650: "Skylake",
 	0x806e0: "Kaby Lake",
 	0x906e0: "Kaby Lake",
+	0x306d0: "Broadwell",
+	0x406f0: "Broadwell",
 }
 
 type microArch struct {

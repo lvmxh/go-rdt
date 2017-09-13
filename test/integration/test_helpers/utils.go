@@ -109,6 +109,12 @@ func GetV1URL() string {
 		"http://%s:%d/v1/", GetConfigAddr(), GetConfigPort())
 }
 
+func GetPolicyPath() string {
+	var policyPath string
+	GetConfigOption("default.policypath", &policyPath)
+	return policyPath
+}
+
 // usage:
 //       m := map[string]interface{}{"name": "John", "age": 47}
 //       s := "Hi {{.name}}. Your age is {{.age}}\n"
