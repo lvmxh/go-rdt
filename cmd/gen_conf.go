@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"flag" // flag is enough for us.
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
@@ -21,6 +23,7 @@ const (
 func genDefaultPlatForm() string {
 	dpf := strings.Title(cpu.GetMicroArch(cpu.GetSignature()))
 	if dpf == "" {
+		fmt.Println("Do not support the host platform, use defaut platform:", defPlatform)
 		dpf = defPlatform
 	}
 	return dpf
@@ -61,6 +64,11 @@ func main() {
 	pfs := genPlatFormList(pfm)
 	platform := flag.String("platform", dpf,
 		"the platform than rmd will run, Support PlatForm:\n\t    "+strings.Join(pfs, ", "))
+	datas := flag.String("data", "",
+		"Data options that overwrite the config opitons. "+
+			"It can be a json format as '{\"a\": 1, \"b\": 2}' or "+
+			"a key/value assignment format as \"key=value,key=value\". "+
+			"It can also start a letter @, the rest should be a file name to read the json data from.")
 	flag.Parse()
 
 	if _, ok := pfm[*platform]; !ok {
@@ -68,16 +76,43 @@ func main() {
 		os.Exit(1)
 	}
 
+	union := []map[string]interface{}{template.Options}
+
 	//  Skylake, Kaby Lake, Broadwell
-	var option = template.Options
 	// FIXME hard code, a smart way to load the platform and other optionts automatically.
 	if *platform == "Broadwell" {
-		option = mergeOptions(template.Options, template.Broadwell)
+		union = append(union, template.Broadwell)
 	}
 	if *platform == "Skylake" {
-		option = mergeOptions(template.Options, template.Skylake)
+		union = append(union, template.Skylake)
 	}
 
+	var bdatas []byte
+	if strings.HasPrefix(*datas, "@") {
+		f := strings.TrimPrefix(*datas, "@")
+		dat, err := ioutil.ReadFile(f)
+		if err != nil {
+			fmt.Println("Bad data file: ", err)
+			os.Exit(1)
+		}
+		bdatas = dat
+	} else if strings.HasPrefix(*datas, "{") {
+		bdatas = []byte(*datas)
+	} else if strings.Contains(*datas, "=") {
+		// TODO will also  support -data 'stdout=true,tasks=["ovs*",dpdk]'
+		fmt.Println("Unsupport key/value assignment format at present.")
+		os.Exit(1)
+	}
+	if len(bdatas) > 2 {
+		var js interface{}
+		if err := json.Unmarshal([]byte(bdatas), &js); err != nil {
+			fmt.Println("Error to paser data:", err)
+			os.Exit(1)
+		}
+		union = append(union, js.(map[string]interface{}))
+	}
+
+	option := mergeOptions(union...)
 	conf, err := testhelpers.FormatByKey(template.Templ, option)
 	if err != nil {
 		fmt.Println("Error, to generate config file:", err)

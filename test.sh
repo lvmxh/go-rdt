@@ -59,14 +59,7 @@ sudo mount -t resctrl resctrl /sys/fs/resctrl
 
 # FIXME will change to use template. Sed is not readable.
 # cp etc/rdtagent/rdtagent.toml /tmp/
-sudo go run ./cmd/gen_conf.go -path /tmp/rdtagent.toml
-if [ $? -ne 0 ]; then
-    echo "Failed to generate configure file. Exit."
-    exit 1
-fi
-
-cp etc/rdtagent/policy.yaml /tmp/
-
+# Set a unused random port
 CHECK="do while"
 
 while [[ ! -z $CHECK ]]; do
@@ -74,8 +67,16 @@ while [[ ! -z $CHECK ]]; do
     CHECK=$(sudo netstat -ap | grep $PORT)
 done
 
-# Set a unused random port
-sed -i -e 's/\(^port = \)\(.*\)/\1'$PORT'/g' $CONFFILE
+# TODO will also  support -data 'stdout=true,tasks=["ovs*","dpdk"]'
+sudo go run ./cmd/gen_conf.go -path /tmp/rdtagent.toml -data "{\"tcpport\": $PORT}"
+if [ $? -ne 0 ]; then
+    echo "Failed to generate configure file. Exit."
+    exit 1
+fi
+
+cp etc/rdtagent/policy.yaml /tmp/
+
+# TODO need to remove these sed command.
 # Set DB transport to avoid change the system DB
 sed -i -e 's/\(transport = \)\(.*\)/\1"\/tmp\/rmd.db"/g' $CONFFILE
 # Set log stdout
