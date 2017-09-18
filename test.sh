@@ -74,15 +74,13 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-cp etc/rdtagent/policy.yaml /tmp/
+cp etc/rdtagent/policy.toml /tmp/
 
 # TODO need to remove these sed command.
 # Set DB transport to avoid change the system DB
 sed -i -e 's/\(transport = \)\(.*\)/\1"\/tmp\/rmd.db"/g' $CONFFILE
 # Set log stdout
 sed -i -e 's/\(stdout = \)\(.*\)/\1false/g' $CONFFILE
-# Set policy.yaml
-sed -i -e 's/\(policypath = \)\(.*\)/\1\"/tmp/policy.toml\"/g' $CONFFILE
 
 cat $CONFFILE
 
