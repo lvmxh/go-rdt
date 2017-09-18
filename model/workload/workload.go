@@ -350,12 +350,6 @@ func (w *RDTWorkLoad) Update(patched *RDTWorkLoad) (*RDTWorkLoad, *AppError) {
 	return w, nil
 }
 
-// Calculate offset for the pos'th cache of cattype based on sub_grp
-// e.g.
-// sub_grp = [base-sub1]
-// base-sub1: L3:0=f;1=1
-// calculateOffset(r, sub_grp, L3, 0) = 4
-// calculateOffset(r, sub_grp, L3, 1) = 1
 func getCacheIDs(cpubitmap string, cacheinfos *cache.CacheInfos, cpunum int) []uint32 {
 	var CacheIDs []uint32
 	cpubm, _ := libutil.NewBitmap(cpunum, cpubitmap)
