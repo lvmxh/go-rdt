@@ -9,7 +9,7 @@ import (
 	"github.com/boltdb/bolt"
 
 	. "openstackcore-rdtagent/db/config"
-	"openstackcore-rdtagent/model/workload"
+	"openstackcore-rdtagent/model/types/workload"
 )
 
 var boltSession *bolt.DB

@@ -8,7 +8,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 
 	. "openstackcore-rdtagent/db/config"
-	"openstackcore-rdtagent/model/workload"
+	"openstackcore-rdtagent/model/types/workload"
 )
 
 // mgo database session

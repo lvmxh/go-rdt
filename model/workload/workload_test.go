@@ -7,6 +7,8 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"openstackcore-rdtagent/lib/proc"
 	"openstackcore-rdtagent/model/cache"
+
+	tw "openstackcore-rdtagent/model/types/workload"
 )
 
 func TestGetCacheIDs(t *testing.T) {
@@ -49,7 +51,7 @@ func TestValidateWorkLoad(t *testing.T) {
 			subs := StubFunc(&proc.ListProcesses, map[string]proc.Process{"1": proc.Process{1, "cmdline"}})
 			defer subs.Reset()
 			var cache uint32 = 1
-			var wl *RDTWorkLoad = &RDTWorkLoad{}
+			wl := &tw.RDTWorkLoad{}
 			err := wl.Validate()
 			So(err, ShouldNotBeNil)
 

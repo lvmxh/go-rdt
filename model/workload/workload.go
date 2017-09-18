@@ -20,6 +20,7 @@ import (
 	. "openstackcore-rdtagent/api/error"
 	"openstackcore-rdtagent/model/cache"
 	"openstackcore-rdtagent/model/policy"
+	tw "openstackcore-rdtagent/model/types/workload"
 	"openstackcore-rdtagent/util"
 	"openstackcore-rdtagent/util/rdtpool"
 	. "openstackcore-rdtagent/util/rdtpool/base"
@@ -31,49 +32,7 @@ import (
 // goroutine one time
 var l sync.Mutex
 
-const (
-	Successful = "Successful"
-	Failed     = "Failed"
-	Invalid    = "Invalid"
-	None       = "None"
-)
-
-type RDTWorkLoad struct {
-	// ID
-	ID string `json:"id,omitempty"`
-	// core ids, the work load run on top of cores/cpus
-	CoreIDs []string `json:"core_ids,omitempty"`
-	// task ids, the work load's task ids
-	TaskIDs []string `json:"task_ids,omitempty"`
-	// policy the workload want to apply
-	Policy string `json:"policy,omitempty"`
-	// Status
-	Status string `json:"status"`
-	// CosNamej
-	CosName string `json:"cos_name"`
-	// Max Cache ways, use pointer to distinguish 0 value and empty value
-	MaxCache *uint32 `json:"max_cache,omitempty"`
-	// Min Cache ways, use pointer to distinguish 0 value and empty value
-	MinCache *uint32 `json:"min_cache,omitempty"`
-}
-
-// build this struct when create Resasscciation
-type EnforceRequest struct {
-	// all resassociations on the host
-	Resall map[string]*resctrl.ResAssociation
-	// max cache ways
-	MaxWays uint32
-	// min cache ways, not used yet
-	MinWays uint32
-	// enforce on which cache ids
-	Cache_IDs []uint32
-	// consume from base group or not
-	Consume bool
-	// request type
-	Type string
-}
-
-func (w *RDTWorkLoad) Validate() error {
+func Validate(w *tw.RDTWorkLoad) error {
 	if len(w.TaskIDs) <= 0 && len(w.CoreIDs) <= 0 {
 		return fmt.Errorf("No task or core id specified")
 	}
@@ -95,14 +54,14 @@ func (w *RDTWorkLoad) Validate() error {
 	return nil
 }
 
-func (w *RDTWorkLoad) Enforce() *AppError {
-	w.Status = Failed
+func Enforce(w *tw.RDTWorkLoad) *AppError {
+	w.Status = tw.Failed
 
 	l.Lock()
 	defer l.Unlock()
 	resaall := resctrl.GetResAssociation()
 
-	er := &EnforceRequest{}
+	er := &tw.EnforceRequest{}
 	if err := populateEnforceRequest(er, w); err != nil {
 		return err
 	}
@@ -144,6 +103,7 @@ func (w *RDTWorkLoad) Enforce() *AppError {
 				}
 			}
 			if maxWays <= 0 {
+				// Try to Shrink workload in besteffort pool
 				return AppErrorf(http.StatusBadRequest,
 					"Not enough cache left on cache_id %s", k)
 			} else {
@@ -209,12 +169,12 @@ func (w *RDTWorkLoad) Enforce() *AppError {
 	}
 
 	w.CosName = grpName
-	w.Status = Successful
+	w.Status = tw.Successful
 	return nil
 }
 
-// Release Cos
-func (w *RDTWorkLoad) Release() error {
+// Release Cos of the workload
+func Release(w *tw.RDTWorkLoad) error {
 	l.Lock()
 	defer l.Unlock()
 
@@ -260,8 +220,8 @@ func (w *RDTWorkLoad) Release() error {
 	return nil
 }
 
-// Patch a workload
-func (w *RDTWorkLoad) Update(patched *RDTWorkLoad) (*RDTWorkLoad, *AppError) {
+// Update a workload
+func Update(w, patched *tw.RDTWorkLoad) *AppError {
 
 	// if we change policy/max_cache/min_cache, release current resource group
 	// and re-enforce it.
@@ -294,8 +254,8 @@ func (w *RDTWorkLoad) Update(patched *RDTWorkLoad) (*RDTWorkLoad, *AppError) {
 	}
 
 	if reEnforce == true {
-		if err := w.Release(); err != nil {
-			return w, NewAppError(http.StatusInternalServerError, "Faild to release workload",
+		if err := Release(w); err != nil {
+			return NewAppError(http.StatusInternalServerError, "Faild to release workload",
 				fmt.Errorf(""))
 		}
 
@@ -305,7 +265,7 @@ func (w *RDTWorkLoad) Update(patched *RDTWorkLoad) (*RDTWorkLoad, *AppError) {
 		if len(patched.CoreIDs) > 0 {
 			w.CoreIDs = patched.CoreIDs
 		}
-		return w, w.Enforce()
+		return Enforce(w)
 	}
 
 	l.Lock()
@@ -314,14 +274,14 @@ func (w *RDTWorkLoad) Update(patched *RDTWorkLoad) (*RDTWorkLoad, *AppError) {
 
 	if !reflect.DeepEqual(patched.CoreIDs, w.CoreIDs) ||
 		!reflect.DeepEqual(patched.TaskIDs, w.TaskIDs) {
-		err := patched.Validate()
+		err := Validate(patched)
 		if err != nil {
-			return w, NewAppError(http.StatusBadRequest, "Failed to validate workload", err)
+			return NewAppError(http.StatusBadRequest, "Failed to validate workload", err)
 		}
 
 		targetResAss, ok := resaall[w.CosName]
 		if !ok {
-			return w, NewAppError(http.StatusInternalServerError, "Can not find resource group name",
+			return NewAppError(http.StatusInternalServerError, "Can not find resource group name",
 				fmt.Errorf(""))
 		}
 
@@ -333,7 +293,7 @@ func (w *RDTWorkLoad) Update(patched *RDTWorkLoad) (*RDTWorkLoad, *AppError) {
 		if len(patched.CoreIDs) > 0 {
 			bm, err := CpuBitmaps(patched.CoreIDs)
 			if err != nil {
-				return w, NewAppError(http.StatusBadRequest,
+				return NewAppError(http.StatusBadRequest,
 					"Failed to Pareser workload coreIDs.", err)
 			}
 			// TODO: check if this new CoreIDs overwrite other resource group
@@ -343,11 +303,11 @@ func (w *RDTWorkLoad) Update(patched *RDTWorkLoad) (*RDTWorkLoad, *AppError) {
 		// commit changes
 		if err = targetResAss.Commit(w.CosName); err != nil {
 			log.Errorf("Error while try to commit resource group for workload %s, group name %s", w.ID, w.CosName)
-			return w, NewAppError(http.StatusInternalServerError,
+			return NewAppError(http.StatusInternalServerError,
 				"Error to commit resource group for workload.", err)
 		}
 	}
-	return w, nil
+	return nil
 }
 
 func getCacheIDs(cpubitmap string, cacheinfos *cache.CacheInfos, cpunum int) []uint32 {
@@ -382,9 +342,9 @@ func inCacheList(cache uint32, cache_list []uint32) bool {
 	return false
 }
 
-func populateEnforceRequest(req *EnforceRequest, w *RDTWorkLoad) *AppError {
+func populateEnforceRequest(req *tw.EnforceRequest, w *tw.RDTWorkLoad) *AppError {
 
-	w.Status = None
+	w.Status = tw.None
 	cpubitstr := ""
 	if len(w.CoreIDs) >= 0 {
 		bm, err := CpuBitmaps(w.CoreIDs)

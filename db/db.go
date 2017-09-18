@@ -7,7 +7,7 @@ import (
 	// uncouple it from APP. Or we can add it in a rmd/config
 	. "openstackcore-rdtagent/db/config"
 	libutil "openstackcore-rdtagent/lib/util"
-	"openstackcore-rdtagent/model/workload"
+	"openstackcore-rdtagent/model/types/workload"
 	"openstackcore-rdtagent/util"
 )
 

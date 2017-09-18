@@ -6,6 +6,7 @@ import (
 	"github.com/emicklei/go-restful"
 	log "github.com/sirupsen/logrus"
 	"openstackcore-rdtagent/db"
+	tw "openstackcore-rdtagent/model/types/workload"
 	"openstackcore-rdtagent/model/workload"
 )
 
@@ -78,7 +79,7 @@ func (w WorkLoadResource) WorkLoadGetById(request *restful.Request, response *re
 // POST /v1/workloads
 // body : '{"core_ids":["1","2"], "task_ids":["123","456"], "policys": ["foo"], "algorithms": ["bar"], "group": ["infra"]}'
 func (w *WorkLoadResource) WorkLoadNew(request *restful.Request, response *restful.Response) {
-	wl := new(workload.RDTWorkLoad)
+	wl := new(tw.RDTWorkLoad)
 	err := request.ReadEntity(&wl)
 	log.Infof("Try to create workload %v", wl)
 	if err != nil {
@@ -87,7 +88,7 @@ func (w *WorkLoadResource) WorkLoadNew(request *restful.Request, response *restf
 		return
 	}
 
-	if err := wl.Validate(); err != nil {
+	if err := workload.Validate(wl); err != nil {
 		response.WriteErrorString(http.StatusBadRequest,
 			"Failed to validate workload. Reason: "+err.Error())
 		return
@@ -100,7 +101,7 @@ func (w *WorkLoadResource) WorkLoadNew(request *restful.Request, response *restf
 		return
 	}
 
-	e := wl.Enforce()
+	e := workload.Enforce(wl)
 	if e != nil {
 		response.WriteErrorString(e.Code, e.Error())
 		// Some thing wrong in user's request parameters. Delete the DB.
@@ -128,22 +129,22 @@ func (w WorkLoadResource) WorkLoadPatch(request *restful.Request, response *rest
 		return
 	}
 
-	newwl := new(workload.RDTWorkLoad)
+	newwl := new(tw.RDTWorkLoad)
 	request.ReadEntity(&newwl)
 	newwl.ID = id
 
 	log.Infof("Try to patch a workload %v", newwl)
-	updatedwl, e := wl.Update(newwl)
+	e := workload.Update(&wl, newwl)
 	if e != nil {
 		response.WriteErrorString(e.Code, e.Error())
 		return
 	}
-	if err = w.Db.UpdateWorkload(updatedwl); err != nil {
+	if err = w.Db.UpdateWorkload(&wl); err != nil {
 		response.WriteErrorString(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	response.WriteEntity(updatedwl)
+	response.WriteEntity(wl)
 }
 
 // DELETE /v1/workloads/{id}
@@ -164,7 +165,7 @@ func (w WorkLoadResource) WorkLoadDeleteById(request *restful.Request, response 
 		return
 	}
 
-	if err = wl.Release(); err != nil {
+	if err = workload.Release(&wl); err != nil {
 		response.WriteErrorString(http.StatusInternalServerError, err.Error())
 		return
 	}
