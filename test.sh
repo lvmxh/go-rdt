@@ -5,13 +5,13 @@
 
 if [ "$1" == "-u" ]; then
     # NOTE please use -short for unittest.
-    go test -short -v -cover $(go list ./... | grep -v /vendor/ )
+    go test -short -v -cover $(go list ./... | grep -v /vendor/ | grep -v /test/)
     exit 0
 fi
 
 if [ "$1" != "-i" ]; then
     # NOTE please use -short for unittest.
-    go test -short -v -cover $(go list ./... | grep -v /vendor/ )
+    go test -short -v -cover $(go list ./... | grep -v /vendor/ | grep -v /test/)
 fi
 
 
