@@ -34,6 +34,7 @@ cpuset = "2-3"
 tasks = ["ovs*"] # Just support Wildcards. Do we need to support RE?
 
 [CachePool] # Cache Pool config is optional
+shrink = false # wether allow to shrink cache ways in best effort pool
 max_allowed_shared = 10 # max allowed workload in shared pool, default is 10
 guarantee = 10
 besteffort = 7

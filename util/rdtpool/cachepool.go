@@ -97,6 +97,7 @@ func GetCachePoolLayout() (map[string]*Reserved, error) {
 				return
 			}
 			cachePoolReserved[Besteffort] = resev
+			cachePoolReserved[Besteffort].Shrink = poolConf.Shrink
 		}
 
 		if poolConf.Shared > 0 {

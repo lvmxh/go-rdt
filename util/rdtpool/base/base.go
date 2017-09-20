@@ -30,6 +30,7 @@ type Reserved struct {
 	Schemata    map[string]*Bitmap // Schema list
 	CPUsPerNode map[string]*Bitmap // CPU bitmap
 	Quota       uint               // Max allowed usage for this resource
+	Shrink      bool               // Wether shrink in BE pool
 }
 
 // Concurrency-safe.

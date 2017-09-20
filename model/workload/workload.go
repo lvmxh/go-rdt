@@ -105,11 +105,15 @@ func Enforce(w *tw.RDTWorkLoad) *AppError {
 				}
 			}
 			if maxWays <= 0 {
+				if !reserved[rdtpool.Besteffort].Shrink {
+					return AppErrorf(http.StatusBadRequest,
+						"Not enough cache left on cache_id %s", k)
+				}
 				// Try to Shrink workload in besteffort pool
 				cand, changed, err := shrinkBEPool(resaall, reserved[rdtpool.Besteffort].Schemata[k], cacheId, er.MinWays)
 				if err != nil {
-					return AppErrorf(http.StatusBadRequest,
-						"Not enough cache left on cache_id %s", k)
+					return AppErrorf(http.StatusInternalServerError,
+						"Errors while try to shrink cache ways on cache_id %s", k)
 				}
 				log.Printf("Shriking cache ways in besteffort pool, candidate schemata for cache id  %d is %s", cacheId, cand.ToString())
 				candidate[k] = cand

@@ -10,7 +10,8 @@ var Options = map[string]interface{}{
 	"max_shared":      10,
 	"guarantee":       10,
 	"besteffort":      7,
-	"shared":          2}
+	"shared":          2,
+	"shrink":          false}
 
 const Templ = `# This is a rdtagent config.
 
@@ -47,6 +48,7 @@ cpuset = "2-3"
 tasks = ["ovs*"] # Just support Wildcards. Do we need to support RE?
 
 [CachePool] # Cache Pool config is optional
+shrink = {{.shrink}}
 max_allowed_shared = {{.max_shared}} # max allowed workload in shared pool, default is {{.max_shared}}
 guarantee = {{.guarantee}}
 besteffort = {{.besteffort}}
