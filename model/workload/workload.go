@@ -18,6 +18,7 @@ import (
 	libutil "openstackcore-rdtagent/lib/util"
 
 	. "openstackcore-rdtagent/api/error"
+	"openstackcore-rdtagent/db"
 	"openstackcore-rdtagent/model/cache"
 	"openstackcore-rdtagent/model/policy"
 	tw "openstackcore-rdtagent/model/types/workload"
@@ -74,8 +75,9 @@ func Enforce(w *tw.RDTWorkLoad) *AppError {
 	}
 
 	reserved := rdtpool.GetReservedInfo()
-
+	changedRes := make(map[string]*resctrl.ResAssociation, 0)
 	candidate := make(map[string]*libutil.Bitmap, 0)
+
 	for k, v := range av {
 		cacheId, _ := strconv.Atoi(k)
 		if !inCacheList(uint32(cacheId), er.Cache_IDs) && er.Type != rdtpool.Shared {
@@ -104,8 +106,20 @@ func Enforce(w *tw.RDTWorkLoad) *AppError {
 			}
 			if maxWays <= 0 {
 				// Try to Shrink workload in besteffort pool
-				return AppErrorf(http.StatusBadRequest,
-					"Not enough cache left on cache_id %s", k)
+				cand, changed, err := shrinkBEPool(resaall, reserved[rdtpool.Besteffort].Schemata[k], cacheId, er.MinWays)
+				if err != nil {
+					return AppErrorf(http.StatusBadRequest,
+						"Not enough cache left on cache_id %s", k)
+				}
+				log.Printf("Shriking cache ways in besteffort pool, candidate schemata for cache id  %d is %s", cacheId, cand.ToString())
+				candidate[k] = cand
+				// Merge changed association to a map, we will commit this map
+				// later
+				for k, v := range changed {
+					if _, ok := changedRes[k]; !ok {
+						changedRes[k] = v
+					}
+				}
 			} else {
 				if maxWays > er.MaxWays {
 					maxWays = er.MaxWays
@@ -158,6 +172,21 @@ func Enforce(w *tw.RDTWorkLoad) *AppError {
 		log.Errorf("Error while try to commit resource group for workload %s, group name %s", w.ID, grpName)
 		return NewAppError(http.StatusInternalServerError,
 			"Error to commit resource group for workload.", err)
+	}
+
+	// loop to change shrinked resource
+	// TODO: there's corners if there are multiple changed resource groups,
+	// but we failed to commit one of them (worest case is the last group),
+	// there's no rollback.
+	// possible fix is to adding this into a task flow
+	for name, res := range changedRes {
+		log.Debugf("Shink %s group", name)
+		if err = res.Commit(name); err != nil {
+			log.Errorf("Error while try to commit shrinked resource group, name: %s", name)
+			resctrl.DestroyResAssociation(grpName)
+			return NewAppError(http.StatusInternalServerError,
+				"Error to shrink resource group", err)
+		}
 	}
 
 	// reset os group
@@ -422,4 +451,59 @@ func newResAss(r map[string]*libutil.Bitmap, level string) *resctrl.ResAssociati
 		log.Debugf("Newly created Mask for Cache %s is %s", k, newcos.Mask)
 	}
 	return &newResAss
+}
+
+// shrinkBEPool requres to provide cacheid of the request, MinCache ways (
+// because we lack cache now if we need to shrink), of cause resassociations
+// besteffort pool reserved cache way bitmap.
+// returns: bitmap we allocated for the new request
+// returns: a map[string]*resctrl.ResAssociation as we changed other workloads'
+// cache ways, need to reflect them into resctrl fs.
+// returns: error if internal error happens.
+func shrinkBEPool(resaall map[string]*resctrl.ResAssociation,
+	reservedSchemata *libutil.Bitmap,
+	cacheId int,
+	reqways uint32) (*libutil.Bitmap, map[string]*resctrl.ResAssociation, error) {
+
+	besteffortRes := make(map[string]*resctrl.ResAssociation)
+	dbc, _ := db.NewDB()
+	// do a copy
+	availableSchemata := &(*reservedSchemata)
+	targetLev := strconv.FormatUint(uint64(libcache.GetLLC()), 10)
+	for name, v := range resaall {
+		if strings.HasSuffix(name, "-"+rdtpool.Besteffort) {
+			besteffortRes[name] = v
+			ws, _ := dbc.QueryWorkload(map[string]interface{}{
+				"CosName": name})
+			if len(ws) == 0 {
+				return nil, besteffortRes, fmt.Errorf(
+					"Internal error, can not find exsting workload for resource group name %s", name)
+			}
+			cosSchemata, _ := CacheBitmaps(v.Schemata["L"+targetLev][cacheId].Mask)
+			// TODO: need find a better way to reduce the cache way fragments
+			// as currently we are using map to keep resctrl group, it's non-order
+			// so it's little hard to get which resctrl group next to which.
+			// just using max - min slot to shrink the cache. Hence, the result
+			// would only shrink one of the resource group to min one
+			minSchemata := cosSchemata.GetConnectiveBits(*ws[0].MinCache, 0, false)
+			availableSchemata = availableSchemata.Axor(minSchemata)
+		}
+	}
+	// I would like to allocate cache from low to high, this will help to
+	// reduce cos
+	candidateSchemata := availableSchemata.GetConnectiveBits(reqways, 0, true)
+
+	// loop besteffortRes to find which assocation need to be changed.
+	changedRes := make(map[string]*resctrl.ResAssociation)
+	for name, v := range besteffortRes {
+		cosSchemata, _ := CacheBitmaps(v.Schemata["L"+targetLev][cacheId].Mask)
+		tmpSchemataStr := cosSchemata.Axor(candidateSchemata).ToString()
+		if tmpSchemataStr != cosSchemata.ToString() {
+			// Changing pointers, the change will be reflact to the origin one
+			v.Schemata["L"+targetLev][cacheId].Mask = tmpSchemataStr
+			changedRes[name] = v
+		}
+	}
+
+	return candidateSchemata, changedRes, nil
 }
