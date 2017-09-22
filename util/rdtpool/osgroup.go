@@ -109,7 +109,7 @@ func SetOSGroup() error {
 			osGroup.Schemata[cacheLevel][i].Mask = GetCosInfo().CbmMask
 		}
 	}
-	if err := osGroup.Commit("."); err != nil {
+	if err := resctrl.Commit(osGroup, "."); err != nil {
 		return err
 	}
 	return nil

@@ -172,7 +172,7 @@ func Enforce(w *tw.RDTWorkLoad) *AppError {
 	}
 	resAss.Tasks = append(resAss.Tasks, w.TaskIDs...)
 
-	if err = resAss.Commit(grpName); err != nil {
+	if err = resctrl.Commit(resAss, grpName); err != nil {
 		log.Errorf("Error while try to commit resource group for workload %s, group name %s", w.ID, grpName)
 		return NewAppError(http.StatusInternalServerError,
 			"Error to commit resource group for workload.", err)
@@ -185,7 +185,7 @@ func Enforce(w *tw.RDTWorkLoad) *AppError {
 	// possible fix is to adding this into a task flow
 	for name, res := range changedRes {
 		log.Debugf("Shink %s group", name)
-		if err = res.Commit(name); err != nil {
+		if err = resctrl.Commit(res, name); err != nil {
 			log.Errorf("Error while try to commit shrinked resource group, name: %s", name)
 			resctrl.DestroyResAssociation(grpName)
 			return NewAppError(http.StatusInternalServerError,
@@ -248,7 +248,7 @@ func Release(w *tw.RDTWorkLoad) error {
 	}
 	if len(w.CoreIDs) > 0 {
 		r.CPUs = cpubm.ToString()
-		return r.Commit(w.CosName)
+		return resctrl.Commit(r, w.CosName)
 	}
 	return nil
 }
@@ -334,7 +334,7 @@ func Update(w, patched *tw.RDTWorkLoad) *AppError {
 			w.CoreIDs = patched.CoreIDs
 		}
 		// commit changes
-		if err = targetResAss.Commit(w.CosName); err != nil {
+		if err = resctrl.Commit(targetResAss, w.CosName); err != nil {
 			log.Errorf("Error while try to commit resource group for workload %s, group name %s", w.ID, w.CosName)
 			return NewAppError(http.StatusInternalServerError,
 				"Error to commit resource group for workload.", err)

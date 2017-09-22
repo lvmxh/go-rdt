@@ -146,7 +146,7 @@ func SetInfraGroup() error {
 
 	infraGroup.Tasks = append(infraGroup.Tasks, tasks...)
 
-	if err := infraGroup.Commit(groupName); err != nil {
+	if err := resctrl.Commit(infraGroup, groupName); err != nil {
 		return err
 	}
 

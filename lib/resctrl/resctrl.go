@@ -196,19 +196,19 @@ func GetResAssociation() map[string]*ResAssociation {
 // After some test on taskFlow, we can remove these logic code and use taskFlow.
 // The taskFlow need a snapshot of all ResAssociation for the transaction.
 // It can be gotten by GetResAssociation.
-func (r ResAssociation) Commit(group string) error {
+func Commit(r *ResAssociation, group string) error {
 	if !IsIntelRdtMounted() {
 		return fmt.Errorf("Can't apply this association, for resctrl is not mounted!")
 	}
 
-	return taskFlow(group, &r, GetResAssociation())
+	return taskFlow(group, r, GetResAssociation())
 }
 
 // FIXME need to catch error
 func CommitAll(m_res map[string]*ResAssociation) error {
 	ress := GetResAssociation()
 	for name, res := range m_res {
-		res.Commit(name)
+		Commit(res, name)
 	}
 
 	// Golang does not support set difference
