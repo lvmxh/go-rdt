@@ -22,8 +22,9 @@ address = "{{.address}}"
 port = {{.tcpport}}
 policypath = "/etc/rdtagent/policy.toml"
 # tlsport = 443
-# certpath = "etc/rdtagent/cert" # Only support pem format, hard code that CAFile is ca.pem, CertFile is rmd-cert.pem, KeyFile is rmd-key.pem
-# clientauth = "challenge"  # can be "noneed, require, require_any, challenge_given, challenge", challenge means require and verify.
+# certpath = "etc/rdtagent/cert/server" # Only support pem format, hard code that CAFile is ca.pem, CertFile is rmd-cert.pem, KeyFile is rmd-key.pem
+# clientcapath = "etc/rdtagent/cert/client" # Only support pem format, hard code that CAFile is ca.pem
+# clientauth = "challenge"  # can be "no, require, require_any, challenge_given, challenge", challenge means require and verify.
 # unixsock = "./var/run/rmd.sock"
 
 [log]

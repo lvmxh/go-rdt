@@ -138,3 +138,16 @@ Requires curl >= v7.40.0
 ```
 sudo curl --unix-socket /your/socket/path http:/your/resource/url
 ```
+
+## Access RMD by TLS:
+
+Access RMD by TLS if it is enabled.
+
+Need to config tlsport, certpath, clientcapath, clientauth options in configure file.
+
+Using TLS and managing a CA is an advanced topic. It is not the scope of RMD. RMD just pre-define server certs for testing, Please do not use them in product env. User can generate certs by themself.
+
+If you want to get cache info, your can run this command:
+```
+curl https://hostname:port/v1/cache --cert etc/rdtagent/cert/client/cert.pem  --key etc/rdtagent/cert/client/key.pem --cacert  etc/rdtagent/cert/client/ca.pem
+```

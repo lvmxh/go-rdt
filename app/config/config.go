@@ -9,7 +9,7 @@ import (
 )
 
 var ClientAuth = map[string]tls.ClientAuthType{
-	"noneed":          tls.NoClientCert,
+	"no":              tls.NoClientCert,
 	"require":         tls.RequestClientCert,
 	"require_any":     tls.RequireAnyClientCert,
 	"challenge_given": tls.VerifyClientCertIfGiven,
@@ -17,20 +17,22 @@ var ClientAuth = map[string]tls.ClientAuthType{
 }
 
 const (
-	CAFile   = "ca.pem"
-	CertFile = "rmd-cert.pem"
-	KeyFile  = "rmd-key.pem"
+	CAFile       = "ca.pem"
+	CertFile     = "rmd-cert.pem"
+	KeyFile      = "rmd-key.pem"
+	ClientCAFile = "ca.pem"
 )
 
 // TODO consider create a new struct for TLSConfig
 type Default struct {
-	Address    string `toml:"address"`
-	Port       uint   `toml:"port"`
-	TLSPort    uint   `toml:"tlsport"`
-	CertPath   string `toml:"certpath"`
-	ClientAuth string `toml:"clientauth"`
-	UnixSock   string `toml:"unixsock"`
-	PolicyPath string `toml:"policypath"`
+	Address      string `toml:"address"`
+	Port         uint   `toml:"port"`
+	TLSPort      uint   `toml:"tlsport"`
+	CertPath     string `toml:"certpath"`
+	ClientCAPath string `toml:"certpath"`
+	ClientAuth   string `toml:"clientauth"`
+	UnixSock     string `toml:"unixsock"`
+	PolicyPath   string `toml:"policypath"`
 }
 
 type Database struct {
@@ -49,7 +51,8 @@ var def = &Default{
 	"localhost",
 	8081,
 	0,
-	"etc/rdtagent/cert",
+	"etc/rdtagent/cert/server",
+	"etc/rdtagent/cert/client",
 	"challenge",
 	"",
 	"etc/rdtagent/policy.yaml"}
