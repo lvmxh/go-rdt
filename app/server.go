@@ -22,6 +22,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"openstackcore-rdtagent/api/v1"
 	"openstackcore-rdtagent/db"
+	"openstackcore-rdtagent/util/acl"
 	"openstackcore-rdtagent/util/options"
 )
 
@@ -89,6 +90,37 @@ func InitializeDB(c *Config) (db.DB, error) {
 	// d.Initialize(c.Generic.Transport, c.Generic.DBName)
 }
 
+func TlsACL(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+	appconf := appConf.NewConfig()
+	if req.Request.TLS == nil || appConf.ClientAuth[appconf.Def.ClientAuth] < appConf.ClientAuth["challenge_given"] {
+		chain.ProcessFilter(req, resp)
+		return
+	}
+
+	ou := ""
+	for _, v := range req.Request.TLS.PeerCertificates[0].Subject.OrganizationalUnit {
+		if strings.ToLower(v) == "admin" {
+			ou = "admin"
+			break
+		}
+		if strings.ToLower(v) == "user" {
+			ou = "user"
+		}
+	}
+	cn := req.Request.TLS.PeerCertificates[0].Subject.CommonName
+	user := cn
+	if ou != "" {
+		user = ou
+	}
+	e, _ := acl.NewEnforcer()
+	if e.Enforce(req, user) != true {
+		log.Errorf("User is not allow to access this resource")
+		resp.WriteErrorString(401, cn+" is not Authorized")
+		return
+	}
+	chain.ProcessFilter(req, resp)
+}
+
 // Initialize server from config
 func Initialize(c *Config) (*restful.Container, error) {
 	db, err := InitializeDB(c)
@@ -97,6 +129,8 @@ func Initialize(c *Config) (*restful.Container, error) {
 	}
 
 	wsContainer := restful.NewContainer()
+	wsContainer.Filter(TlsACL)
+	// TODO Dakshina will support  wsContainer.Filter(auth.PamAuthenticate)
 	wsContainer.Router(restful.CurlyRouter{})
 
 	cap := v1.CapabilitiesResource{}
