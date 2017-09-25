@@ -2,7 +2,6 @@ package bootcheck
 
 import (
 	"fmt"
-	"os"
 
 	log "github.com/sirupsen/logrus"
 
@@ -10,60 +9,46 @@ import (
 	"openstackcore-rdtagent/lib/cpu"
 	"openstackcore-rdtagent/lib/resctrl"
 	"openstackcore-rdtagent/util/acl"
-	"openstackcore-rdtagent/util/pidfile"
 	"openstackcore-rdtagent/util/rdtpool"
 )
 
-func errorOut(msg string) {
-	fmt.Println(msg)
-	pidfile.ClosePID()
-	log.Fatalf(msg)
-	// TODO (Shaohe), remove os.Exit, Fatalf can exit.
-	os.Exit(1)
-}
-
-// SanityCheck to check if I am the only RMD process
+// SanityCheck before string rmd process
 func SanityCheck() {
-	if err := pidfile.CreatePID(); err != nil {
-		msg := "Create PID file fail. Reason: " + err.Error()
-		errorOut(msg)
-	}
 	pf := cpu.GetMicroArch(cpu.GetSignature())
 	if pf == "" {
 		msg := "Unknow platform, please update the cpu_map.toml conf file."
-		errorOut(msg)
+		log.Fatal(msg)
 	}
 	if _, err := acl.NewEnforcer(); err != nil {
 		msg := "Error to generate an Enforcer! Reason: " + err.Error()
-		errorOut(msg)
+		log.Fatal(msg)
 	}
 	cpunum := cpu.HostCpuNum()
 	if cpunum == 0 {
 		msg := "Unable to get Total CPU numbers on Host."
-		errorOut(msg)
+		log.Fatal(msg)
 	}
 	if !resctrl.IsIntelRdtMounted() {
 		msg := "resctrl does not enable."
-		errorOut(msg)
+		log.Fatal(msg)
 	}
 	if err := DBCheck(); err != nil {
 		msg := "Check db error. Reason: " + err.Error()
-		errorOut(msg)
+		log.Fatal(msg)
 	}
 	if err := rdtpool.SetOSGroup(); err != nil {
 		msg := "Error, create OS groups failed! Reason: " + err.Error()
-		errorOut(msg)
+		log.Fatal(msg)
 	}
 	if err := rdtpool.SetInfraGroup(); err != nil {
 		msg := "Error, create infra groups failed! Reason: " + err.Error()
-		errorOut(msg)
-		os.Exit(1)
+		log.Fatal(msg)
 	}
 	v, err := rdtpool.GetCachePoolLayout()
 	log.Debugf("Cache Pool layout %v", v)
 	if err != nil {
 		msg := "Error while get cache pool layout Reason: " + err.Error()
-		errorOut(msg)
+		log.Fatal(msg)
 	}
 }
 

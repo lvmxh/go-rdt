@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"openstackcore-rdtagent/lib/cache"
+	rpcproxy "openstackcore-rdtagent/lib/proxy"
 	"openstackcore-rdtagent/lib/resctrl"
 	util "openstackcore-rdtagent/lib/util"
 	. "openstackcore-rdtagent/util/rdtpool/base"
@@ -109,7 +110,7 @@ func SetOSGroup() error {
 			osGroup.Schemata[cacheLevel][i].Mask = GetCosInfo().CbmMask
 		}
 	}
-	if err := resctrl.Commit(osGroup, "."); err != nil {
+	if err := rpcproxy.Commit(osGroup, "."); err != nil {
 		return err
 	}
 	return nil

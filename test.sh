@@ -96,7 +96,7 @@ CONF=$CONFFILE go test -v ./test/integration/...
 rev=$?
 
 # cleanup
-sudo kill -9 `cat $PID`
+sudo kill -TERM `cat $PID`
 sudo umount /sys/fs/resctrl
 rm ${GOPATH}/bin/openstackcore-rdtagent
 
