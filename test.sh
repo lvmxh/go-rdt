@@ -68,7 +68,7 @@ while [[ ! -z $CHECK ]]; do
 done
 
 # TODO will also  support -data 'stdout=true,tasks=["ovs*","dpdk"]'
-sudo go run ./cmd/gen_conf.go -path /tmp/rdtagent.toml -data "{\"tcpport\": $PORT}"
+go run ./cmd/gen_conf.go -path /tmp/rdtagent.toml -data "{\"tcpport\": $PORT}"
 if [ $? -ne 0 ]; then
     echo "Failed to generate configure file. Exit."
     exit 1
