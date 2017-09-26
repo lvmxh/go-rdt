@@ -15,6 +15,7 @@ import (
 	"openstackcore-rdtagent/util/conf"
 	"openstackcore-rdtagent/util/flag"
 	"openstackcore-rdtagent/util/log"
+	logconf "openstackcore-rdtagent/util/log/config"
 	"openstackcore-rdtagent/util/options"
 	"openstackcore-rdtagent/util/pidfile"
 )
@@ -50,7 +51,7 @@ func main() {
 		// https://github.com/golang/go/issues/9463
 		signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
 
-		child, err := util.DropRunAs(rmduser, in.Writer, in.Reader)
+		child, err := util.DropRunAs(rmduser, logconf.NewConfig().Stdout, in.Writer, in.Reader)
 
 		if err != nil {
 			fmt.Println("Failed to drop root priviledge")
@@ -88,6 +89,21 @@ func main() {
 	}
 
 	// Below are executed in child process
+	flag := syscall.SIGHUP
+	if _, _, err := syscall.RawSyscall(syscall.SYS_PRCTL, syscall.PR_SET_PDEATHSIG, uintptr(flag), 0); err != 0 {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	sigc := make(chan os.Signal, 1)
+	signal.Notify(sigc, syscall.SIGHUP)
+	go func() {
+		sig := <-sigc
+		//NOTE, should we add some cleanup?
+		fmt.Printf("Received b %s, shutdown RMD for root process exit.", sig.String())
+		// Do not Exit(0), for there are some thing wrong with supper RMD.
+		os.Exit(1)
+	}()
+
 	log.Init()
 	//in.Writer
 	in.Writer = os.NewFile(3, "")

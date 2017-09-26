@@ -58,7 +58,7 @@ func CreateUser(name string) error {
 }
 
 //DropRunAs will drop root previlidge and run as a normal user
-func DropRunAs(name string, files ...*os.File) (*os.Process, error) {
+func DropRunAs(name string, debug bool, files ...*os.File) (*os.Process, error) {
 
 	if os.Getuid() != 0 {
 		return nil, fmt.Errorf("Need to run as root user")
@@ -77,6 +77,11 @@ func DropRunAs(name string, files ...*os.File) (*os.Process, error) {
 	// new process. It does not include standard input, standard output, or
 	// standard error. If non-nil, entry i becomes file descriptor 3+i.
 	cmd.ExtraFiles = files
+	if debug {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
+
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Credential: &syscall.Credential{
 			Uid: uint32(uid),
