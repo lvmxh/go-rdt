@@ -88,6 +88,10 @@ cat $CONFFILE
 # GOPATH
 # TODO change it to rmd
 godep go install openstackcore-rdtagent
+if [ $? -ne 0]; then
+    echo "Failed to build rmd, please correct build issue."
+    exit 1
+fi
 sudo ${GOPATH}/bin/openstackcore-rdtagent --conf-dir ${CONFFILE%/*} --log-dir "/tmp/rdagent.log" &
 
 sleep 1

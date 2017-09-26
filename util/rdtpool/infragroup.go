@@ -11,7 +11,7 @@ import (
 
 	"openstackcore-rdtagent/lib/cache"
 	"openstackcore-rdtagent/lib/proc"
-	rpcproxy "openstackcore-rdtagent/lib/proxy"
+	proxy "openstackcore-rdtagent/lib/proxy"
 	"openstackcore-rdtagent/lib/resctrl"
 	util "openstackcore-rdtagent/lib/util"
 	. "openstackcore-rdtagent/util/rdtpool/base"
@@ -111,7 +111,7 @@ func SetInfraGroup() error {
 	cacheLevel := "L" + target_lev
 	ways := GetCosInfo().CbmMaskLen
 
-	allres := resctrl.GetResAssociation()
+	allres := proxy.GetResAssociation()
 	infraGroup, ok := allres[groupName]
 	if !ok {
 		infraGroup = resctrl.NewResAssociation()
@@ -147,7 +147,7 @@ func SetInfraGroup() error {
 
 	infraGroup.Tasks = append(infraGroup.Tasks, tasks...)
 
-	if err := rpcproxy.Commit(infraGroup, groupName); err != nil {
+	if err := proxy.Commit(infraGroup, groupName); err != nil {
 		return err
 	}
 

@@ -6,8 +6,7 @@ import (
 	"sync"
 
 	"openstackcore-rdtagent/lib/cache"
-	rpcproxy "openstackcore-rdtagent/lib/proxy"
-	"openstackcore-rdtagent/lib/resctrl"
+	proxy "openstackcore-rdtagent/lib/proxy"
 	util "openstackcore-rdtagent/lib/util"
 	. "openstackcore-rdtagent/util/rdtpool/base"
 	. "openstackcore-rdtagent/util/rdtpool/config"
@@ -77,7 +76,7 @@ func SetOSGroup() error {
 		return err
 	}
 
-	allres := resctrl.GetResAssociation()
+	allres := proxy.GetResAssociation()
 	osGroup := allres["."]
 	org_bm, err := CpuBitmaps(osGroup.CPUs)
 	if err != nil {
@@ -110,7 +109,7 @@ func SetOSGroup() error {
 			osGroup.Schemata[cacheLevel][i].Mask = GetCosInfo().CbmMask
 		}
 	}
-	if err := rpcproxy.Commit(osGroup, "."); err != nil {
+	if err := proxy.Commit(osGroup, "."); err != nil {
 		return err
 	}
 	return nil

@@ -14,7 +14,7 @@ import (
 	libcache "openstackcore-rdtagent/lib/cache"
 	"openstackcore-rdtagent/lib/cpu"
 	"openstackcore-rdtagent/lib/proc"
-	rpcproxy "openstackcore-rdtagent/lib/proxy"
+	proxy "openstackcore-rdtagent/lib/proxy"
 	"openstackcore-rdtagent/lib/resctrl"
 	libutil "openstackcore-rdtagent/lib/util"
 
@@ -61,7 +61,7 @@ func Enforce(w *tw.RDTWorkLoad) *AppError {
 
 	l.Lock()
 	defer l.Unlock()
-	resaall := resctrl.GetResAssociation()
+	resaall := proxy.GetResAssociation()
 
 	er := &tw.EnforceRequest{}
 	if err := populateEnforceRequest(er, w); err != nil {
@@ -173,7 +173,7 @@ func Enforce(w *tw.RDTWorkLoad) *AppError {
 	}
 	resAss.Tasks = append(resAss.Tasks, w.TaskIDs...)
 
-	if err = rpcproxy.Commit(resAss, grpName); err != nil {
+	if err = proxy.Commit(resAss, grpName); err != nil {
 		log.Errorf("Error while try to commit resource group for workload %s, group name %s", w.ID, grpName)
 		return NewAppError(http.StatusInternalServerError,
 			"Error to commit resource group for workload.", err)
@@ -186,9 +186,9 @@ func Enforce(w *tw.RDTWorkLoad) *AppError {
 	// possible fix is to adding this into a task flow
 	for name, res := range changedRes {
 		log.Debugf("Shink %s group", name)
-		if err = rpcproxy.Commit(res, name); err != nil {
+		if err = proxy.Commit(res, name); err != nil {
 			log.Errorf("Error while try to commit shrinked resource group, name: %s", name)
-			rpcproxy.DestroyResAssociation(grpName)
+			proxy.DestroyResAssociation(grpName)
 			return NewAppError(http.StatusInternalServerError,
 				"Error to shrink resource group", err)
 		}
@@ -197,7 +197,7 @@ func Enforce(w *tw.RDTWorkLoad) *AppError {
 	// reset os group
 	if err = rdtpool.SetOSGroup(); err != nil {
 		log.Errorf("Error while try to commit resource group for default group")
-		rpcproxy.DestroyResAssociation(grpName)
+		proxy.DestroyResAssociation(grpName)
 		return NewAppError(http.StatusInternalServerError,
 			"Error while try to commit resource group for default group.", err)
 	}
@@ -212,7 +212,7 @@ func Release(w *tw.RDTWorkLoad) error {
 	l.Lock()
 	defer l.Unlock()
 
-	resaall := resctrl.GetResAssociation()
+	resaall := proxy.GetResAssociation()
 
 	r, ok := resaall[w.CosName]
 
@@ -232,7 +232,7 @@ func Release(w *tw.RDTWorkLoad) error {
 	// safely remove resource group if no tasks and cpu bit map is empty
 	if len(r.Tasks) < 1 && cpubm.IsEmpty() {
 		log.Printf("Remove resource group: %s", w.CosName)
-		if err := rpcproxy.DestroyResAssociation(w.CosName); err != nil {
+		if err := proxy.DestroyResAssociation(w.CosName); err != nil {
 			return err
 		}
 		if err := rdtpool.SetOSGroup(); err != nil {
@@ -242,14 +242,14 @@ func Release(w *tw.RDTWorkLoad) error {
 	}
 	// remove workload task ids from resource group
 	if len(w.TaskIDs) > 0 {
-		if err := resctrl.RemoveTasks(w.TaskIDs); err != nil {
+		if err := proxy.RemoveTasks(w.TaskIDs); err != nil {
 			log.Printf("Ignore Error while remove tasks %s", err)
 			return nil
 		}
 	}
 	if len(w.CoreIDs) > 0 {
 		r.CPUs = cpubm.ToString()
-		return rpcproxy.Commit(r, w.CosName)
+		return proxy.Commit(r, w.CosName)
 	}
 	return nil
 }
@@ -304,7 +304,7 @@ func Update(w, patched *tw.RDTWorkLoad) *AppError {
 
 	l.Lock()
 	defer l.Unlock()
-	resaall := resctrl.GetResAssociation()
+	resaall := proxy.GetResAssociation()
 
 	if !reflect.DeepEqual(patched.CoreIDs, w.CoreIDs) ||
 		!reflect.DeepEqual(patched.TaskIDs, w.TaskIDs) {
@@ -335,7 +335,7 @@ func Update(w, patched *tw.RDTWorkLoad) *AppError {
 			w.CoreIDs = patched.CoreIDs
 		}
 		// commit changes
-		if err = rpcproxy.Commit(targetResAss, w.CosName); err != nil {
+		if err = proxy.Commit(targetResAss, w.CosName); err != nil {
 			log.Errorf("Error while try to commit resource group for workload %s, group name %s", w.ID, w.CosName)
 			return NewAppError(http.StatusInternalServerError,
 				"Error to commit resource group for workload.", err)

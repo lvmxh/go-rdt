@@ -7,7 +7,7 @@ import (
 
 	"openstackcore-rdtagent/lib/cache"
 	"openstackcore-rdtagent/lib/cpu"
-	"openstackcore-rdtagent/lib/resctrl"
+	"openstackcore-rdtagent/lib/proxy"
 	. "openstackcore-rdtagent/lib/util"
 )
 
@@ -36,7 +36,7 @@ type Reserved struct {
 // Concurrency-safe.
 func GetCosInfo() CosInfo {
 	infoOnce.Do(func() {
-		rcinfo := resctrl.GetRdtCosInfo()
+		rcinfo := proxy.GetRdtCosInfo()
 		level := syscache.GetLLC()
 		target_lev := strconv.FormatUint(uint64(level), 10)
 		cacheLevel := "l" + target_lev
