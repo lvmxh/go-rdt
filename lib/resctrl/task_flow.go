@@ -2,10 +2,12 @@ package resctrl
 
 import (
 	"fmt"
-	"github.com/denderello/task"
 	"os"
 	"path/filepath"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
+	"openstackcore-rdtagent/util/task"
 )
 
 type ResctrlTask struct {
@@ -123,7 +125,7 @@ func (t ResctrlSchemataTask) Rollback() error {
 }
 
 func taskFlow(group string, r *ResAssociation, rs map[string]*ResAssociation) error {
-	ts := []task.Task{}
+	tasks := []task.Task{}
 	path := SysResctrl
 
 	if strings.ToLower(group) != "default" && group != "." {
@@ -139,15 +141,14 @@ func taskFlow(group string, r *ResAssociation, rs map[string]*ResAssociation) er
 		ct.Revert = false
 		tt.Revert = false
 		st.Revert = false
-		ts = append(ts, gt)
+		tasks = append(tasks, gt)
 	}
 
-	ts = append(ts, []task.Task{ct, tt, st}...)
-	q := task.NewQueue(ts)
-	err := q.Start()
-	if err != nil {
-		// use log
-		fmt.Println("Task queue failed: \n  ", err)
+	tasks = append(tasks, []task.Task{ct, tt, st}...)
+	taskList := task.NewTaskList(tasks)
+	if err := taskList.Start(); err != nil {
+		log.Errorf("Failed to execute task list %s", err.Error())
+		return err
 	}
-	return err
+	return nil
 }
