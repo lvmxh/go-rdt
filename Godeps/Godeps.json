@@ -12,6 +12,11 @@
 			"Rev": "a368813c5e648fee92e5f6c30e3944ff9d5e8895"
 		},
 		{
+			"ImportPath": "github.com/Knetic/govaluate",
+			"Comment": "v3.0.0-27-gaa73cfd",
+			"Rev": "aa73cfd04eeb71192f11391d4854c2f22e8ac26f"
+		},
+		{
 			"ImportPath": "github.com/ajg/form",
 			"Comment": "v1.5-1-g523a5da",
 			"Rev": "523a5da1a92f01b01f840b61689c0340a0243532"
@@ -23,8 +28,38 @@
 		},
 		{
 			"ImportPath": "github.com/casbin/casbin",
-			"Comment": "v1.0.0",
-			"Rev": "24e651819005cf57777db7f9028b7b79724d0983"
+			"Comment": "v1.0.0-8-gba95ed2",
+			"Rev": "ba95ed24e07a42088b2265a847142a4785ea5a19"
+		},
+		{
+			"ImportPath": "github.com/casbin/casbin/config",
+			"Comment": "v1.0.0-8-gba95ed2",
+			"Rev": "ba95ed24e07a42088b2265a847142a4785ea5a19"
+		},
+		{
+			"ImportPath": "github.com/casbin/casbin/file-adapter",
+			"Comment": "v1.0.0-8-gba95ed2",
+			"Rev": "ba95ed24e07a42088b2265a847142a4785ea5a19"
+		},
+		{
+			"ImportPath": "github.com/casbin/casbin/model",
+			"Comment": "v1.0.0-8-gba95ed2",
+			"Rev": "ba95ed24e07a42088b2265a847142a4785ea5a19"
+		},
+		{
+			"ImportPath": "github.com/casbin/casbin/persist",
+			"Comment": "v1.0.0-8-gba95ed2",
+			"Rev": "ba95ed24e07a42088b2265a847142a4785ea5a19"
+		},
+		{
+			"ImportPath": "github.com/casbin/casbin/rbac",
+			"Comment": "v1.0.0-8-gba95ed2",
+			"Rev": "ba95ed24e07a42088b2265a847142a4785ea5a19"
+		},
+		{
+			"ImportPath": "github.com/casbin/casbin/util",
+			"Comment": "v1.0.0-8-gba95ed2",
+			"Rev": "ba95ed24e07a42088b2265a847142a4785ea5a19"
 		},
 		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
@@ -150,7 +185,7 @@
 		},
 		{
 			"ImportPath": "github.com/golang/protobuf/proto",
-			"Rev": "ab9f9a6dab164b7d1246e0e688b0ab7b94d8553e"
+			"Rev": "17ce1425424ab154092bbb43af630bd647f3bb0d"
 		},
 		{
 			"ImportPath": "github.com/google/go-github/github",
@@ -251,11 +286,6 @@
 			"ImportPath": "github.com/klauspost/crc32",
 			"Comment": "v1.1-5-gbab58d7",
 			"Rev": "bab58d77464aa9cf4e84200c3276da0831fe0c03"
-		},
-		{
-			"ImportPath": "github.com/Knetic/govaluate",
-			"Comment": "v3.0.0-23-g89a078c",
-			"Rev": "89a078c30383b31e1b72bec86907910914227d9f"
 		},
 		{
 			"ImportPath": "github.com/labstack/echo",
