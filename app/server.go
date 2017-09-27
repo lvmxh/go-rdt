@@ -24,6 +24,7 @@ import (
 	"openstackcore-rdtagent/db"
 	"openstackcore-rdtagent/util/acl"
 	"openstackcore-rdtagent/util/options"
+	"openstackcore-rdtagent/util/auth"
 )
 
 type GenericConfig struct {
@@ -130,7 +131,7 @@ func Initialize(c *Config) (*restful.Container, error) {
 
 	wsContainer := restful.NewContainer()
 	wsContainer.Filter(TlsACL)
-	// TODO Dakshina will support  wsContainer.Filter(auth.PamAuthenticate)
+	wsContainer.Filter(auth.PamAuthenticate)
 	wsContainer.Router(restful.CurlyRouter{})
 
 	cap := v1.CapabilitiesResource{}
