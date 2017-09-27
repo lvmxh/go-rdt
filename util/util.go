@@ -57,20 +57,27 @@ func CreateUser(name string) error {
 	return nil
 }
 
+func GetUserGUID(name string) (int, int, error) {
+	User, err := user.Lookup(name)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	uid, _ := strconv.Atoi(User.Uid)
+	gid, _ := strconv.Atoi(User.Gid)
+	return uid, gid, nil
+}
+
 //DropRunAs will drop root previlidge and run as a normal user
 func DropRunAs(name string, debug bool, files ...*os.File) (*os.Process, error) {
 
 	if os.Getuid() != 0 {
 		return nil, fmt.Errorf("Need to run as root user")
 	}
-
-	User, err := user.Lookup(name)
+	uid, gid, err := GetUserGUID(name)
 	if err != nil {
 		return nil, err
 	}
-
-	uid, _ := strconv.Atoi(User.Uid)
-	gid, _ := strconv.Atoi(User.Gid)
 
 	cmd := exec.Command(os.Args[0], os.Args[1:]...)
 	// ExtraFiles specifies additional open files to be inherited by the
