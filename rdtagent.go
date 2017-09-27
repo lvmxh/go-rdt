@@ -30,6 +30,10 @@ func main() {
 	s.AddFlags(pflag.CommandLine)
 	flag.InitFlags()
 	conf.Init()
+	if err := log.Init(); err != nil {
+		fmt.Println("Init log failed:", err)
+		os.Exit(1)
+	}
 
 	if os.Getuid() == 0 {
 		if !util.IsUserExist(rmduser) {
@@ -53,17 +57,16 @@ func main() {
 		signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
 
 		// FIXME: This is a quickly fix. Will improve later.
-		uid, gid, err := util.GetUserGUID(rmduser)
 		file := logconf.NewConfig().Path
-		if err := os.Chown(file, uid, gid); err != nil {
-			fmt.Println("Failed to change owner of file:", file)
+		if err := util.Chown(file, rmduser); err != nil {
+			fmt.Println(err)
 			os.Exit(1)
 		}
 		ts := dbconf.NewConfig().Transport
 		bd := dbconf.NewConfig().Backend
 		if bd == "bolt" {
-			if err := os.Chown(ts, uid, gid); err != nil {
-				fmt.Println("Failed to change owner of file:", ts)
+			if err := util.Chown(ts, rmduser); err != nil {
+				fmt.Println(err)
 				os.Exit(1)
 			}
 		}
@@ -120,7 +123,6 @@ func main() {
 		os.Exit(1)
 	}()
 
-	log.Init()
 	//in.Writer
 	in.Writer = os.NewFile(3, "")
 	//in.Reader

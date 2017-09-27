@@ -5,6 +5,10 @@ package template
 var Options = map[string]interface{}{
 	"address":         "localhost",
 	"tcpport":         8081,
+	"logfile":         "/var/log/rdagent.log",
+	"dbbackend":       "bolt",
+	"dbtransport":     "/var/run/rdtagent.db",
+	"logtostdout":     true,
 	"os_cacheways":    1,
 	"infra_cacheways": 19,
 	"max_shared":      10,
@@ -28,14 +32,14 @@ policypath = "/etc/rdtagent/policy.toml"
 # unixsock = "./var/run/rmd.sock"
 
 [log]
-path = "/var/log/rdagent.log"
+path = "{{.logfile}} "
 env = "dev"  # production or dev
 level = "debug"
-stdout = true
+stdout = {{.logtostdout}}
 
 [database]
-backend = "bolt" # mgo
-transport = "/var/run/rdtagent.db" # mongodb://localhost
+backend = "{{.dbbackend}}" # mgo
+transport = "{{.dbtransport}}" # mongodb://localhost
 dbname = "bolt" # RDTPolicy
 
 [OSGroup] # OSGroup is mandatory

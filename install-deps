@@ -8,3 +8,21 @@ fi
 go fmt
 godep go install openstackcore-rdtagent && \
 sudo cp -r etc/rdtagent /etc
+
+USER="rmd"
+sudo useradd $USER || echo "User rmd already exists."
+
+LOGFILE="/var/log/rmd/rmd.log"
+if [ ! -d ${LOGFILE%/*} ]; then
+    sudo mkdir -p ${LOGFILE%/*}
+    sudo chown $USER:$USER ${LOGFILE%/*}
+fi
+
+DBFILE="/var/run/rmd/rmd.db"
+if [ ! -d ${DBFILE%/*} ]; then
+    sudo mkdir -p ${DBFILE%/*}
+    sudo chown $USER:$USER  ${DBFILE%/*}
+fi
+
+DATA="\"logfile\":\"$LOGFILE\", \"dbtransport\":\"$DBFILE\", \"logtostdout\":false"
+sudo go run ./cmd/gen_conf.go -path /etc/rdtagent/rdtagent.toml -data "{$DATA}"

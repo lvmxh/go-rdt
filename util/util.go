@@ -68,6 +68,20 @@ func GetUserGUID(name string) (int, int, error) {
 	return uid, gid, nil
 }
 
+func Chown(file, user string) error {
+	if _, err := os.Stat(file); err == nil {
+		uid, gid, err := GetUserGUID(user)
+		if err != nil {
+			return err
+		}
+		if err := os.Chown(file, uid, gid); err != nil {
+			fmt.Println("Failed to change owner of file:", file)
+			return err
+		}
+	}
+	return nil
+}
+
 //DropRunAs will drop root previlidge and run as a normal user
 func DropRunAs(name string, debug bool, files ...*os.File) (*os.Process, error) {
 
