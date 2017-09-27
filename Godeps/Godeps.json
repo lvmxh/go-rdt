@@ -67,10 +67,6 @@
 			"Rev": "a476722483882dd40b8111f0eb64e1d7f43f56e4"
 		},
 		{
-			"ImportPath": "github.com/denderello/task",
-			"Rev": "ff09f14210d6ccfd446bf448f571d0f9cb42b2a8"
-		},
-		{
 			"ImportPath": "github.com/dgrijalva/jwt-go",
 			"Comment": "v3.0.0-20-ga539ee1",
 			"Rev": "a539ee1a749a2b895533f979515ac7e6e0f5b650"
