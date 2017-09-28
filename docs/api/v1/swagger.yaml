@@ -33,9 +33,9 @@ paths:
                 $ref: '#/definitions/CachesSummary'
   /cache/{cache_level}:
     get:
-      summary: Host CPU topology
+      summary: Host cache topology for specific level
       description: |
-        Get the cache infor for specified cache level
+        Get the cache infor for specified cache level, also the endpoint suppport provide llc
       tags:
         - cache
       parameters:
@@ -44,7 +44,7 @@ paths:
         description: cache level
         required: true
         type: string
-        enum: ['l3', 'l2']
+        enum: ['l3', 'l2', 'llc']
       responses:
         200:
           description: An array cache infor
@@ -54,7 +54,7 @@ paths:
               $ref: '#/definitions/CacheInfos'
   /workloads:
     get:
-      summary: Get all work loads running on the host
+      summary: Get all RMD managed work loads running on the host
       description: |
         Get all work loads running on the host
       tags:
@@ -67,9 +67,9 @@ paths:
             items:
               $ref: '#/definitions/Workload'
     post:
-      summary: Create a workload
+      summary: Create a workload with enforcement
       description: |
-        Create a workload
+        Create a workload by providing task list or cpu list
       tags:
         - workload
       parameters:
@@ -97,7 +97,7 @@ paths:
       parameters:
       - name: workload_id
         in: path
-        description: workload id 
+        description: workload id
         required: true
         type: string
       tags:
@@ -114,7 +114,7 @@ paths:
       parameters:
       - name: workload_id
         in: path
-        description: workload id 
+        description: workload id
         required: true
         type: string
       tags:
@@ -131,7 +131,7 @@ paths:
       parameters:
       - name: workload_id
         in: path
-        description: workload id 
+        description: workload id
         required: true
         type: string
       - name: body
@@ -172,6 +172,20 @@ paths:
           description: Score of hospitality
           schema:
             $ref: '#/definitions/Score'
+  /policy:
+    get:
+      summary: List pre-defined cache policy
+      description: |
+        List pre-defined cache polies
+      tags:
+        - policy
+      responses:
+        200:
+          description: list of pre-defined policies
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Policy'
 definitions:
   CacheSummary:
     type: object
@@ -239,10 +253,10 @@ definitions:
       policy:
         description: Workload priority tier
         type: string
-      Status:
+      status:
         description: Workload priority tier
         type: string
-      CosName:
+      cos_name:
         description: Workload priority tier
         type: string
   CacheScore:
@@ -255,3 +269,25 @@ definitions:
     properties:
       score:
         $ref: '#/definitions/CacheScore'
+  Tier:
+    type: object
+    properties:
+      MaxCache:
+        type: string
+      MinCache:
+        type: string
+  Policy:
+    type: object
+    properties:
+      gold:
+        type: array
+        items:
+          $ref: '#/definitions/Tier'
+      silver-bf:
+        type: array
+        items:
+          $ref: '#/definitions/Tier'
+      bronze-shared:
+        type: array
+        items:
+          $ref: '#/definitions/Tier'
