@@ -204,12 +204,12 @@ func (c *CacheInfos) GetByLevel(level uint32) *AppError {
 			new_cacheinfo.ShareCpuList = sc.SharedCpuList
 			new_cacheinfo.CacheLevel = level
 
-			new_cacheinfo.AvaliableWays = av[sc.Id].ToBinString()
+			new_cacheinfo.AvaliableWays = av[sc.Id].ToString()
 
 			cpuPools, _ := rdtpool.GetCPUPools()
 			defaultCpus, _ := base.CpuBitmaps(resctrl.GetResAssociation()["."].CPUs)
-			new_cacheinfo.AvaliableCPUs = cpuPools["all"][sc.Id].And(defaultCpus).ToBinString()
-			new_cacheinfo.AvaliableIsoCPUs = cpuPools["isolated"][sc.Id].And(defaultCpus).ToBinString()
+			new_cacheinfo.AvaliableCPUs = cpuPools["all"][sc.Id].And(defaultCpus).ToHumanString()
+			new_cacheinfo.AvaliableIsoCPUs = cpuPools["isolated"][sc.Id].And(defaultCpus).ToHumanString()
 
 			p, err := policy.GetDefaultPlatformPolicy()
 			if err != nil {

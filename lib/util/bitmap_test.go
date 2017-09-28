@@ -458,3 +458,30 @@ func TestBitmapMaximum(t *testing.T) {
 	}
 
 }
+
+func TestBitMapToHumanString(t *testing.T) {
+	bm, _ := NewBitmap("f00000,00000010,f011000c")
+	if bm.ToHumanString() != "2-3,16,20,28-31,36,84-87" {
+		t.Errorf("Humman string for f00000,00000010,f011000c should be 2-3,16,20,28-31,36,84-87")
+	}
+
+	bm, _ = NewBitmap("8fffff,00000000,fffffff3")
+	if bm.ToHumanString() != "0-1,4-31,64-83,87" {
+		t.Errorf("Humman string for 8fffff,00000000,fffffff3 should be 0-1,4-31,64-83,87")
+	}
+
+	bm, _ = NewBitmap("ffffff,ffffffff,ffffffff")
+	if bm.ToHumanString() != "0-87" {
+		t.Errorf("Humman string for ffffff,ffffffff,fffffff should be 0-87")
+	}
+
+	bm, _ = NewBitmap("1f")
+	if bm.ToHumanString() != "0-4" {
+		t.Errorf("Humman string for 1f should be 0-4")
+	}
+
+	bm, _ = NewBitmap("")
+	if bm.ToHumanString() != "" {
+		t.Errorf("Humman string for `` should be ``")
+	}
+}
