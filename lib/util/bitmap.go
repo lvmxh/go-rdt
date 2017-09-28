@@ -259,102 +259,24 @@ func (b *Bitmap) ToBinStrings() []string {
 
 // ToHumanString return human string of the bitmap, e.g. 1-2,10-11
 func (b *Bitmap) ToHumanString() string {
-
-	// Find next set bit in a integer
-	// e.g: nextSetBit(0xC, 0) = 2
-	// e.g: nextSetBit(0xC, 1) = 2
-	// e.g: nextSetBit(0xC, 2) = 3
-	// e.g: nextSetBit(0xC, 3) = -1
-	var nextSetBit = func(val, pos int) int {
-		tmp := (val >> uint(pos+1))
-		nextBit := 0
-
-		for tmp != 0 && tmp&0x1 != 1 {
-			tmp = tmp >> 1
-			nextBit += 1
-		}
-		if tmp == 0 {
-			return -1
-		}
-		return pos + nextBit + 1
-	}
-	var start, cur, prev int
-	var humanStr string
-	offset := 0
-
-	type Pair struct {
-		start int
-		end   int
-	}
-	var pairArray []Pair
-
-	// Loop for each Bits (int32), each stand for 32 bit binary and collect
-	// bit pair into pairArray
-	for _, v := range b.Bits {
-		cur = nextSetBit(v, -1)
-		prev = cur
-		start = cur
-
-		for prev >= 0 {
-			cur = nextSetBit(v, prev)
-
-			if cur == (prev + 1) {
-				prev = cur
-				continue
+	ts := b.ToBinStrings()
+	hs := []string{}
+	pos := 0
+	for _, v := range ts {
+		if v[0] == '1' {
+			if len(v) == 1 {
+				hs = append(hs, strconv.Itoa(pos))
+			} else {
+				hs = append(hs,
+					strconv.Itoa(pos)+"-"+strconv.Itoa(pos+len(v)-1))
 			}
-
-			pairArray = append(pairArray, Pair{start + offset, prev + offset})
-
-			prev = cur
-			start = cur
 		}
-		// FIXME(Shaohe) Hard code 32.
-		offset += 32
+		pos += len(v)
 	}
-
-	// merge pairArray
-	lenOfArray := len(pairArray)
-	if lenOfArray < 1 {
-		return ""
+	if len(hs) == 0 {
+		hs = append(hs, "")
 	}
-
-	var assembleStr = func(str string, begin, last int) string {
-		if begin == last {
-			return fmt.Sprintf("%s%d", str, begin)
-		} else {
-			return fmt.Sprintf("%s%d-%d", str, begin, last)
-		}
-	}
-
-	first := true
-	begin := pairArray[0].start
-	last := pairArray[0].end
-	// start from the second pair
-	i := 1
-	for i < lenOfArray {
-		p := pairArray[i]
-		i++
-		if last == p.start-1 {
-			last = p.end
-			continue
-		}
-
-		if !first {
-			humanStr = fmt.Sprintf("%s,", humanStr)
-		} else {
-			first = false
-		}
-		humanStr = assembleStr(humanStr, begin, last)
-		begin = p.start
-		last = p.end
-	}
-
-	// what's if there's only one pair, do the last collection
-	if !first {
-		humanStr = fmt.Sprintf("%s,", humanStr)
-	}
-	humanStr = assembleStr(humanStr, begin, last)
-	return humanStr
+	return strings.Join(hs, ",")
 }
 
 // Get MaxConnectiveBits
