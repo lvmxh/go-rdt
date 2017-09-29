@@ -34,6 +34,8 @@ cpuset = "2-3,24-25"
 tasks = ["ovs*"] # Just support Wildcards. Do we need to support RE?
 
 [CachePool]
+shrink = false # wether allow to shrink cache ways in best effort pool
+max_allowed_shared = 10 # max allowed workload in shared pool, default is 10
 guarantee = 10
 besteffort = 7
 shared = 2
@@ -45,6 +47,9 @@ shared = 2
 
 Besides, define cache pool, cache allocation will happened in the pools.
 
+- shrink: whether shrink cache ways which already allocated to workload in
+          besteffort pool.
+- max_allowed_shared: max allowed workloads in shared cache pool
 - guarantee: allocate cache for workload max_cache == min_cache > 0
 - besteffort: allocate cache for workload max_cache > min_cache > 0
 - shared: allocate cache for workload max_cache == min_cache = 0
@@ -69,8 +74,8 @@ shared:     1100 0000 0000 0000 0000
 A workload could be a running task(s) or some cpus which want to allocate
 cache for them.
 
-The task(s)/cpus should be valided, RDTAgent will fail your request they
-are invalid.
+The task(s)/cpus should be valided, RMD will fail your request they are
+invalid.
 
 Besides you need to specify what policy of the workload will be usage.
 
@@ -86,26 +91,41 @@ The post body could contains:
 }
 ```
 
+You can not neither specify policy and max_cache/min_cache at same time, that
+is ambiguous to RMD.
+
 An example:
 
 1) Create a workload with gold policy.
 
 ```
-curl -H "Content-Type: application/json" --request POST --data '{"task_ids":["78377"], "policy": "gold"}' http://127.0.0.1:8888/v1/workloads
+curl -H "Content-Type: application/json" --request POST --data \
+         '{"task_ids":["78377"], "policy": "gold"}' \
+         http://127.0.0.1:8888/v1/workloads
 ```
 
 2) Create workload with max_cache, min_cache.
 
 ```
-curl -H "Content-Type: application/json" --request POST --data '{"task_ids":["14988"], "max_cache": 4, "min_cache": 4}' http://127.0.0.1:8888/v1/workloads
+curl -H "Content-Type: application/json" --request POST --data \
+         '{"task_ids":["14988"], "max_cache": 4, "min_cache": 4}' \
+         http://127.0.0.1:8888/v1/workloads
 ```
 
+Admin can change and add new policies by editing an toml/yaml file which is
+pointed in the configuration file.
+
+```
+policypath = "etc/rdtagent/policy.toml"
+```
 
 ## Hospitality score API usage:
 
-Hospitality score API will give a score for scheduling workload on a host for cache allocation request.
+Hospitality score API will give a score for scheduling workload on a host for
+cache allocation request.
 
-Admin can ether give the max_cache/min_cache or a policy to query if the hospitality score.
+Admin can ether give the max_cache/min_cache or a policy to query if the
+hospitality score.
 
 The score will be calculate as following:
 
@@ -119,7 +139,9 @@ The score will be calculate as following:
 To get hospitality score:
 
 ```
-curl -H "Content-Type: application/json" --request POST --data '{"max_cache": 2, "min_cache": 2}' http://127.0.0.1:8888/v1/hospitality
+curl -H "Content-Type: application/json" --request POST --data \
+         '{"max_cache": 2, "min_cache": 2}' \
+         http://127.0.0.1:8888/v1/hospitality
 {
     "score": {
         "l3": {
@@ -143,11 +165,18 @@ sudo curl --unix-socket /your/socket/path http:/your/resource/url
 
 Access RMD by TLS if it is enabled.
 
-Need to config tlsport, certpath, clientcapath, clientauth options in configure file.
+Need to config tlsport, certpath, clientcapath, clientauth options in
+configure file.
 
-Using TLS and managing a CA is an advanced topic. It is not the scope of RMD. RMD just pre-define server certs for testing, Please do not use them in product env. User can generate certs by themself.
+Using TLS and managing a CA is an advanced topic. It is not the scope of RMD.
+RMD just pre-define server certs for testing.
+
+Please do not use them in product environment.
+User can generate certs by themselves.
 
 If you want to get cache info, your can run this command:
 ```
-curl https://hostname:port/v1/cache --cert etc/rdtagent/cert/client/cert.pem  --key etc/rdtagent/cert/client/key.pem --cacert  etc/rdtagent/cert/client/ca.pem
+curl https://hostname:port/v1/cache --cert etc/rdtagent/cert/client/cert.pem \
+         --key etc/rdtagent/cert/client/key.pem \
+         --cacert  etc/rdtagent/cert/client/ca.pem
 ```
