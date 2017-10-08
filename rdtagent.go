@@ -106,7 +106,7 @@ func main() {
 		sig := <-sigc
 		//NOTE, should we add some cleanup?
 		cleanupFunc()
-		fmt.Printf("Received b %s, shutdown RMD for root process exit.", sig.String())
+		fmt.Printf("Received %s, shutdown RMD for root process exit.", sig.String())
 		// Do not Exit(0), for there are some thing wrong with supper RMD.
 		os.Exit(1)
 	}()
