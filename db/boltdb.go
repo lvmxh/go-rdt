@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/boltdb/bolt"
+	bolt "github.com/coreos/bbolt"
 
 	. "openstackcore-rdtagent/db/config"
 	"openstackcore-rdtagent/model/types/workload"

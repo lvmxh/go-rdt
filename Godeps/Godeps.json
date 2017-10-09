@@ -62,6 +62,11 @@
 			"Rev": "ba95ed24e07a42088b2265a847142a4785ea5a19"
 		},
 		{
+			"ImportPath": "github.com/coreos/bbolt",
+			"Comment": "v1.3.1-coreos.2-2-g3eac9d3",
+			"Rev": "3eac9d3bd834d07cf6b83b780a750cd10c16597a"
+		},
+		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
 			"Comment": "v1.1.0-7-ga476722",
 			"Rev": "a476722483882dd40b8111f0eb64e1d7f43f56e4"
@@ -116,6 +121,16 @@
 			"Rev": "01f18a9beadcc489be4f89c92e82c02e251268cc"
 		},
 		{
+			"ImportPath": "github.com/geekypanda/httpcache/fhttp",
+			"Comment": "v0.0.1-18-g01f18a9",
+			"Rev": "01f18a9beadcc489be4f89c92e82c02e251268cc"
+		},
+		{
+			"ImportPath": "github.com/geekypanda/httpcache/fhttp/rule",
+			"Comment": "v0.0.1-18-g01f18a9",
+			"Rev": "01f18a9beadcc489be4f89c92e82c02e251268cc"
+		},
+		{
 			"ImportPath": "github.com/geekypanda/httpcache/nethttp",
 			"Comment": "v0.0.1-18-g01f18a9",
 			"Rev": "01f18a9beadcc489be4f89c92e82c02e251268cc"
@@ -127,6 +142,11 @@
 		},
 		{
 			"ImportPath": "github.com/geekypanda/httpcache/ruleset",
+			"Comment": "v0.0.1-18-g01f18a9",
+			"Rev": "01f18a9beadcc489be4f89c92e82c02e251268cc"
+		},
+		{
+			"ImportPath": "github.com/geekypanda/httpcache/server",
 			"Comment": "v0.0.1-18-g01f18a9",
 			"Rev": "01f18a9beadcc489be4f89c92e82c02e251268cc"
 		},
