@@ -35,6 +35,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	cleanupFunc := func() {
+		pidfile.ClosePID()
+		in.Reader.Close()
+		out.Writer.Close()
+		out.Reader.Close()
+		in.Writer.Close()
+	}
+
 	if os.Getuid() == 0 {
 		if !util.IsUserExist(rmduser) {
 			if err := util.CreateUser(rmduser); err != nil {
@@ -50,11 +58,6 @@ func main() {
 
 		in.Reader, out.Writer, _ = os.Pipe()
 		out.Reader, in.Writer, _ = os.Pipe()
-
-		sigc := make(chan os.Signal, 1)
-		// We are not allowed to catch SIGKILL
-		// https://github.com/golang/go/issues/9463
-		signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
 
 		// FIXME: This is a quickly fix. Will improve later.
 		file := logconf.NewConfig().Path
@@ -77,28 +80,12 @@ func main() {
 			os.Exit(1)
 		}
 
-		cleanup := func() {
-			pidfile.ClosePID()
-			in.Reader.Close()
-			out.Writer.Close()
-			out.Reader.Close()
-			in.Writer.Close()
-		}
-
-		go func(p *os.Process) {
-			sig := <-sigc
-			fmt.Printf("Received %s, shutdown RMD\n", sig.String())
-			p.Kill()
-			cleanup()
-			os.Exit(0)
-		}(child)
-
 		// wait for child status
 		go func(p *os.Process) {
 			processState, _ := p.Wait()
 			if !processState.Success() {
 				fmt.Println("Failed to start rmd API server, check log for details")
-				cleanup()
+				cleanupFunc()
 				os.Exit(1)
 			}
 		}(child)
@@ -108,8 +95,8 @@ func main() {
 	}
 
 	// Below are executed in child process
-	flag := syscall.SIGHUP
-	if _, _, err := syscall.RawSyscall(syscall.SYS_PRCTL, syscall.PR_SET_PDEATHSIG, uintptr(flag), 0); err != 0 {
+	flg := syscall.SIGHUP
+	if _, _, err := syscall.RawSyscall(syscall.SYS_PRCTL, syscall.PR_SET_PDEATHSIG, uintptr(flg), 0); err != 0 {
 		fmt.Println(err)
 		os.Exit(1)
 	}
@@ -118,6 +105,7 @@ func main() {
 	go func() {
 		sig := <-sigc
 		//NOTE, should we add some cleanup?
+		cleanupFunc()
 		fmt.Printf("Received b %s, shutdown RMD for root process exit.", sig.String())
 		// Do not Exit(0), for there are some thing wrong with supper RMD.
 		os.Exit(1)
