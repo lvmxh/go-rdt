@@ -233,7 +233,9 @@ func genTLSConfig() (*tls.Config, error) {
 		RootCAs:      roots,
 		ClientAuth:   clientauth,
 		Certificates: []tls.Certificate{tlsCert},
-		ClientCAs:    clientPool}, nil
+		ClientCAs:    clientPool,
+		MinVersion:   tls.VersionTLS11,
+	}, nil
 }
 
 // RunServer uses the provided options to run the apiserver.
