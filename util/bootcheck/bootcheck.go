@@ -7,7 +7,7 @@ import (
 
 	"openstackcore-rdtagent/db"
 	"openstackcore-rdtagent/lib/cpu"
-	proxy "openstackcore-rdtagent/lib/proxy"
+	"openstackcore-rdtagent/lib/proxyclient"
 	"openstackcore-rdtagent/util/acl"
 	"openstackcore-rdtagent/util/rdtpool"
 )
@@ -28,8 +28,9 @@ func SanityCheck() {
 		msg := "Unable to get Total CPU numbers on Host."
 		log.Fatal(msg)
 	}
-	if !proxy.IsIntelRdtMounted() {
-		if err := proxy.EnableCat(); err != nil {
+
+	if !proxyclient.IsIntelRdtMounted() {
+		if err := proxyclient.EnableCat(); err != nil {
 			msg := "can not enable cat"
 			log.Fatal(msg)
 		}
@@ -66,7 +67,7 @@ func DBCheck() error {
 		return err
 	}
 
-	resaall := proxy.GetResAssociation()
+	resaall := proxyclient.GetResAssociation()
 
 	wl, err := d.GetAllWorkload()
 	if err != nil {

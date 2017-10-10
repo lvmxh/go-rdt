@@ -23,8 +23,8 @@ import (
 	"openstackcore-rdtagent/api/v1"
 	"openstackcore-rdtagent/db"
 	"openstackcore-rdtagent/util/acl"
-	"openstackcore-rdtagent/util/options"
 	"openstackcore-rdtagent/util/auth"
+	"openstackcore-rdtagent/util/options"
 )
 
 type GenericConfig struct {
@@ -34,6 +34,7 @@ type GenericConfig struct {
 	DBBackend            string
 	Transport            string
 	DBName               string
+	TLSPort              uint
 }
 
 // RDAgent config
@@ -67,6 +68,7 @@ func BuildServerConfig(s *options.ServerRunOptions) *Config {
 		DBBackend:            appconfig.Db.Backend,
 		Transport:            appconfig.Db.Transport,
 		DBName:               appconfig.Db.DBName,
+		TLSPort:              appconfig.Def.TLSPort,
 	}
 
 	swaggerconfig := swagger.Config{
@@ -131,7 +133,11 @@ func Initialize(c *Config) (*restful.Container, error) {
 
 	wsContainer := restful.NewContainer()
 	wsContainer.Filter(TlsACL)
-	wsContainer.Filter(auth.PamAuthenticate)
+	// Enable PAM authentication only for http requests
+	// FIXME: Require better design to switch
+	if c.Generic.TLSPort == 0 {
+		wsContainer.Filter(auth.PAMAuthenticate)
+	}
 	wsContainer.Router(restful.CurlyRouter{})
 
 	cap := v1.CapabilitiesResource{}

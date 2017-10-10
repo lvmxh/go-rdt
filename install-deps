@@ -24,5 +24,11 @@ if [ ! -d ${DBFILE%/*} ]; then
     sudo chown $USER:$USER  ${DBFILE%/*}
 fi
 
+PAMSRCFILE="/etc/rdtagent/pam/rmd"
+PAMDIR="/etc/pam.d"
+if [ -d $PAMDIR ]; then
+    cp $PAMSRCFILE $PAMDIR
+fi
+
 DATA="\"logfile\":\"$LOGFILE\", \"dbtransport\":\"$DBFILE\", \"logtostdout\":false"
-sudo go run ./cmd/gen_conf.go -path /etc/rdtagent/rdtagent.toml -data "{$DATA}"
+go run ./cmd/gen_conf.go -path /etc/rdtagent/rdtagent.toml -data "{$DATA}"

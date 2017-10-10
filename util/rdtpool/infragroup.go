@@ -2,17 +2,16 @@ package rdtpool
 
 import (
 	"fmt"
+	"github.com/gobwas/glob"
+	log "github.com/sirupsen/logrus"
+	"openstackcore-rdtagent/lib/cache"
+	"openstackcore-rdtagent/lib/proc"
+	"openstackcore-rdtagent/lib/resctrl"
 	"strconv"
 	"strings"
 	"sync"
 
-	"github.com/gobwas/glob"
-	log "github.com/sirupsen/logrus"
-
-	"openstackcore-rdtagent/lib/cache"
-	"openstackcore-rdtagent/lib/proc"
-	proxy "openstackcore-rdtagent/lib/proxy"
-	"openstackcore-rdtagent/lib/resctrl"
+	"openstackcore-rdtagent/lib/proxyclient"
 	util "openstackcore-rdtagent/lib/util"
 	. "openstackcore-rdtagent/util/rdtpool/base"
 	. "openstackcore-rdtagent/util/rdtpool/config"
@@ -111,7 +110,7 @@ func SetInfraGroup() error {
 	cacheLevel := "L" + target_lev
 	ways := GetCosInfo().CbmMaskLen
 
-	allres := proxy.GetResAssociation()
+	allres := proxyclient.GetResAssociation()
 	infraGroup, ok := allres[groupName]
 	if !ok {
 		infraGroup = resctrl.NewResAssociation()
@@ -147,7 +146,7 @@ func SetInfraGroup() error {
 
 	infraGroup.Tasks = append(infraGroup.Tasks, tasks...)
 
-	if err := proxy.Commit(infraGroup, groupName); err != nil {
+	if err := proxyclient.Commit(infraGroup, groupName); err != nil {
 		return err
 	}
 

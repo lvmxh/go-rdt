@@ -5,20 +5,19 @@ package hospitality
 
 import (
 	"fmt"
-	"net/http"
-	"sort"
-	"strconv"
-
 	log "github.com/sirupsen/logrus"
+	"net/http"
 	. "openstackcore-rdtagent/api/error"
 	"openstackcore-rdtagent/db"
 	"openstackcore-rdtagent/lib/cache"
 	libcache "openstackcore-rdtagent/lib/cache"
 	_ "openstackcore-rdtagent/lib/proc"
-	proxy "openstackcore-rdtagent/lib/proxy"
+	"openstackcore-rdtagent/lib/proxyclient"
 	libutil "openstackcore-rdtagent/lib/util"
 	"openstackcore-rdtagent/model/policy"
 	"openstackcore-rdtagent/util/rdtpool"
+	"sort"
+	"strconv"
 )
 
 /*
@@ -64,7 +63,7 @@ func (h *Hospitality) getScoreByLevel(level uint32) error {
 			// multiple cpus chares on same cache.
 			continue
 		} else {
-			resaall := proxy.GetResAssociation()
+			resaall := proxyclient.GetResAssociation()
 			ui32, _ := strconv.Atoi(sc.WaysOfAssociativity)
 			numWays := uint32(ui32)
 
@@ -84,7 +83,7 @@ func (h *Hospitality) getScoreByLevel(level uint32) error {
 				}
 			}
 
-			inf := proxy.GetRdtCosInfo()
+			inf := proxyclient.GetRdtCosInfo()
 			freeM := inf["l"+target_lev].CbmMask
 			freeb, _ := libutil.NewBitmap(int(numWays), freeM)
 			for _, v := range sb {
@@ -202,7 +201,7 @@ func (h *HospitalityRaw) GetByRequestMaxMin(max, min uint32, cache_id *uint32, t
 			"Bad request, max_cache=%d, min_cache=%d", max, min)
 	}
 
-	resaall := proxy.GetResAssociation()
+	resaall := proxyclient.GetResAssociation()
 
 	av, _ := rdtpool.GetAvailableCacheSchemata(resaall, []string{"infra", "."}, reqType, "L"+target_lev)
 

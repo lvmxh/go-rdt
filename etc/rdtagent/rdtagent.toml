@@ -45,3 +45,6 @@ shared = 2
 path = "etc/rdtagent/acl/"  #
 # use CSV format
 filter = "url" # at present just support "url", will support "url,ip,proto"
+
+[pam]
+service = "rmd"
