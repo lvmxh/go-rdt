@@ -133,9 +133,9 @@ func Initialize(c *Config) (*restful.Container, error) {
 
 	wsContainer := restful.NewContainer()
 	wsContainer.Filter(TlsACL)
-	// Enable PAM authentication only for http requests
+	// Enable PAM authentication only for https requests
 	// FIXME: Require better design to switch
-	if c.Generic.TLSPort == 0 {
+	if c.Generic.TLSPort != 0 {
 		wsContainer.Filter(auth.PAMAuthenticate)
 	}
 	wsContainer.Router(restful.CurlyRouter{})
