@@ -5,28 +5,30 @@ import (
 
 	// from app import an config is really not a good idea.
 	// uncouple it from APP. Or we can add it in a rmd/config
-	. "openstackcore-rdtagent/db/config"
+	"openstackcore-rdtagent/db/config"
 	libutil "openstackcore-rdtagent/lib/util"
 	"openstackcore-rdtagent/model/types/workload"
 	"openstackcore-rdtagent/util"
 )
 
-// workload table name
+// WorkloadTableName is the table name for workload
 const WorkloadTableName = "workload"
 
+// DB is the interface for a db engine
 type DB interface {
 	Initialize(transport, dbname string) error
 	CreateWorkload(w *workload.RDTWorkLoad) error
 	DeleteWorkload(w *workload.RDTWorkLoad) error
 	UpdateWorkload(w *workload.RDTWorkLoad) error
 	GetAllWorkload() ([]workload.RDTWorkLoad, error)
-	GetWorkloadById(id string) (workload.RDTWorkLoad, error)
+	GetWorkloadByID(id string) (workload.RDTWorkLoad, error)
 	ValidateWorkload(w *workload.RDTWorkLoad) error
 	QueryWorkload(query map[string]interface{}) ([]workload.RDTWorkLoad, error)
 }
 
+// NewDB return DB connection
 func NewDB() (DB, error) {
-	dbcon := NewConfig()
+	dbcon := config.NewConfig()
 	if dbcon.Backend == "bolt" {
 		return newBoltDB()
 	} else if dbcon.Backend == "mgo" {
@@ -80,7 +82,7 @@ func validateWorkload(w workload.RDTWorkLoad, ws []workload.RDTWorkLoad) error {
 	bminter := bm.And(bmsum)
 
 	if !bminter.IsEmpty() {
-		return fmt.Errorf("CPU list %s has been assigned.", bminter.ToString())
+		return fmt.Errorf("CPU list %s has been assigned", bminter.ToString())
 	}
 
 	return nil

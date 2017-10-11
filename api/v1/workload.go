@@ -30,7 +30,7 @@ func (w WorkLoadResource) Register(container *restful.Container) {
 		Doc("Create new work load").
 		Operation("WorkLoadNew"))
 
-	ws.Route(ws.GET("/{id:[0-9]*}").To(w.WorkLoadGetById).
+	ws.Route(ws.GET("/{id:[0-9]*}").To(w.WorkLoadGetByID).
 		Doc("Get workload by id").
 		Param(ws.PathParameter("id", "id").DataType("string")).
 		Operation("WorkLoadGetById"))
@@ -40,10 +40,10 @@ func (w WorkLoadResource) Register(container *restful.Container) {
 		Param(ws.PathParameter("id", "id").DataType("string")).
 		Operation("WorkLoadPatch"))
 
-	ws.Route(ws.DELETE("/{id:[0-9]*}").To(w.WorkLoadDeleteById).
+	ws.Route(ws.DELETE("/{id:[0-9]*}").To(w.WorkLoadDeleteByID).
 		Doc("Delete workload by id").
 		Param(ws.PathParameter("id", "id").DataType("string")).
-		Operation("WorkLoadDeleteById"))
+		Operation("WorkLoadDeleteByID"))
 
 	container.Add(ws)
 }
@@ -59,11 +59,11 @@ func (w WorkLoadResource) WorkLoadGet(request *restful.Request, response *restfu
 }
 
 // GET /v1/workloads/{id}
-func (w WorkLoadResource) WorkLoadGetById(request *restful.Request, response *restful.Response) {
+func (w WorkLoadResource) WorkLoadGetByID(request *restful.Request, response *restful.Response) {
 
 	id := request.PathParameter("id")
 	log.Infof("Try to get workload by %s", id)
-	wl, err := w.Db.GetWorkloadById(id)
+	wl, err := w.Db.GetWorkloadByID(id)
 	if len(wl.ID) == 0 {
 		response.AddHeader("Content-Type", "text/plain")
 		response.WriteErrorString(http.StatusNotFound, "404: Could not found workload")
@@ -122,7 +122,7 @@ func (w *WorkLoadResource) WorkLoadNew(request *restful.Request, response *restf
 // PATCH /v1/workloads/{id}
 func (w WorkLoadResource) WorkLoadPatch(request *restful.Request, response *restful.Response) {
 	id := request.PathParameter("id")
-	wl, err := w.Db.GetWorkloadById(id)
+	wl, err := w.Db.GetWorkloadByID(id)
 	if len(wl.ID) == 0 || err != nil {
 		response.AddHeader("Content-Type", "text/plain")
 		response.WriteErrorString(http.StatusNotFound, "404: Could not found workload")
@@ -148,11 +148,11 @@ func (w WorkLoadResource) WorkLoadPatch(request *restful.Request, response *rest
 }
 
 // DELETE /v1/workloads/{id}
-func (w WorkLoadResource) WorkLoadDeleteById(request *restful.Request, response *restful.Response) {
+func (w WorkLoadResource) WorkLoadDeleteByID(request *restful.Request, response *restful.Response) {
 
 	id := request.PathParameter("id")
 	log.Infof("Try to delete workload by %s", id)
-	wl, err := w.Db.GetWorkloadById(id)
+	wl, err := w.Db.GetWorkloadByID(id)
 
 	if len(wl.ID) == 0 {
 		response.AddHeader("Content-Type", "text/plain")

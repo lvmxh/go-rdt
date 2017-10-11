@@ -81,7 +81,7 @@ func Enforce(w *tw.RDTWorkLoad) *AppError {
 
 	for k, v := range av {
 		cacheId, _ := strconv.Atoi(k)
-		if !inCacheList(uint32(cacheId), er.Cache_IDs) && er.Type != rdtpool.Shared {
+		if !inCacheList(uint32(cacheId), er.CacheIDs) && er.Type != rdtpool.Shared {
 			candidate[k], _ = libutil.NewBitmap(GetCosInfo().CbmMaskLen, GetCosInfo().CbmMask)
 			continue
 		}
@@ -392,13 +392,13 @@ func populateEnforceRequest(req *tw.EnforceRequest, w *tw.RDTWorkLoad) *AppError
 	cacheinfo := &cache.CacheInfos{}
 	cacheinfo.GetByLevel(libcache.GetLLC())
 
-	cpunum := cpu.HostCpuNum()
+	cpunum := cpu.HostCPUNum()
 	if cpunum == 0 {
 		return AppErrorf(http.StatusInternalServerError,
 			"Unable to get Total CPU numbers on Host")
 	}
 
-	req.Cache_IDs = getCacheIDs(cpubitstr, cacheinfo, cpunum)
+	req.CacheIDs = getCacheIDs(cpubitstr, cacheinfo, cpunum)
 
 	populatePolicy := true
 
@@ -450,7 +450,7 @@ func newResAss(r map[string]*libutil.Bitmap, level string) *resctrl.ResAssociati
 
 	for k, v := range r {
 		cacheId, _ := strconv.Atoi(k)
-		newcos := resctrl.CacheCos{Id: uint8(cacheId), Mask: v.ToString()}
+		newcos := resctrl.CacheCos{ID: uint8(cacheId), Mask: v.ToString()}
 		newResAss.Schemata[targetLev] = append(newResAss.Schemata[targetLev], newcos)
 
 		log.Debugf("Newly created Mask for Cache %s is %s", k, newcos.Mask)

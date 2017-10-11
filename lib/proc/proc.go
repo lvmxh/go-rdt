@@ -11,15 +11,18 @@ import (
 )
 
 const (
-	CpuInfoPath   = "/proc/cpuinfo"
+	// CPUInfoPath is the patch to cpuinfo
+	CPUInfoPath = "/proc/cpuinfo"
+	// MountInfoPath is the mount info path
 	MountInfoPath = "/proc/self/mountinfo"
-	ResctrlPath   = "/sys/fs/resctrl"
+	// ResctrlPath is the patch to resctrl
+	ResctrlPath = "/sys/fs/resctrl"
 )
 
 // rdt_a, cat_l3, cdp_l3, cqm, cqm_llc, cqm_occup_llc
 // cqm_mbm_total, cqm_mbm_local
-func parseCpuInfoFile(flag string) (bool, error) {
-	f, err := os.Open(CpuInfoPath)
+func parseCPUInfoFile(flag string) (bool, error) {
+	f, err := os.Open(CPUInfoPath)
 	if err != nil {
 		return false, err
 	}
@@ -43,16 +46,19 @@ func parseCpuInfoFile(flag string) (bool, error) {
 	return false, nil
 }
 
+// IsRdtAvailiable returns RDT feature available or not
 func IsRdtAvailiable() (bool, error) {
-	return parseCpuInfoFile("rdt_a")
+	return parseCPUInfoFile("rdt_a")
 }
 
+// IsCqmAvailiable returns CMT feature available or not
 func IsCqmAvailiable() (bool, error) {
-	return parseCpuInfoFile("cqm")
+	return parseCPUInfoFile("cqm")
 }
 
+// IsCdpAvailiable returns CDP feature available or not
 func IsCdpAvailiable() (bool, error) {
-	return parseCpuInfoFile("cdp_l3")
+	return parseCPUInfoFile("cdp_l3")
 }
 
 // we can use shell command: "mount -l -t resctrl"
@@ -73,9 +79,10 @@ func findMountDir(mountdir string) (string, error) {
 			return text, nil
 		}
 	}
-	return "", fmt.Errorf("Can not found the mount entry: %s!", mountdir)
+	return "", fmt.Errorf("Can not found the mount entry: %s", mountdir)
 }
 
+// IsEnableRdt returns if RDT is enabled or not
 func IsEnableRdt() bool {
 	mount, err := findMountDir(ResctrlPath)
 	if err != nil {
@@ -84,6 +91,7 @@ func IsEnableRdt() bool {
 	return len(mount) > 0
 }
 
+// IsEnableCdp returns if CDP is enabled or not
 func IsEnableCdp() bool {
 	var flag = "cdp"
 	mount, err := findMountDir(ResctrlPath)
@@ -93,6 +101,7 @@ func IsEnableCdp() bool {
 	return strings.Contains(mount, flag)
 }
 
+// IsEnableCat returns if CAT is enabled or not
 func IsEnableCat() bool {
 	var flag = "cdp"
 	mount, err := findMountDir(ResctrlPath)
@@ -102,22 +111,24 @@ func IsEnableCat() bool {
 	return !strings.Contains(mount, flag) && len(mount) > 0
 }
 
+// Process struct with pid and command line
 type Process struct {
 	Pid     int
 	CmdLine string
 }
 
+// ListProcesses returns all process on the host
 var ListProcesses = func() map[string]Process {
 	processes := make(map[string]Process)
 	files, _ := filepath.Glob("/proc/[0-9]*/cmdline")
 	for _, file := range files {
 
-		list_f := strings.Split(file, "/")
-		if pid, err := strconv.Atoi(list_f[2]); err == nil {
+		listfs := strings.Split(file, "/")
+		if pid, err := strconv.Atoi(listfs[2]); err == nil {
 
 			cmd, _ := ioutil.ReadFile(file)
 			cmdString := strings.Join(strings.Split(string(cmd), "\x00"), " ")
-			processes[list_f[2]] = Process{pid, cmdString}
+			processes[listfs[2]] = Process{pid, cmdString}
 		}
 	}
 

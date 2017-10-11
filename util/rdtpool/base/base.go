@@ -52,7 +52,7 @@ func GetCosInfo() CosInfo {
 // a wraper for Bitmap
 func CpuBitmaps(cpuids interface{}) (*Bitmap, error) {
 	// FIXME need a wrap for CPU bitmap.
-	cpunum := cpu.HostCpuNum()
+	cpunum := cpu.HostCPUNum()
 	if cpunum == 0 {
 		// return nil or an empty Bitmap?
 		var bm *Bitmap

@@ -23,7 +23,7 @@ func SanityCheck() {
 		msg := "Error to generate an Enforcer! Reason: " + err.Error()
 		log.Fatal(msg)
 	}
-	cpunum := cpu.HostCpuNum()
+	cpunum := cpu.HostCPUNum()
 	if cpunum == 0 {
 		msg := "Unable to get Total CPU numbers on Host."
 		log.Fatal(msg)

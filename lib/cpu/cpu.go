@@ -12,21 +12,24 @@ import (
 )
 
 const (
-	SysCpu      = "/sys/devices/system/cpu"
-	CpuInfoPath = "/proc/cpuinfo"
+	// SysCPU is the path to cpu devices in linux
+	SysCPU = "/sys/devices/system/cpu"
+	// CPUInfoPath is the path to cpu info in /proc
+	CPUInfoPath = "/proc/cpuinfo"
 )
 
 var cpunOnce sync.Once
 var isolCPUsOnce sync.Once
 
-var cpuNumber int = 0
-var isolatedCPUs string = ""
+var cpuNumber int
+var isolatedCPUs string
 
+// HostCPUNum returns the total cpu number of host
 // REF: https://www.kernel.org/doc/Documentation/cputopology.txt
 // another way is call sysconf via cgo, like libpqos
-func HostCpuNum() int {
+func HostCPUNum() int {
 	cpunOnce.Do(func() {
-		path := filepath.Join(SysCpu, "possible")
+		path := filepath.Join(SysCPU, "possible")
 		data, _ := ioutil.ReadFile(path)
 		strs := strings.TrimSpace(string(data))
 		num, err := strconv.Atoi(strings.SplitN(strs, "-", 2)[1])
@@ -40,13 +43,14 @@ func HostCpuNum() int {
 	return cpuNumber
 }
 
+// GetSignature returns Signature of the processor
 // ignore stepping and processor type.
 // NOTE, Guess all cpus in one hose are same microarch
 func GetSignature() uint32 {
 	// family, model string
 	var family, model int
 
-	f, err := os.Open(CpuInfoPath)
+	f, err := os.Open(CPUInfoPath)
 	if err != nil {
 		return 0
 	}
@@ -80,13 +84,13 @@ func GetSignature() uint32 {
 	return 0
 }
 
-// Get isolated CPUs.
+// IsolatedCPUs returns isolated CPUs.
 // The result will be as follow:
 // 2-21,24-43,46-65,68-87
 // This result can generate a Bitmap
 func IsolatedCPUs() string {
 	isolCPUsOnce.Do(func() {
-		path := filepath.Join(SysCpu, "isolated")
+		path := filepath.Join(SysCPU, "isolated")
 		data, _ := ioutil.ReadFile(path)
 		strs := strings.TrimSpace(string(data))
 		isolatedCPUs = strs

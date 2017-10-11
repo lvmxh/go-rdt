@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// Server options
+// ServerRunOptions are options for a running server
 type ServerRunOptions struct {
 	Port     string
 	Addr     string
@@ -17,7 +17,7 @@ func NewServerRunOptions() *ServerRunOptions {
 	return new(ServerRunOptions)
 }
 
-// Add options from cmdline
+// AddFlags adds options from cmdline
 func (s *ServerRunOptions) AddFlags(fs *pflag.FlagSet) {
 
 	// TODO Cobra and viper are good friends, viper.BindPFlag can benefit from them.

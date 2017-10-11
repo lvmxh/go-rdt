@@ -8,7 +8,7 @@ import (
 
 	bolt "github.com/coreos/bbolt"
 
-	. "openstackcore-rdtagent/db/config"
+	"openstackcore-rdtagent/db/config"
 	"openstackcore-rdtagent/model/types/workload"
 )
 
@@ -16,6 +16,7 @@ var boltSession *bolt.DB
 
 var boltSessionOnce sync.Once
 
+// BoltDB connection
 type BoltDB struct {
 	session *bolt.DB
 }
@@ -25,7 +26,7 @@ type BoltDB struct {
 func getSession() error {
 	var err error
 	boltSessionOnce.Do(func() {
-		conf := NewConfig()
+		conf := config.NewConfig()
 		boltSession, err = bolt.Open(conf.Transport, 0600, nil)
 	})
 	return err
@@ -43,6 +44,7 @@ func newBoltDB() (DB, error) {
 	return &db, nil
 }
 
+// Initialize does initialize
 func (b *BoltDB) Initialize(transport, dbname string) error {
 	b.session.Update(func(tx *bolt.Tx) error {
 		// First touch a Bucket
@@ -56,6 +58,7 @@ func (b *BoltDB) Initialize(transport, dbname string) error {
 	return nil
 }
 
+// ValidateWorkload from data base view
 func (b *BoltDB) ValidateWorkload(w *workload.RDTWorkLoad) error {
 	/* When create a new workload we need to verify that the new PIDs
 	   we the workload specified should not existed */
@@ -69,6 +72,7 @@ func (b *BoltDB) ValidateWorkload(w *workload.RDTWorkLoad) error {
 	return nil
 }
 
+// CreateWorkload creates workload in db
 func (b *BoltDB) CreateWorkload(w *workload.RDTWorkLoad) error {
 	return b.session.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(WorkloadTableName))
@@ -88,6 +92,7 @@ func (b *BoltDB) CreateWorkload(w *workload.RDTWorkLoad) error {
 	})
 }
 
+// DeleteWorkload removes workload from db
 func (b *BoltDB) DeleteWorkload(w *workload.RDTWorkLoad) error {
 	return b.session.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(WorkloadTableName))
@@ -95,6 +100,7 @@ func (b *BoltDB) DeleteWorkload(w *workload.RDTWorkLoad) error {
 	})
 }
 
+// UpdateWorkload updates
 func (b *BoltDB) UpdateWorkload(w *workload.RDTWorkLoad) error {
 
 	return b.session.Update(func(tx *bolt.Tx) error {
@@ -109,6 +115,7 @@ func (b *BoltDB) UpdateWorkload(w *workload.RDTWorkLoad) error {
 	})
 }
 
+// GetAllWorkload returns all workloads in db
 func (b *BoltDB) GetAllWorkload() ([]workload.RDTWorkLoad, error) {
 	ws := []workload.RDTWorkLoad{}
 	err := b.session.View(func(tx *bolt.Tx) error {
@@ -124,7 +131,8 @@ func (b *BoltDB) GetAllWorkload() ([]workload.RDTWorkLoad, error) {
 	return ws, err
 }
 
-func (b *BoltDB) GetWorkloadById(id string) (workload.RDTWorkLoad, error) {
+// GetWorkloadByID by ID
+func (b *BoltDB) GetWorkloadByID(id string) (workload.RDTWorkLoad, error) {
 	w := workload.RDTWorkLoad{}
 	err := b.session.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(WorkloadTableName))
@@ -134,6 +142,7 @@ func (b *BoltDB) GetWorkloadById(id string) (workload.RDTWorkLoad, error) {
 	return w, err
 }
 
+// QueryWorkload with given params
 func (b *BoltDB) QueryWorkload(query map[string]interface{}) ([]workload.RDTWorkLoad, error) {
 	ws, err := b.GetAllWorkload()
 	if err != nil {

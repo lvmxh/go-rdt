@@ -7,7 +7,7 @@ import (
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
-	. "openstackcore-rdtagent/db/config"
+	"openstackcore-rdtagent/db/config"
 	"openstackcore-rdtagent/model/types/workload"
 )
 
@@ -15,9 +15,10 @@ import (
 var mgoSession *mgo.Session
 var mgoSessionOnce sync.Once
 
-// Global variable for Database name
+// Dbname is database name of mgodb
 var Dbname string
 
+// MgoDB is connection of mgodb
 type MgoDB struct {
 	session *mgo.Session
 }
@@ -27,7 +28,7 @@ type MgoDB struct {
 func getMgoSession() error {
 	var err error
 	mgoSessionOnce.Do(func() {
-		conf := NewConfig()
+		conf := config.NewConfig()
 		mgoSession, err = mgo.Dial(conf.Transport)
 	})
 	return err
@@ -46,9 +47,10 @@ func newMgoDB() (DB, error) {
 
 }
 
+// Initialize does initialize
 func (m *MgoDB) Initialize(transport, dbname string) error {
 
-	conf := NewConfig()
+	conf := config.NewConfig()
 	// FIXME, Dbname here seems some urgly
 	Dbname = conf.DBName
 
@@ -70,6 +72,7 @@ func (m *MgoDB) Initialize(transport, dbname string) error {
 	return nil
 }
 
+// ValidateWorkload from data base view
 func (m *MgoDB) ValidateWorkload(w *workload.RDTWorkLoad) error {
 	/* When create a new workload we need to verify that the new PIDs
 	   we the workload specified should not existed */
@@ -77,6 +80,7 @@ func (m *MgoDB) ValidateWorkload(w *workload.RDTWorkLoad) error {
 	return nil
 }
 
+// CreateWorkload creates workload in db
 func (m *MgoDB) CreateWorkload(w *workload.RDTWorkLoad) error {
 	s := m.session.Copy()
 	defer s.Close()
@@ -87,16 +91,19 @@ func (m *MgoDB) CreateWorkload(w *workload.RDTWorkLoad) error {
 	return nil
 }
 
+// DeleteWorkload removes workload from db
 func (m *MgoDB) DeleteWorkload(w *workload.RDTWorkLoad) error {
 	// not implement yet
 	return nil
 }
 
+// UpdateWorkload updates
 func (m *MgoDB) UpdateWorkload(w *workload.RDTWorkLoad) error {
 	// not implement yet
 	return nil
 }
 
+// GetAllWorkload returns all workloads in db
 func (m *MgoDB) GetAllWorkload() ([]workload.RDTWorkLoad, error) {
 	ws := []workload.RDTWorkLoad{}
 	s := m.session.Copy()
@@ -109,7 +116,8 @@ func (m *MgoDB) GetAllWorkload() ([]workload.RDTWorkLoad, error) {
 	return ws, nil
 }
 
-func (m *MgoDB) GetWorkloadById(id string) (workload.RDTWorkLoad, error) {
+// GetWorkloadByID by ID
+func (m *MgoDB) GetWorkloadByID(id string) (workload.RDTWorkLoad, error) {
 	w := workload.RDTWorkLoad{}
 	s := m.session.Copy()
 	defer s.Close()
@@ -122,6 +130,7 @@ func (m *MgoDB) GetWorkloadById(id string) (workload.RDTWorkLoad, error) {
 
 }
 
+// QueryWorkload with given params
 func (m *MgoDB) QueryWorkload(query map[string]interface{}) ([]workload.RDTWorkLoad, error) {
 	// not implement yet
 	return []workload.RDTWorkLoad{}, nil

@@ -7,17 +7,20 @@ import (
 	"openstackcore-rdtagent/lib/proxy/config"
 )
 
+// PAMRequest is request from rpc client
 type PAMRequest struct {
 	User string
 	Pass string
 }
 
-type Credentials struct {
+// Credential represents user provided credential
+type Credential struct {
 	Username string
 	Password string
 }
 
-func (c Credentials) PAMResponseHandler(s pam.Style, msg string) (string, error) {
+// PAMResponseHandler is handler for PAM Authentication of rpc server
+func (c Credential) PAMResponseHandler(s pam.Style, msg string) (string, error) {
 	switch s {
 	case pam.PromptEchoOff:
 		return c.Password, nil
@@ -34,9 +37,10 @@ func (c Credentials) PAMResponseHandler(s pam.Style, msg string) (string, error)
 	return "", errors.New("Unrecognized message style")
 }
 
-func (_ *Proxy) PAMAuthenticate(request PAMRequest, dummy *int) error {
+// PAMAuthenticate does PAM authenticate
+func (*Proxy) PAMAuthenticate(request PAMRequest, dummy *int) error {
 
-	c := Credentials{
+	c := Credential{
 		Username: request.User,
 		Password: request.Pass,
 	}

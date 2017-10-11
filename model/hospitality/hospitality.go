@@ -74,7 +74,7 @@ func (h *Hospitality) getScoreByLevel(level uint32) error {
 				}
 				for _, sv := range v.Schemata {
 					for _, cv := range sv {
-						if cv.Id == uint8(id) {
+						if cv.ID == uint8(id) {
 							// FIXME we assume number of ways == length of cbm mask
 							bm, _ := libutil.NewBitmap(int(numWays), cv.Mask)
 							sb = append(sb, bm)

@@ -93,7 +93,7 @@ func SetOSGroup() error {
 	schemata, _ := GetAvailableCacheSchemata(allres, []string{"infra", "."}, "none", cacheLevel)
 
 	for i, v := range osGroup.Schemata[cacheLevel] {
-		cacheId := strconv.Itoa(int(v.Id))
+		cacheId := strconv.Itoa(int(v.ID))
 		if !reserve.CPUsPerNode[cacheId].IsEmpty() {
 			// OSGroup is the first Group, use the edge cache ways.
 			// FIXME (Shaohe), left or right cache ways, need to be check.

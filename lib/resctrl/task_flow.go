@@ -10,7 +10,8 @@ import (
 	"openstackcore-rdtagent/util/task"
 )
 
-type ResctrlTask struct {
+// Task is task for resctrl
+type Task struct {
 	TaskName string
 	*ResAssociation
 	RessSnapshot map[string]*ResAssociation
@@ -19,36 +20,44 @@ type ResctrlTask struct {
 	Revert       bool // whether need to Revert after task faild
 }
 
-func (t ResctrlTask) Name() string {
+// Name returns name of the task
+func (t Task) Name() string {
 	return t.TaskName
 }
 
-func (t ResctrlTask) Run() error {
+// Run starts the task
+func (t Task) Run() error {
 	return nil
 }
 
-func (t ResctrlTask) Rollback() error {
+// Rollback task
+func (t Task) Rollback() error {
 	return nil
 }
 
-type ResctrlGroupTask struct {
-	ResctrlTask
+// GroupTask is task to create new group
+type GroupTask struct {
+	Task
 }
 
-func (t ResctrlGroupTask) Run() error {
+// Run to create new resource group
+func (t GroupTask) Run() error {
 	return os.MkdirAll(t.Path, 0755)
 }
 
-func (t ResctrlGroupTask) Rollback() error {
+// Rollback remove created resrouce group
+func (t GroupTask) Rollback() error {
 	os.Remove(t.Path)
 	return nil
 }
 
-type ResctrlCPUsTask struct {
-	ResctrlTask
+// CPUsTask is the CPU task
+type CPUsTask struct {
+	Task
 }
 
-func (t ResctrlCPUsTask) Run() error {
+// Run to write CPU mask
+func (t CPUsTask) Run() error {
 	// Only write to cpus if admin specify cpu bit map
 	// only commit a user deinfed cpus
 	if t.CPUs != "" {
@@ -58,7 +67,8 @@ func (t ResctrlCPUsTask) Run() error {
 	return nil
 }
 
-func (t ResctrlCPUsTask) Rollback() error {
+// Rollback dos nothing for now
+func (t CPUsTask) Rollback() error {
 	if !t.Revert {
 		return nil
 	}
@@ -66,11 +76,13 @@ func (t ResctrlCPUsTask) Rollback() error {
 	return nil
 }
 
-type ResctrlTasksTask struct {
-	ResctrlTask
+// TasksTask is the task for add tasks
+type TasksTask struct {
+	Task
 }
 
-func (t ResctrlTasksTask) Run() error {
+// Run add tasks
+func (t TasksTask) Run() error {
 	// only commit a user deinfed group's task to sys fs
 	if t.Group != "." && len(t.Tasks) > 0 {
 		// write one task one time, or write will fail
@@ -84,7 +96,8 @@ func (t ResctrlTasksTask) Run() error {
 	return nil
 }
 
-func (t ResctrlTasksTask) Rollback() error {
+// Rollback tasks
+func (t TasksTask) Rollback() error {
 	if !t.Revert {
 		return nil
 	}
@@ -92,11 +105,13 @@ func (t ResctrlTasksTask) Rollback() error {
 	return nil
 }
 
-type ResctrlSchemataTask struct {
-	ResctrlTask
+// SchemataTask is the task to create schemata
+type SchemataTask struct {
+	Task
 }
 
-func (t ResctrlSchemataTask) Run() error {
+// Run to commit schemata
+func (t SchemataTask) Run() error {
 	if len(t.Schemata) > 0 {
 		schemata := make([]string, 0, 10)
 		for k, v := range t.Schemata {
@@ -104,8 +119,8 @@ func (t ResctrlSchemataTask) Run() error {
 			// resctrl require we have strict cache id order
 			for cacheid := 0; cacheid < len(v); cacheid++ {
 				for _, cos := range v {
-					if uint8(cacheid) == cos.Id {
-						str = append(str, fmt.Sprintf("%d=%s", cos.Id, cos.Mask))
+					if uint8(cacheid) == cos.ID {
+						str = append(str, fmt.Sprintf("%d=%s", cos.ID, cos.Mask))
 						break
 					}
 				}
@@ -119,7 +134,8 @@ func (t ResctrlSchemataTask) Run() error {
 	return nil
 }
 
-func (t ResctrlSchemataTask) Rollback() error {
+// Rollback to revert it
+func (t SchemataTask) Rollback() error {
 	// NOTE, do not need to revert the Schemata to the snapshort
 	return nil
 }
@@ -132,12 +148,12 @@ func taskFlow(group string, r *ResAssociation, rs map[string]*ResAssociation) er
 		path = filepath.Join(SysResctrl, group)
 	}
 
-	ct := ResctrlCPUsTask{ResctrlTask{"update-cpus", r, rs, group, path, true}}
-	tt := ResctrlTasksTask{ResctrlTask{"update-tasks", r, rs, group, path, true}}
-	st := ResctrlSchemataTask{ResctrlTask{"update-schemata", r, rs, group, path, true}}
+	ct := CPUsTask{Task{"update-cpus", r, rs, group, path, true}}
+	tt := TasksTask{Task{"update-tasks", r, rs, group, path, true}}
+	st := SchemataTask{Task{"update-schemata", r, rs, group, path, true}}
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		gt := ResctrlGroupTask{ResctrlTask{"creat-group", r, rs, group, path, true}}
+		gt := GroupTask{Task{"creat-group", r, rs, group, path, true}}
 		ct.Revert = false
 		tt.Revert = false
 		st.Revert = false

@@ -24,7 +24,7 @@ func IsIntelRdtMounted() bool {
 // Commit resctrl.ResAssociation with given name
 func Commit(r *resctrl.ResAssociation, name string) error {
 	// TODO how to get error reason
-	req := proxy.ProxyRequest{name, *r}
+	req := proxy.Request{name, *r}
 	// Add checking before using client and do reconnect
 	return proxy.Client.Call("Proxy.Commit", req, nil)
 }
@@ -42,7 +42,7 @@ func RemoveTasks(tasks []string) error {
 	return proxy.Client.Call("Proxy.RemoveTasks", tasks, nil)
 }
 
-// EnableCat() enable cat feature on host
+// EnableCat enable cat feature on host
 func EnableCat() error {
 	var result bool
 	if err := proxy.Client.Call("Proxy.EnableCat", 0, &result); err != nil {
@@ -50,7 +50,6 @@ func EnableCat() error {
 	}
 	if result {
 		return nil
-	} else {
-		return fmt.Errorf("Can not enable cat")
 	}
+	return fmt.Errorf("Can not enable cat")
 }

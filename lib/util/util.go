@@ -33,7 +33,7 @@ func typeConversion(value string, ntype string) (reflect.Value, error) {
 	return reflect.ValueOf(value), fmt.Errorf("unknow type" + ntype)
 }
 
-// Set obj's 'name' field with proper type
+// SetField sets obj's 'name' field with proper type
 func SetField(obj interface{}, name string, value interface{}) error {
 	structValue := reflect.ValueOf(obj).Elem()
 	structFieldValue := structValue.FieldByName(name)
@@ -53,18 +53,19 @@ func SetField(obj interface{}, name string, value interface{}) error {
 	// Try to remove these logic to TypeConversion
 	case "int":
 		v := value.(string)
-		v_int, err := strconv.Atoi(v)
+		vInt, err := strconv.Atoi(v)
 		if err != nil {
 			// add log
 			return err
 		}
-		val = reflect.ValueOf(v_int)
+		val = reflect.ValueOf(vInt)
 	}
 
 	structFieldValue.Set(val)
 	return nil
 }
 
+// StringInSlice string in slice
 // O(n), maybe key in map is O(1)
 // Not sure a good way for golang to check a string in slice
 func StringInSlice(val string, list []string) bool {
@@ -76,8 +77,7 @@ func StringInSlice(val string, list []string) bool {
 	return false
 }
 
-// O(n/2)
-func StringReverse(s string) string {
+func stringReverse(s string) string {
 	runes := []rune(s)
 	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
 		runes[i], runes[j] = runes[j], runes[i]
@@ -86,7 +86,7 @@ func StringReverse(s string) string {
 }
 
 // Only support string slice at present
-func SliceReverse(s []string) []string {
+func sliceReverse(s []string) []string {
 
 	reversed := []string{}
 
@@ -100,9 +100,9 @@ func SliceReverse(s []string) []string {
 	return reversed
 }
 
-func InitBitMap(num int) []byte {
+func initBitMap(num int) []byte {
 	bitMap := make([]byte, num, num)
-	for i, _ := range bitMap {
+	for i := range bitMap {
 		bitMap[i] = "0"[0]
 	}
 	return bitMap
@@ -121,7 +121,7 @@ func setBitMap(scope string, bitmap []byte) error {
 			return err
 		}
 		if low >= len(bitmap) || high >= len(bitmap) {
-			return fmt.Errorf("set bitmap out index!")
+			return fmt.Errorf("Set bitmap out index")
 		}
 		for i := low; i <= high; i++ {
 			bitmap[i] = "1"[0]
@@ -132,7 +132,7 @@ func setBitMap(scope string, bitmap []byte) error {
 			return err
 		}
 		if i >= len(bitmap) {
-			return fmt.Errorf("set bitmap out index!")
+			return fmt.Errorf("Set bitmap out index")
 		}
 		bitmap[i] = "1"[0]
 	}
@@ -144,8 +144,8 @@ func setBitMap(scope string, bitmap []byte) error {
 // for i, v := range cpus {
 //     setBitMap(v, cpuBitMap)
 // }
-// cpustr := DelimiterByComma(string(cpuBitMap), 24)
-func DelimiterByComma(bitstr string, step ...int) string {
+// cpustr := delimiterByComma(string(cpuBitMap), 24)
+func delimiterByComma(bitstr string, step ...int) string {
 	s := 32
 	if len(step) > 0 {
 		s = step[0]
@@ -162,16 +162,17 @@ func DelimiterByComma(bitstr string, step ...int) string {
 	return string(bitByte)
 }
 
-func Binary2Hex(str string) (string, error) {
-	v, err := strconv.ParseInt(StringReverse(str), 2, 64)
+func binary2Hex(str string) (string, error) {
+	v, err := strconv.ParseInt(stringReverse(str), 2, 64)
 	if err != nil {
 		return "", err
 	}
 	return strconv.FormatUint(uint64(v), 16), err
 }
 
+// GenerateBitMap generate bit map
 func GenerateBitMap(coreids []string, num int) (string, error) {
-	cpuBitMap := InitBitMap(num)
+	cpuBitMap := initBitMap(num)
 	for _, v := range coreids {
 		err := setBitMap(v, cpuBitMap)
 		if err != nil {
@@ -179,16 +180,17 @@ func GenerateBitMap(coreids []string, num int) (string, error) {
 		}
 	}
 
-	cpus := DelimiterByComma(StringReverse(string(cpuBitMap)))
+	cpus := delimiterByComma(stringReverse(string(cpuBitMap)))
 	cpulist := strings.Split(cpus, ",")
 	for i, str := range cpulist {
-		v, _ := Binary2Hex(str)
+		v, _ := binary2Hex(str)
 		cpulist[i] = v
 	}
 
-	return strings.Join(SliceReverse(cpulist), ","), nil
+	return strings.Join(sliceReverse(cpulist), ","), nil
 }
 
+// IsZeroHexString is zero hex string
 // No varification for input s.
 // Such as whitespace in "0x11, 22" and "g" in "0xg1111"
 // Caller do varification.
@@ -199,7 +201,7 @@ func IsZeroHexString(s string) bool {
 	return len(s) == strings.Count(s, "0")
 }
 
-// cbm are all consecutive bits
+// HexMap cbm are all consecutive bits
 var HexMap = map[byte]int{
 	'1': 1,
 	'3': 2,
@@ -208,9 +210,10 @@ var HexMap = map[byte]int{
 	'F': 4,
 }
 
+// CbmLen returns length of CBM
 func CbmLen(cbm string) int {
 	len := 0
-	for i, _ := range cbm {
+	for i := range cbm {
 		len += HexMap[cbm[i]]
 	}
 	return len

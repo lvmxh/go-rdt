@@ -10,7 +10,7 @@ import (
 	"syscall"
 )
 
-// Helper function to find if a elem in a slice
+// HasElem Helper function to find if a elem in a slice
 func HasElem(s interface{}, elem interface{}) bool {
 	arrv := reflect.ValueOf(s)
 	if arrv.Kind() == reflect.Slice {
@@ -23,6 +23,7 @@ func HasElem(s interface{}, elem interface{}) bool {
 	return false
 }
 
+// SubtractStringSlice remove string from slice
 func SubtractStringSlice(slice, s []string) []string {
 	for _, i := range s {
 		for pos, j := range slice {
@@ -35,6 +36,7 @@ func SubtractStringSlice(slice, s []string) []string {
 	return slice
 }
 
+// IsUserExist check if user exist on host
 func IsUserExist(name string) bool {
 	_, err := user.Lookup(name)
 	if err != nil {
@@ -57,6 +59,7 @@ func CreateUser(name string) error {
 	return nil
 }
 
+// GetUserGUID give user's GUID
 func GetUserGUID(name string) (int, int, error) {
 	User, err := user.Lookup(name)
 	if err != nil {
@@ -68,6 +71,7 @@ func GetUserGUID(name string) (int, int, error) {
 	return uid, gid, nil
 }
 
+// Chown changes owner
 func Chown(file, user string) error {
 	if _, err := os.Stat(file); err == nil {
 		uid, gid, err := GetUserGUID(user)

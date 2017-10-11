@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	// SysResctrl is the patch to resctrl
 	SysResctrl = "/sys/fs/resctrl"
 )
 
@@ -24,10 +25,11 @@ var (
 	// The absolute path to the root of the Intel RDT "resource control" filesystem
 	intelRdtRootLock sync.Mutex
 	intelRdtRoot     string
-	// global immutable variable
+	// RdtInfo is global immutable variable
 	RdtInfo *map[string]*RdtCosInfo
 )
 
+// NotFoundError represents not found error
 type NotFoundError struct {
 	ResourceControl string
 }
@@ -36,12 +38,14 @@ func (e *NotFoundError) Error() string {
 	return fmt.Sprintf("mountpoint for %s not found", e.ResourceControl)
 }
 
+// NewNotFoundError returns new error of NotFoundError
 func NewNotFoundError(res string) error {
 	return &NotFoundError{
 		ResourceControl: res,
 	}
 }
 
+// IsNotFound returns if notfound error happend
 func IsNotFound(err error) bool {
 	if err == nil {
 		return false
@@ -63,6 +67,7 @@ func writeFile(dir, file, data string) error {
 	return nil
 }
 
+// DestroyResAssociation removes resource group
 func DestroyResAssociation(group string) error {
 	path := filepath.Join(SysResctrl, group)
 	if err := os.RemoveAll(path); err != nil {
@@ -71,13 +76,13 @@ func DestroyResAssociation(group string) error {
 	return nil
 }
 
+// CacheCos is the COS of a cache
 type CacheCos struct {
-	Id   uint8
+	ID   uint8
 	Mask string
 }
 
-// NOTE (Shaohe) e1589538 clean up. It changes "Cpus" to "CPUs", but this improdocu a bug.
-// In order to avoid this bug, I'd like to add a tag for the feilds.
+// ResAssociation is the resource group in resctrl
 // TODO (Shaohe) need to paser the tag for field setting.
 type ResAssociation struct {
 	Tasks    []string              `"taks"`
@@ -85,6 +90,7 @@ type ResAssociation struct {
 	Schemata map[string][]CacheCos `"schemata"`
 }
 
+// NewResAssociation gives new empty ResAssociation
 func NewResAssociation() *ResAssociation {
 	ra := &ResAssociation{}
 	ra.Tasks = []string{}
@@ -92,10 +98,11 @@ func NewResAssociation() *ResAssociation {
 	return ra
 }
 
-//Usage:
+// parserResAssociation does the parsing.
+// Usage:
 //    ress := make(map[string]*ResAssociation)
-//	  filepath.Walk(SysResctrl, ParserResAssociation(SysResctrl, ignore, ress))
-func ParserResAssociation(basepath string, ignore []string, ps map[string]*ResAssociation) filepath.WalkFunc {
+//	  filepath.Walk(SysResctrl, parserResAssociation(SysResctrl, ignore, ress))
+func parserResAssociation(basepath string, ignore []string, ps map[string]*ResAssociation) filepath.WalkFunc {
 	parser := func(res *ResAssociation, name string, val []byte) error {
 		switch name {
 		case "Cpus":
@@ -177,6 +184,7 @@ func ParserResAssociation(basepath string, ignore []string, ps map[string]*ResAs
 	}
 }
 
+// GetResAssociation returns all resource groups
 // access the resctrl need flock to avoid race with other agent.
 // Go does not support flock lib.
 // That need cgo, please ref:
@@ -185,10 +193,11 @@ func ParserResAssociation(basepath string, ignore []string, ps map[string]*ResAs
 func GetResAssociation() map[string]*ResAssociation {
 	ignore := []string{"info"}
 	ress := make(map[string]*ResAssociation)
-	filepath.Walk(SysResctrl, ParserResAssociation(SysResctrl, ignore, ress))
+	filepath.Walk(SysResctrl, parserResAssociation(SysResctrl, ignore, ress))
 	return ress
 }
 
+// Commit resources in resctrl
 // FIXME(Shaohe) Commit should be a transaction.
 // So we use taskFlow to guarantee the consistency.
 // Also we need a coarse granularity lock for IPC. We already has it.
@@ -198,28 +207,30 @@ func GetResAssociation() map[string]*ResAssociation {
 // It can be gotten by GetResAssociation.
 func Commit(r *ResAssociation, group string) error {
 	if !IsIntelRdtMounted() {
-		return fmt.Errorf("Can't apply this association, for resctrl is not mounted!")
+		return fmt.Errorf("Can't apply this association, for resctrl is not mounted")
 	}
 
 	return taskFlow(group, r, GetResAssociation())
 }
 
+// CommitAll change all resource group
 // FIXME need to catch error
-func CommitAll(m_res map[string]*ResAssociation) error {
+func CommitAll(mRes map[string]*ResAssociation) error {
 	ress := GetResAssociation()
-	for name, res := range m_res {
+	for name, res := range mRes {
 		Commit(res, name)
 	}
 
 	// Golang does not support set difference
 	for name := range ress {
-		if _, ok := m_res[name]; !ok && name != "." {
+		if _, ok := mRes[name]; !ok && name != "." {
 			DestroyResAssociation(name)
 		}
 	}
 	return nil
 }
 
+// RdtCosInfo is from /sys/fs/resctrl/info
 type RdtCosInfo struct {
 	CbmMask    string
 	MinCbmBits int
@@ -235,7 +246,7 @@ Usage:
 	fmt.Println(info["l3data"])  //for RDT, we can get info["l3data"]
 
 */
-func ParserRdtCosInfo(basepath string, ignore []string, mres map[string]*RdtCosInfo) filepath.WalkFunc {
+func parserRdtCosInfo(basepath string, ignore []string, mres map[string]*RdtCosInfo) filepath.WalkFunc {
 
 	return func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -273,6 +284,7 @@ func ParserRdtCosInfo(basepath string, ignore []string, mres map[string]*RdtCosI
 	}
 }
 
+// GetRdtCosInfo gives RDT info
 // access the resctrl need flock to avoid race with other agent.
 // Go does not support flock lib.
 // That need cgo, please ref:
@@ -285,7 +297,7 @@ func GetRdtCosInfo() map[string]*RdtCosInfo {
 	ignore := []string{"info"} // ignore the toppath
 	info := make(map[string]*RdtCosInfo)
 	basepath := SysResctrl + "/info"
-	filepath.Walk(basepath, ParserRdtCosInfo(basepath, ignore, info))
+	filepath.Walk(basepath, parserRdtCosInfo(basepath, ignore, info))
 	RdtInfo = &info
 	return *RdtInfo
 }
@@ -350,6 +362,7 @@ func getIntelRdtRoot() (string, error) {
 	return intelRdtRoot, nil
 }
 
+// IsIntelRdtMounted give true/false of RDT mounted or not
 func IsIntelRdtMounted() bool {
 	_, err := getIntelRdtRoot()
 	if err != nil {
@@ -360,6 +373,7 @@ func IsIntelRdtMounted() bool {
 	return true
 }
 
+// DisableRdt unmount resctrl
 func DisableRdt() bool {
 	if IsIntelRdtMounted() {
 		if err := exec.Command("umount", "/sys/fs/resctrl").Run(); err != nil {
@@ -369,6 +383,7 @@ func DisableRdt() bool {
 	return true
 }
 
+// EnableCat mounts resctrl
 func EnableCat() bool {
 	// mount -t resctrl resctrl /sys/fs/resctrl
 	if err := os.MkdirAll("/sys/fs/resctrl", 0755); err != nil {
@@ -380,6 +395,7 @@ func EnableCat() bool {
 	return true
 }
 
+// EnableCdp mounts resctrl with option -o
 func EnableCdp() bool {
 	// mount -t resctrl -o cdp resctrl /sys/fs/resctrl
 	if err := os.MkdirAll("/sys/fs/resctrl", 0755); err != nil {
@@ -391,6 +407,7 @@ func EnableCdp() bool {
 	return true
 }
 
+// RemoveTasks move tasks to default resctrl group
 // Resctrl doesn't support remove tasks from sysfs, the way to remove tasks from
 // resource group is to move them to default group
 func RemoveTasks(tasks []string) error {

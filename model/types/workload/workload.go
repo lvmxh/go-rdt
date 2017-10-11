@@ -3,10 +3,14 @@ package workload
 import "openstackcore-rdtagent/lib/resctrl"
 
 const (
+	// Successful status
 	Successful = "Successful"
-	Failed     = "Failed"
-	Invalid    = "Invalid"
-	None       = "None"
+	// Failed enfoced
+	Failed = "Failed"
+	// Invalid workload
+	Invalid = "Invalid"
+	// None status
+	None = "None"
 )
 
 //RDTWorkLoad is the workload struct of RMD
@@ -38,7 +42,7 @@ type EnforceRequest struct {
 	// min cache ways, not used yet
 	MinWays uint32
 	// enforce on which cache ids
-	Cache_IDs []uint32
+	CacheIDs []uint32
 	// consume from base group or not
 	Consume bool
 	// request type

@@ -1,11 +1,11 @@
 package config
 
 import (
-	// "github.com/heirko/go-contrib/logrusHelper"
 	"github.com/spf13/viper"
 	"sync"
 )
 
+// Database struct
 type Database struct {
 	Backend   string `toml:"backend"`
 	Transport string `toml:"transport"`
@@ -17,7 +17,7 @@ var configOnce sync.Once
 // FIXME (Shaohe), the DBName should not be "bolt", "rmd" is more better.
 var db = &Database{"bolt", "var/run/rdtagent.db", "bolt"}
 
-// Concurrency-safe.
+// NewConfig is Concurrency safe.
 func NewConfig() Database {
 	configOnce.Do(func() {
 		// FIXME (Shaohe), we are planing to use logrusHelper. Seems we still
