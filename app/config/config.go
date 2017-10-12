@@ -53,7 +53,7 @@ var def = &Default{
 	0,
 	"etc/rdtagent/cert/server",
 	"etc/rdtagent/cert/client",
-	"challenge",
+	"no",
 	"",
 	"etc/rdtagent/policy.yaml"}
 var db = &Database{}

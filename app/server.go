@@ -34,7 +34,7 @@ type GenericConfig struct {
 	DBBackend            string
 	Transport            string
 	DBName               string
-	TLSPort              uint
+	IsClientCertAuth     bool
 }
 
 // RDAgent config
@@ -62,13 +62,21 @@ func BuildServerConfig(s *options.ServerRunOptions) *Config {
 		s.TLSPort = strconv.FormatUint(uint64(appconfig.Def.TLSPort), 10)
 	}
 
+	// Default is no client cert option for tls
+	isClientCertAuth := false
+
+	clientauth, ok := appConf.ClientAuth[appconfig.Def.ClientAuth]
+	if ok && clientauth != tls.NoClientCert {
+		isClientCertAuth = true
+	}
+
 	genericconfig := GenericConfig{
 		APIServerServiceIP:   s.Addr,
 		APIServerServicePort: s.Port,
 		DBBackend:            appconfig.Db.Backend,
 		Transport:            appconfig.Db.Transport,
 		DBName:               appconfig.Db.DBName,
-		TLSPort:              appconfig.Def.TLSPort,
+		IsClientCertAuth:     isClientCertAuth,
 	}
 
 	swaggerconfig := swagger.Config{
@@ -133,11 +141,11 @@ func Initialize(c *Config) (*restful.Container, error) {
 
 	wsContainer := restful.NewContainer()
 	wsContainer.Filter(TlsACL)
-	// Enable PAM authentication only for https requests
-	// FIXME: Require better design to switch
-	if c.Generic.TLSPort != 0 {
+	// PAM client authentication is enabled if invalid or no client cert option is supplied
+	if !c.Generic.IsClientCertAuth {
 		wsContainer.Filter(auth.PAMAuthenticate)
 	}
+
 	wsContainer.Router(restful.CurlyRouter{})
 
 	cap := v1.CapabilitiesResource{}

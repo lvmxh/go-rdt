@@ -9,6 +9,13 @@ import (
 
 func PAMAuthenticate(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 
+	// PAM enabled only for HTTPS requests
+	if req.Request.TLS == nil {
+		chain.ProcessFilter(req, resp)
+		return
+	}
+
+	// Get user credentials
 	u, p, ok := req.Request.BasicAuth()
 
 	if !ok {
@@ -16,6 +23,7 @@ func PAMAuthenticate(req *restful.Request, resp *restful.Response, chain *restfu
 		return
 	}
 
+	// PAM authenticate
 	err := proxyclient.PAMAuthenticate(u, p)
 
 	if err != nil {
