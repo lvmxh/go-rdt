@@ -29,13 +29,13 @@ import (
 
 // GenericConfig is the generic config for the application
 type GenericConfig struct {
-	APIServerServiceIP   string
-	APIServerServicePort string
-	EnableUISupport      bool
-	DBBackend            string
-	Transport            string
-	DBName               string
-	IsClientCertAuth     bool
+	APIServerServiceIP     string
+	APIServerServicePort   string
+	EnableUISupport        bool
+	DBBackend              string
+	Transport              string
+	DBName                 string
+	IsClientCertAuthOption bool
 }
 
 // Config is application configuration
@@ -63,20 +63,21 @@ func buildServerConfig(s *options.ServerRunOptions) *Config {
 	}
 
 	// Default is no client cert option for tls
-	isClientCertAuth := false
+	isClientCertAuthOption := false
 
-	clientauth, ok := appConf.ClientAuth[appconfig.Def.ClientAuth]
-	if ok && clientauth != tls.NoClientCert {
-		isClientCertAuth = true
+	clientAuthOption, ok := appConf.ClientAuth[appconfig.Def.ClientAuth]
+
+	if ok && clientAuthOption != tls.NoClientCert {
+		isClientCertAuthOption = true
 	}
 
 	genericconfig := GenericConfig{
-		APIServerServiceIP:   s.Addr,
-		APIServerServicePort: s.Port,
-		DBBackend:            appconfig.Db.Backend,
-		Transport:            appconfig.Db.Transport,
-		DBName:               appconfig.Db.DBName,
-		IsClientCertAuth:     isClientCertAuth,
+		APIServerServiceIP:     s.Addr,
+		APIServerServicePort:   s.Port,
+		DBBackend:              appconfig.Db.Backend,
+		Transport:              appconfig.Db.Transport,
+		DBName:                 appconfig.Db.DBName,
+		IsClientCertAuthOption: isClientCertAuthOption,
 	}
 
 	swaggerconfig := swagger.Config{
@@ -134,9 +135,10 @@ func Initialize(c *Config) (*restful.Container, error) {
 	}
 
 	wsContainer := restful.NewContainer()
-	wsContainer.Filter(TlsACL)
-	// PAM client authentication is enabled if invalid or no client cert option is supplied
-	if !c.Generic.IsClientCertAuth {
+	wsContainer.Filter(TLSACL)
+
+	// Enable PAM authentication when invalid or no client cert auth option is provided
+	if !c.Generic.IsClientCertAuthOption {
 		wsContainer.Filter(auth.PAMAuthenticate)
 	}
 
