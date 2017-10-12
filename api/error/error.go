@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+// AppError is struct of application error
 // The Code should be a const in https://golang.org/pkg/net/http/
 type AppError struct {
 	Code    int
@@ -12,6 +13,7 @@ type AppError struct {
 	Err     error
 }
 
+// Error gives error string
 func (e AppError) Error() string {
 	if e.Message != "" && e.Err != nil {
 		return fmt.Sprintf("%s. Details: %v\n", e.Message, e.Err)
@@ -22,12 +24,14 @@ func (e AppError) Error() string {
 	return e.Message
 }
 
+// AppErrorf create AppError from formate
 func AppErrorf(code int, format string, a ...interface{}) *AppError {
 	msg := fmt.Sprintf(format, a...)
 	ae := AppError{code, msg, nil}
 	return &ae
 }
 
+// NewAppError create new AppError
 func NewAppError(value ...interface{}) *AppError {
 	ae := AppError{}
 	for i, val := range value {
