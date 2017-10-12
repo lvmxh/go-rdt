@@ -1,20 +1,20 @@
 package v1
 
 import (
-	_ "fmt"
 	"net/http"
 
 	"github.com/emicklei/go-restful"
 	log "github.com/sirupsen/logrus"
 
-	. "openstackcore-rdtagent/api/error"
-	m_hospitality "openstackcore-rdtagent/model/hospitality"
+	rmderror "openstackcore-rdtagent/api/error"
+	hospitality "openstackcore-rdtagent/model/hospitality"
 )
 
-// Hospitality Info
+// HospitalityResource is the API resource
 type HospitalityResource struct{}
 
-func (hospitality HospitalityResource) Register(container *restful.Container) {
+// Register routers
+func (h HospitalityResource) Register(container *restful.Container) {
 	ws := new(restful.WebService)
 	ws.
 		Path("/v1/hospitality").
@@ -22,12 +22,7 @@ func (hospitality HospitalityResource) Register(container *restful.Container) {
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON)
 
-	ws.Route(ws.GET("/").To(hospitality.HospitalitysGet).
-		Doc("Get the hospitality information, summary.").
-		Operation("HospitalitysGet").
-		Writes(HospitalityResource{}))
-
-	ws.Route(ws.POST("/").To(hospitality.HospitalityGetByRequest).
+	ws.Route(ws.POST("/").To(h.HospitalityGetByRequest).
 		Doc("Get the hospitality information per request.").
 		Operation("HospitalityGetByRequest").
 		Writes(HospitalityResource{}))
@@ -35,20 +30,9 @@ func (hospitality HospitalityResource) Register(container *restful.Container) {
 	container.Add(ws)
 }
 
-// GET /v1/hospitality
-func (hospitality HospitalityResource) HospitalitysGet(request *restful.Request, response *restful.Response) {
-	h := &m_hospitality.Hospitality{}
-	err := h.Get()
-	// FIXME (Shaohe): We should classify the error.
-	if err != nil {
-		response.WriteError(http.StatusInternalServerError, err)
-		return
-	}
-	response.WriteEntity(h)
-}
-
-func (hospitality HospitalityResource) HospitalityGetByRequest(request *restful.Request, response *restful.Response) {
-	hr := &m_hospitality.HospitalityRequest{}
+// HospitalityGetByRequest returns hospitality score by request
+func (h HospitalityResource) HospitalityGetByRequest(request *restful.Request, response *restful.Response) {
+	hr := &hospitality.Request{}
 	err := request.ReadEntity(&hr)
 
 	if err != nil {
@@ -58,12 +42,12 @@ func (hospitality HospitalityResource) HospitalityGetByRequest(request *restful.
 	}
 
 	log.Infof("Try to get hospitality score by %v", hr)
-	h := &m_hospitality.HospitalityRaw{}
-	e := h.GetByRequest(hr)
+	score := &hospitality.Hospitality{}
+	e := score.GetByRequest(hr)
 	if e != nil {
-		err := e.(*AppError)
+		err := e.(*rmderror.AppError)
 		response.WriteErrorString(err.Code, err.Error())
 		return
 	}
-	response.WriteEntity(h)
+	response.WriteEntity(score)
 }
