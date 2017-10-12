@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	. "openstackcore-rdtagent/api/error"
+	rmderror "openstackcore-rdtagent/api/error"
 	"openstackcore-rdtagent/lib/cache"
 	"openstackcore-rdtagent/lib/proc"
 	"openstackcore-rdtagent/lib/resctrl"
@@ -25,8 +25,8 @@ var SizeMap = map[string]uint32{
 	"M": 1024 * 1024,
 }
 
-// CacheInfo with details
-type CacheInfo struct {
+// Info is details of cache
+type Info struct {
 	ID               uint32 `json:"cache_id"`
 	NumWays          uint32
 	NumSets          uint32
@@ -38,25 +38,26 @@ type CacheInfo struct {
 	WayContention    uint64
 	CacheLevel       uint32
 	Location         string            `json:"location_on_socket"`
-	ShareCpuList     string            `json:"share_cpu_list"`
+	ShareCPUList     string            `json:"share_cpu_list"`
 	AvaliableWays    string            `json:"avaliable_ways"`
 	AvaliableCPUs    string            `json:"avaliable_cpus"`
 	AvaliableIsoCPUs string            `json:"avaliable_isolated_cpus"`
 	AvaliablePolicy  map[string]uint32 `json:"avaliable_policy"` // should move out here
 }
 
-type CacheInfos struct {
-	Num    uint32               `json:"number"`
-	Caches map[uint32]CacheInfo `json:"Caches"`
+// Infos is group of cache info
+type Infos struct {
+	Num    uint32          `json:"number"`
+	Caches map[uint32]Info `json:"Caches"`
 }
 
-/*********************************************************************************/
-type CacheSummary struct {
+// Summary is summary of cache
+type Summary struct {
 	Num int      `json:"number"`
 	IDs []string `json:"caches_id"`
 }
 
-// Cat, Cqm seems CPU's feature.
+// CachesSummary Cat, Cqm seems CPU's feature.
 // Should be better
 // type Rdt struct {
 // 	Cat   bool
@@ -65,21 +66,21 @@ type CacheSummary struct {
 // 	CdpOn bool
 // }
 type CachesSummary struct {
-	Rdt    bool                    `json:"rdt"`
-	Cqm    bool                    `json:"cqm"`
-	Cdp    bool                    `json:"cdp"`
-	CdpOn  bool                    `json:"cdp_enable"`
-	Cat    bool                    `json:"cat"`
-	CatOn  bool                    `json:"cat_enable"`
-	Caches map[string]CacheSummary `json:"caches"`
+	Rdt    bool               `json:"rdt"`
+	Cqm    bool               `json:"cqm"`
+	Cdp    bool               `json:"cdp"`
+	CdpOn  bool               `json:"cdp_enable"`
+	Cat    bool               `json:"cat"`
+	CatOn  bool               `json:"cat_enable"`
+	Caches map[string]Summary `json:"caches"`
 }
 
 func (c *CachesSummary) getCaches() error {
 	levs := syscache.AvailableCacheLevel()
 
-	c.Caches = make(map[string]CacheSummary)
+	c.Caches = make(map[string]Summary)
 	for _, l := range levs {
-		summary := &CacheSummary{}
+		summary := &Summary{}
 		il, err := strconv.Atoi(l)
 		if err != nil {
 			return err
@@ -89,7 +90,7 @@ func (c *CachesSummary) getCaches() error {
 			return err
 		}
 		for _, v := range caches {
-			summary.IDs = append(summary.IDs, v.Id)
+			summary.IDs = append(summary.IDs, v.ID)
 
 		}
 		summary.Num = len(caches)
@@ -98,6 +99,7 @@ func (c *CachesSummary) getCaches() error {
 	return nil
 }
 
+// Get returns summary of cache
 func (c *CachesSummary) Get() error {
 	var err error
 	var flag bool
@@ -136,7 +138,7 @@ func (c *CachesSummary) Get() error {
 
 // Convert a string cache size to uint32 in B
 // eg: 1K = 1024
-func ConvertCacheSize(size string) uint32 {
+func convertCacheSize(size string) uint32 {
 	unit := size[len(size)-1:]
 
 	s := strings.TrimRight(size, unit)
@@ -148,17 +150,16 @@ func ConvertCacheSize(size string) uint32 {
 	return uint32(isize) * SizeMap[unit]
 }
 
-func (c *CacheInfos) GetByLevel(level uint32) *AppError {
+// GetByLevel returns cache info by cache level
+func (c *Infos) GetByLevel(level uint32) *rmderror.AppError {
 
 	llc := syscache.GetLLC()
 
 	if llc != level {
 		err := fmt.Errorf("Don't support cache level %d, Only expose last level cache %d", level, llc)
-		return NewAppError(http.StatusBadRequest,
+		return rmderror.NewAppError(http.StatusBadRequest,
 			"Error to get available cache", err)
 	}
-
-	target_lev := strconv.FormatUint(uint64(level), 10)
 
 	// syscache.AvailableCacheLevel return []string
 	levs := syscache.AvailableCacheLevel()
@@ -166,18 +167,19 @@ func (c *CacheInfos) GetByLevel(level uint32) *AppError {
 
 	syscaches, err := syscache.GetSysCaches(int(level))
 	if err != nil {
-		return NewAppError(http.StatusInternalServerError,
+		return rmderror.NewAppError(http.StatusInternalServerError,
 			"Error to get available cache", err)
 	}
 
-	cacheLevel := "L" + target_lev
+	cacheLevel := "L" + strconv.FormatUint(uint64(level), 10)
+
 	allres := resctrl.GetResAssociation()
 	av, _ := rdtpool.GetAvailableCacheSchemata(allres, []string{"infra"}, "none", cacheLevel)
 
-	c.Caches = make(map[uint32]CacheInfo)
+	c.Caches = make(map[uint32]Info)
 
 	for _, sc := range syscaches {
-		id, _ := strconv.Atoi(sc.Id)
+		id, _ := strconv.Atoi(sc.ID)
 		_, ok := c.Caches[uint32(id)]
 		if ok {
 			// syscache.GetSysCaches returns caches per each CPU, there maybe
@@ -186,67 +188,67 @@ func (c *CacheInfos) GetByLevel(level uint32) *AppError {
 		} else {
 			// TODO: NumPartitions uint32,  NumClasses    uint32
 			//       WayContention uint64,  Location string
-			new_cacheinfo := CacheInfo{}
+			newCachdinfo := Info{}
 
 			ui32, _ := strconv.Atoi(sc.CoherencyLineSize)
-			new_cacheinfo.LineSize = uint32(ui32)
+			newCachdinfo.LineSize = uint32(ui32)
 
 			ui32, _ = strconv.Atoi(sc.NumberOfSets)
-			new_cacheinfo.NumSets = uint32(ui32)
+			newCachdinfo.NumSets = uint32(ui32)
 
 			// FIXME the relation between NumWays and sc.PhysicalLinePartition
 			ui32, _ = strconv.Atoi(sc.WaysOfAssociativity)
-			new_cacheinfo.NumWays = uint32(ui32)
-			new_cacheinfo.WaySize = new_cacheinfo.LineSize * new_cacheinfo.NumSets
+			newCachdinfo.NumWays = uint32(ui32)
+			newCachdinfo.WaySize = newCachdinfo.LineSize * newCachdinfo.NumSets
 
-			new_cacheinfo.ID = uint32(id)
-			new_cacheinfo.TotalSize = ConvertCacheSize(sc.Size)
-			new_cacheinfo.ShareCpuList = sc.SharedCpuList
-			new_cacheinfo.CacheLevel = level
+			newCachdinfo.ID = uint32(id)
+			newCachdinfo.TotalSize = convertCacheSize(sc.Size)
+			newCachdinfo.ShareCPUList = sc.SharedCPUList
+			newCachdinfo.CacheLevel = level
 
-			new_cacheinfo.AvaliableWays = av[sc.Id].ToString()
+			newCachdinfo.AvaliableWays = av[sc.ID].ToString()
 
 			cpuPools, _ := rdtpool.GetCPUPools()
 			defaultCpus, _ := base.CPUBitmaps(resctrl.GetResAssociation()["."].CPUs)
-			new_cacheinfo.AvaliableCPUs = cpuPools["all"][sc.Id].And(defaultCpus).ToHumanString()
-			new_cacheinfo.AvaliableIsoCPUs = cpuPools["isolated"][sc.Id].And(defaultCpus).ToHumanString()
+			newCachdinfo.AvaliableCPUs = cpuPools["all"][sc.ID].And(defaultCpus).ToHumanString()
+			newCachdinfo.AvaliableIsoCPUs = cpuPools["isolated"][sc.ID].And(defaultCpus).ToHumanString()
 
 			p, err := policy.GetDefaultPlatformPolicy()
 			if err != nil {
-				return NewAppError(http.StatusInternalServerError,
+				return rmderror.NewAppError(http.StatusInternalServerError,
 					"Error to get policy", err)
 			}
 			ap := make(map[string]uint32)
 			//ap_counter := make(map[string]int)
 			for _, pv := range p {
 				// pv is policy.CATConfig.Catpolicy
-				for t, _ := range pv {
+				for t := range pv {
 					// t is the policy tier name
 					tier, err := policy.GetDefaultPolicy(t)
 					if err != nil {
-						return NewAppError(http.StatusInternalServerError,
+						return rmderror.NewAppError(http.StatusInternalServerError,
 							"Error to get policy", err)
 					}
 
 					iMax, err := strconv.Atoi(tier["MaxCache"])
 					if err != nil {
-						return NewAppError(http.StatusInternalServerError,
+						return rmderror.NewAppError(http.StatusInternalServerError,
 							"Error to get max cache", err)
 					}
 					iMin, err := strconv.Atoi(tier["MinCache"])
 					if err != nil {
-						return NewAppError(http.StatusInternalServerError,
+						return rmderror.NewAppError(http.StatusInternalServerError,
 							"Error to get min cache", err)
 					}
 
-					getAvailablePolicyCount(ap, iMax, iMin, allres, t, cacheLevel, sc.Id)
+					getAvailablePolicyCount(ap, iMax, iMin, allres, t, cacheLevel, sc.ID)
 
 				}
 
 			}
-			new_cacheinfo.AvaliablePolicy = ap
+			newCachdinfo.AvaliablePolicy = ap
 
-			c.Caches[uint32(id)] = new_cacheinfo
+			c.Caches[uint32(id)] = newCachdinfo
 			c.Num = c.Num + 1
 		}
 	}
@@ -257,7 +259,7 @@ func (c *CacheInfos) GetByLevel(level uint32) *AppError {
 func getAvailablePolicyCount(ap map[string]uint32,
 	iMax, iMin int,
 	allres map[string]*resctrl.ResAssociation,
-	tier, cacheLevel, cId string) error {
+	tier, cacheLevel, cID string) error {
 
 	var ways int
 
@@ -278,7 +280,7 @@ func getAvailablePolicyCount(ap map[string]uint32,
 
 	pav, _ := rdtpool.GetAvailableCacheSchemata(allres, []string{"infra", "."}, pool, cacheLevel)
 	ap[tier] = 0
-	freeBitmapStrs := pav[cId].ToBinStrings()
+	freeBitmapStrs := pav[cID].ToBinStrings()
 
 	for _, val := range freeBitmapStrs {
 		if val[0] == '1' {

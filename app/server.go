@@ -27,6 +27,7 @@ import (
 	"openstackcore-rdtagent/util/options"
 )
 
+// GenericConfig is the generic config for the application
 type GenericConfig struct {
 	APIServerServiceIP   string
 	APIServerServicePort string
@@ -37,14 +38,13 @@ type GenericConfig struct {
 	IsClientCertAuth     bool
 }
 
-// RDAgent config
+// Config is application configuration
 type Config struct {
 	Generic *GenericConfig
 	Swagger *swagger.Config
 }
 
-// build RDAgent configuration from command line and configure file
-func BuildServerConfig(s *options.ServerRunOptions) *Config {
+func buildServerConfig(s *options.ServerRunOptions) *Config {
 	// FIXME (cmd line options does not override the config file options)
 	appconfig := appConf.NewConfig()
 
@@ -94,14 +94,8 @@ func BuildServerConfig(s *options.ServerRunOptions) *Config {
 	}
 }
 
-func InitializeDB(c *Config) (db.DB, error) {
-	return db.NewDB()
-	// no need Initialize. We can Initialize it at bootcheck
-	// also, Initialize should be for the whole DB setting.
-	// d.Initialize(c.Generic.Transport, c.Generic.DBName)
-}
-
-func TlsACL(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+// TLSACL is handler for api server to pass acl of a request
+func TLSACL(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 	appconf := appConf.NewConfig()
 	if req.Request.TLS == nil || appConf.ClientAuth[appconf.Def.ClientAuth] < appConf.ClientAuth["challenge_given"] {
 		chain.ProcessFilter(req, resp)
@@ -134,7 +128,7 @@ func TlsACL(req *restful.Request, resp *restful.Response, chain *restful.FilterC
 
 // Initialize server from config
 func Initialize(c *Config) (*restful.Container, error) {
-	db, err := InitializeDB(c)
+	db, err := db.NewDB()
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +171,7 @@ func getCertPool(cafile string) (*x509.CertPool, error) {
 	}
 	ok := pool.AppendCertsFromPEM(data)
 	if !ok {
-		return nil, errors.New("failed to parse root certificate!")
+		return nil, errors.New("failed to parse root certificate")
 	}
 	return pool, nil
 }
@@ -214,7 +208,7 @@ func genTLSConfig() (*tls.Config, error) {
 				missing = append(missing, k)
 			}
 		}
-		return nil, fmt.Errorf("Missing enough files for tls config: %s.", strings.Join(missing, ", "))
+		return nil, fmt.Errorf("Missing enough files for tls config: %s", strings.Join(missing, ", "))
 	}
 
 	// In product env, ClientAuth should >= challenge_given
@@ -248,7 +242,7 @@ func genTLSConfig() (*tls.Config, error) {
 func RunServer(s *options.ServerRunOptions) {
 
 	var server *http.Server
-	config := BuildServerConfig(s)
+	config := buildServerConfig(s)
 	container, err := Initialize(config)
 	if err != nil {
 		log.Fatal(err)
@@ -272,7 +266,7 @@ func RunServer(s *options.ServerRunOptions) {
 			TLSConfig: tlsconf}
 	}
 
-	server_start := func() {
+	serverStart := func() {
 		if s.TLSPort == "" {
 			log.Fatal(server.ListenAndServe())
 		} else {
@@ -280,15 +274,15 @@ func RunServer(s *options.ServerRunOptions) {
 		}
 	}
 	if s.UnixSock == "" {
-		server_start()
+		serverStart()
 	} else {
 		go func() {
-			server_start()
+			serverStart()
 		}()
 	}
 
 	// Unix Socket.
-	config = BuildServerConfig(s)
+	config = buildServerConfig(s)
 	container, err = Initialize(config)
 	if err != nil {
 		log.Fatal(err)

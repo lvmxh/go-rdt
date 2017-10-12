@@ -68,10 +68,10 @@ func GetInfraGroupReserve() (base.Reserved, error) {
 		infraCPUs := map[string]*util.Bitmap{}
 
 		for _, sc := range syscaches {
-			bm, _ := base.CPUBitmaps([]string{sc.SharedCpuList})
-			infraCPUs[sc.Id] = infraCPUbm.And(bm)
-			if infraCPUs[sc.Id].IsEmpty() {
-				schemata[sc.Id], returnErr = base.CacheBitmaps("0")
+			bm, _ := base.CPUBitmaps([]string{sc.SharedCPUList})
+			infraCPUs[sc.ID] = infraCPUbm.And(bm)
+			if infraCPUs[sc.ID].IsEmpty() {
+				schemata[sc.ID], returnErr = base.CacheBitmaps("0")
 				if returnErr != nil {
 					return
 				}
@@ -81,7 +81,7 @@ func GetInfraGroupReserve() (base.Reserved, error) {
 				ways := uint(base.GetCosInfo().CbmMaskLen)
 				mask := strconv.FormatUint((1<<conf.CacheWays-1)<<(ways-conf.CacheWays), 16)
 				//FIXME (Shaohe) check RMD for the bootcheck.
-				schemata[sc.Id], returnErr = base.CacheBitmaps(mask)
+				schemata[sc.ID], returnErr = base.CacheBitmaps(mask)
 				if returnErr != nil {
 					return
 				}

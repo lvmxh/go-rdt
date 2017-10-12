@@ -279,8 +279,7 @@ func parserRdtCosInfo(basepath string, ignore []string, mres map[string]*RdtCosI
 		data, err := ioutil.ReadFile(path)
 		strs := strings.TrimSpace(string(data))
 		res := mres[pkey]
-		libutil.SetField(res, name, strs)
-		return nil
+		return libutil.SetField(res, name, strs)
 	}
 }
 

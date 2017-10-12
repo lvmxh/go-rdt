@@ -14,23 +14,22 @@ import (
 )
 
 const (
-	SysCpuPath = "/sys/devices/system/cpu/"
+	// SysCPUPath is patch of cpu device
+	SysCPUPath = "/sys/devices/system/cpu/"
 )
 
-// All the type a string.
+// SysCache is struct of cache of host
 type SysCache struct {
 	CoherencyLineSize     string
-	Id                    string
+	ID                    string
 	Level                 string
 	NumberOfSets          string
 	PhysicalLinePartition string
-	SharedCpuList         string
-	SharedCpuMap          string
+	SharedCPUList         string
+	SharedCPUMap          string
 	Size                  string
 	Type                  string
 	WaysOfAssociativity   string
-	// Power              string
-	// Uevent             string
 }
 
 // /sys/devices/system/cpu/cpu*/cache/index*/*
@@ -71,15 +70,24 @@ func getSysCache(ignore []string, cache *SysCache) filepath.WalkFunc {
 			// add log
 			return err
 		}
+		// golint does allow us to define a struct name like Cpu, Id
+		// so we need to deal these cases:
+		// handle Cpu -> CPU case
+		// handle Id -> ID
+		if strings.Contains(name, "Cpu") {
+			name = strings.Replace(name, "Cpu", "CPU", -1)
+		} else if name == "Id" {
+			name = "ID"
+		}
 		return libutil.SetField(cache, name, strings.TrimSpace(string(data)))
 	}
 }
 
-// Traverse all sys cache file for a specify level
+// GetSysCaches traverse all sys cache file for a specify level
 func GetSysCaches(level int) (map[string]SysCache, error) {
 	ignore := []string{"uevent", "power"}
 	caches := make(map[string]SysCache)
-	files, err := filepath.Glob(SysCpuPath + "cpu*/cache/index" + strconv.Itoa(level))
+	files, err := filepath.Glob(SysCPUPath + "cpu*/cache/index" + strconv.Itoa(level))
 	if err != nil {
 		return caches, err
 	}
@@ -90,19 +98,19 @@ func GetSysCaches(level int) (map[string]SysCache, error) {
 		if err != nil {
 			return caches, err
 		}
-		if _, ok := caches[cache.Id]; !ok {
-			caches[cache.Id] = *cache
+		if _, ok := caches[cache.ID]; !ok {
+			caches[cache.ID] = *cache
 		}
 	}
 	return caches, nil
 }
 
-// Just return the L2 and L3 level cache, strip L1 cache.
+// AvailableCacheLevel returns the L2 and L3 level cache, strip L1 cache.
 // By default, get the info from cpu0 path, any issue?
 // The type of return should be string or int?
 func AvailableCacheLevel() []string {
 	var levels []string
-	files, _ := filepath.Glob(SysCpuPath + "cpu0/cache/index*/level")
+	files, _ := filepath.Glob(SysCPUPath + "cpu0/cache/index*/level")
 	for _, f := range files {
 		dat, _ := ioutil.ReadFile(f)
 		sdat := strings.TrimRight(string(dat), "\n")
@@ -113,6 +121,7 @@ func AvailableCacheLevel() []string {
 	return levels
 }
 
+// GetLLC return the last level of the cache on the host
 func GetLLC() uint32 {
 	avl := AvailableCacheLevel()
 	sort.Sort(sort.Reverse(sort.StringSlice(avl)))

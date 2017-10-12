@@ -13,15 +13,16 @@ import (
 	m_cache "openstackcore-rdtagent/model/cache"
 )
 
-// Cache Info
-type CachesResource struct{}
+// CachesResource represents Cache Info api resource
+type CachesResource struct {
+}
 
-// Cache Level Info
+// CachesLevelResource is Cache Level Info
 // This should merge into CachesResource
 type CachesLevelResource struct {
 }
 
-func getCacheLevelFromUrl(request *restful.Request) uint32 {
+func getCacheLevelFromURL(request *restful.Request) uint32 {
 	var ilev uint32
 	slev := strings.TrimLeft(request.PathParameter("cache-level"), "l")
 	if slev == "c" {
@@ -34,6 +35,7 @@ func getCacheLevelFromUrl(request *restful.Request) uint32 {
 	return ilev
 }
 
+// Register handlers
 func (cache CachesResource) Register(container *restful.Container) {
 	ws := new(restful.WebService)
 	ws.
@@ -65,7 +67,7 @@ func (cache CachesResource) Register(container *restful.Container) {
 	container.Add(ws)
 }
 
-// GET /v1/cache
+// CachesGet handles GET /v1/cache
 func (cache CachesResource) CachesGet(request *restful.Request, response *restful.Response) {
 	c := &m_cache.CachesSummary{}
 	err := c.Get()
@@ -77,11 +79,11 @@ func (cache CachesResource) CachesGet(request *restful.Request, response *restfu
 	response.WriteEntity(c)
 }
 
-// GET /v1/cache/l[2|3|lc]
+// CachesLevelGet handles GET /v1/cache/l[2|3|lc]
 func (cache CachesResource) CachesLevelGet(request *restful.Request, response *restful.Response) {
-	c := &m_cache.CacheInfos{}
+	c := &m_cache.Infos{}
 
-	ilev := getCacheLevelFromUrl(request)
+	ilev := getCacheLevelFromURL(request)
 	log.Printf("Request Level %d", ilev)
 	err := c.GetByLevel(ilev)
 	if err != nil {
@@ -91,11 +93,11 @@ func (cache CachesResource) CachesLevelGet(request *restful.Request, response *r
 	response.WriteEntity(c)
 }
 
-// GET /v1/cache/l[2, 3]/{id}
+// CacheGet handles GET /v1/cache/l[2, 3]/{id}
 func (cache CachesResource) CacheGet(request *restful.Request, response *restful.Response) {
-	c := &m_cache.CacheInfos{}
+	c := &m_cache.Infos{}
 
-	ilev := getCacheLevelFromUrl(request)
+	ilev := getCacheLevelFromURL(request)
 	// FIXME (Shaohe): should use pattern, \d\{1,3\}
 	id, err := strconv.Atoi(request.PathParameter("id"))
 	if err != nil {

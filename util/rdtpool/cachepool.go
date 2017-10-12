@@ -29,15 +29,15 @@ func getReservedCache(
 
 	for _, sc := range sysc {
 		wc := wayCandidate
-		bm, _ := base.CPUBitmaps([]string{sc.SharedCpuList})
-		osCPUs[sc.Id] = osCPUbm.And(bm)
+		bm, _ := base.CPUBitmaps([]string{sc.SharedCPUList})
+		osCPUs[sc.ID] = osCPUbm.And(bm)
 		// no os group on this cache id
-		if !osCPUs[sc.Id].IsEmpty() {
+		if !osCPUs[sc.ID].IsEmpty() {
 			wc = wc << osCacheWays
 		}
 		wc = wc << wayOffset
 		mask := strconv.FormatUint(uint64(wc), 16)
-		schemata[sc.Id], err = base.CacheBitmaps(mask)
+		schemata[sc.ID], err = base.CacheBitmaps(mask)
 		if err != nil {
 			return r, err
 		}

@@ -10,10 +10,12 @@ import (
 	"openstackcore-rdtagent/model/workload"
 )
 
+// WorkLoadResource is workload api resource
 type WorkLoadResource struct {
 	Db db.DB
 }
 
+// Register handlers
 func (w WorkLoadResource) Register(container *restful.Container) {
 	ws := new(restful.WebService)
 	ws.
@@ -48,7 +50,7 @@ func (w WorkLoadResource) Register(container *restful.Container) {
 	container.Add(ws)
 }
 
-// GET /v1/workloads
+// WorkLoadGet handles GET /v1/workloads
 func (w WorkLoadResource) WorkLoadGet(request *restful.Request, response *restful.Response) {
 	ws, err := w.Db.GetAllWorkload()
 	if err != nil {
@@ -58,7 +60,7 @@ func (w WorkLoadResource) WorkLoadGet(request *restful.Request, response *restfu
 	response.WriteEntity(ws)
 }
 
-// GET /v1/workloads/{id}
+// WorkLoadGetByID handle GET /v1/workloads/{id}
 func (w WorkLoadResource) WorkLoadGetByID(request *restful.Request, response *restful.Response) {
 
 	id := request.PathParameter("id")
@@ -76,7 +78,7 @@ func (w WorkLoadResource) WorkLoadGetByID(request *restful.Request, response *re
 	response.WriteEntity(wl)
 }
 
-// POST /v1/workloads
+// WorkLoadNew handle POST /v1/workloads
 // body : '{"core_ids":["1","2"], "task_ids":["123","456"], "policys": ["foo"], "algorithms": ["bar"], "group": ["infra"]}'
 func (w *WorkLoadResource) WorkLoadNew(request *restful.Request, response *restful.Response) {
 	wl := new(tw.RDTWorkLoad)
@@ -119,7 +121,7 @@ func (w *WorkLoadResource) WorkLoadNew(request *restful.Request, response *restf
 	response.WriteHeaderAndEntity(http.StatusCreated, wl)
 }
 
-// PATCH /v1/workloads/{id}
+// WorkLoadPatch handles PATCH /v1/workloads/{id}
 func (w WorkLoadResource) WorkLoadPatch(request *restful.Request, response *restful.Response) {
 	id := request.PathParameter("id")
 	wl, err := w.Db.GetWorkloadByID(id)
@@ -147,7 +149,7 @@ func (w WorkLoadResource) WorkLoadPatch(request *restful.Request, response *rest
 	response.WriteEntity(wl)
 }
 
-// DELETE /v1/workloads/{id}
+// WorkLoadDeleteByID handles DELETE /v1/workloads/{id}
 func (w WorkLoadResource) WorkLoadDeleteByID(request *restful.Request, response *restful.Response) {
 
 	id := request.PathParameter("id")

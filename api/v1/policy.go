@@ -7,9 +7,11 @@ import (
 	"openstackcore-rdtagent/model/policy"
 )
 
+// PolicyResource represents policy API resource
 type PolicyResource struct {
 }
 
+// Register handlers
 func (c PolicyResource) Register(container *restful.Container) {
 	ws := new(restful.WebService)
 	ws.
@@ -25,7 +27,7 @@ func (c PolicyResource) Register(container *restful.Container) {
 	container.Add(ws)
 }
 
-// GET /v1/policy
+// PolicyGet is handler to for GET
 func (c PolicyResource) PolicyGet(request *restful.Request, response *restful.Response) {
 	p, err := policy.GetDefaultPlatformPolicy()
 	if err != nil {

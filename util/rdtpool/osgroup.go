@@ -47,17 +47,17 @@ func GetOSGroupReserve() (base.Reserved, error) {
 		osCPUs := map[string]*util.Bitmap{}
 
 		for _, sc := range syscaches {
-			bm, _ := base.CPUBitmaps([]string{sc.SharedCpuList})
-			osCPUs[sc.Id] = osCPUbm.And(bm)
-			if osCPUs[sc.Id].IsEmpty() {
-				schemata[sc.Id], returnErr = base.CacheBitmaps("0")
+			bm, _ := base.CPUBitmaps([]string{sc.SharedCPUList})
+			osCPUs[sc.ID] = osCPUbm.And(bm)
+			if osCPUs[sc.ID].IsEmpty() {
+				schemata[sc.ID], returnErr = base.CacheBitmaps("0")
 				if returnErr != nil {
 					return
 				}
 			} else {
 				mask := strconv.FormatUint(1<<conf.CacheWays-1, 16)
 				//FIXME (Shaohe) check RMD for the bootcheck.
-				schemata[sc.Id], returnErr = base.CacheBitmaps(mask)
+				schemata[sc.ID], returnErr = base.CacheBitmaps(mask)
 				if returnErr != nil {
 					return
 				}

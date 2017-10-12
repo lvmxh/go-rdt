@@ -50,9 +50,9 @@ func GetCPUPools() (map[string]map[string]*util.Bitmap, error) {
 		}
 
 		for _, sc := range syscaches {
-			bm, _ := base.CPUBitmaps([]string{sc.SharedCpuList})
-			cpuPoolPerCache["all"][sc.Id] = bm.Axor(osCPUbm).Axor(infraCPUbm)
-			cpuPoolPerCache["isolated"][sc.Id] = bm.Axor(osCPUbm).Axor(infraCPUbm).And(isolatedCPUbm)
+			bm, _ := base.CPUBitmaps([]string{sc.SharedCPUList})
+			cpuPoolPerCache["all"][sc.ID] = bm.Axor(osCPUbm).Axor(infraCPUbm)
+			cpuPoolPerCache["isolated"][sc.ID] = bm.Axor(osCPUbm).Axor(infraCPUbm).And(isolatedCPUbm)
 		}
 	})
 	return cpuPoolPerCache, returnErr

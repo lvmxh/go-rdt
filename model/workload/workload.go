@@ -344,13 +344,13 @@ func Update(w, patched *tw.RDTWorkLoad) *rmderror.AppError {
 	return nil
 }
 
-func getCacheIDs(cpubitmap string, cacheinfos *cache.CacheInfos, cpunum int) []uint32 {
+func getCacheIDs(cpubitmap string, cacheinfos *cache.Infos, cpunum int) []uint32 {
 	var CacheIDs []uint32
 	cpubm, _ := libutil.NewBitmap(cpunum, cpubitmap)
 
 	for _, c := range cacheinfos.Caches {
 		// Okay, NewBitmap only support string list if we using human style
-		bm, _ := libutil.NewBitmap(cpunum, strings.Split(c.ShareCpuList, "\n"))
+		bm, _ := libutil.NewBitmap(cpunum, strings.Split(c.ShareCPUList, "\n"))
 		if !cpubm.And(bm).IsEmpty() {
 			CacheIDs = append(CacheIDs, c.ID)
 		}
@@ -389,7 +389,7 @@ func populateEnforceRequest(req *tw.EnforceRequest, w *tw.RDTWorkLoad) *rmderror
 		cpubitstr = bm.ToString()
 	}
 
-	cacheinfo := &cache.CacheInfos{}
+	cacheinfo := &cache.Infos{}
 	cacheinfo.GetByLevel(libcache.GetLLC())
 
 	cpunum := cpu.HostCPUNum()
