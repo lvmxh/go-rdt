@@ -8,7 +8,7 @@ import (
 	"openstackcore-rdtagent/lib/resctrl"
 	libutil "openstackcore-rdtagent/lib/util"
 	"openstackcore-rdtagent/util"
-	. "openstackcore-rdtagent/util/rdtpool/base"
+	"openstackcore-rdtagent/util/rdtpool/base"
 )
 
 // A map that contains all reserved resource information
@@ -33,22 +33,27 @@ import (
 //         Optional
 
 const (
-	// Resource group
-	OS    = "os"
+	// OS is os resource group name
+	OS = "os"
+	// Infra is infra resource group name
 	Infra = "infra"
-	// Cache resource pool
-	Guarantee  = "guarantee"
+	// Guarantee is guarantee resource group name
+	Guarantee = "guarantee"
+	// Besteffort is besteffort resource group name
 	Besteffort = "besteffort"
-	Shared     = "shared"
+	// Shared is shared resource group name
+	Shared = "shared"
 )
 
-var ReservedInfo map[string]*Reserved
+// ReservedInfo is all reserved resource group inforamtaion
+var ReservedInfo map[string]*base.Reserved
 var revinfoOnce sync.Once
 
-func GetReservedInfo() map[string]*Reserved {
+// GetReservedInfo returns all reserved information
+func GetReservedInfo() map[string]*base.Reserved {
 
 	revinfoOnce.Do(func() {
-		ReservedInfo = make(map[string]*Reserved, 10)
+		ReservedInfo = make(map[string]*base.Reserved, 10)
 
 		r, err := GetOSGroupReserve()
 		if err == nil {
@@ -71,10 +76,10 @@ func GetReservedInfo() map[string]*Reserved {
 	return ReservedInfo
 }
 
-// Return available schemata of caches from specific pool: guarantee,
-// besteffort, shared or just none
+// GetAvailableCacheSchemata returns available schemata of caches from
+// specific pool: guarantee, besteffort, shared or just none
 func GetAvailableCacheSchemata(allres map[string]*resctrl.ResAssociation,
-	ignore_groups []string,
+	ignoreGroups []string,
 	pool string,
 	cacheLevel string) (map[string]*libutil.Bitmap, error) {
 
@@ -82,13 +87,13 @@ func GetAvailableCacheSchemata(allres map[string]*resctrl.ResAssociation,
 	// FIXME (Shaohe) A central util to generate schemata Bitmap
 	schemata := map[string]*libutil.Bitmap{}
 
-	if len(allres) >= GetCosInfo().NumClosids {
+	if len(allres) >= base.GetCosInfo().NumClosids {
 		return nil, fmt.Errorf("error, not enough CLOS on host, %d used", len(allres))
 	}
 
 	if pool == "none" {
-		for k, _ := range ReservedInfo[OS].Schemata {
-			schemata[k], _ = CacheBitmaps(GetCosInfo().CbmMask)
+		for k := range ReservedInfo[OS].Schemata {
+			schemata[k], _ = base.CacheBitmaps(base.GetCosInfo().CbmMask)
 		}
 	} else {
 		resv, ok := ReservedInfo[pool]
@@ -102,15 +107,15 @@ func GetAvailableCacheSchemata(allres map[string]*resctrl.ResAssociation,
 	}
 
 	for k, v := range allres {
-		if util.HasElem(ignore_groups, k) {
+		if util.HasElem(ignoreGroups, k) {
 			continue
 		}
 		if sv, ok := v.Schemata[cacheLevel]; ok {
 			for _, cv := range sv {
 				k := strconv.Itoa(int(cv.ID))
-				bm, _ := CacheBitmaps(cv.Mask)
+				bm, _ := base.CacheBitmaps(cv.Mask)
 				// And check cpu list is empty
-				if cv.Mask == GetCosInfo().CbmMask {
+				if cv.Mask == base.GetCosInfo().CbmMask {
 					continue
 				}
 				schemata[k] = schemata[k].Axor(bm)
@@ -128,7 +133,7 @@ func GetCachePoolName(MaxWays, MinWays uint32) (string, error) {
 		return Besteffort, nil
 	} else if MaxWays == MinWays {
 		return Guarantee, nil
-	} else {
-		return "", fmt.Errorf("max_cache=%d, min_cache=%d, doens't support", MaxWays, MinWays)
 	}
+
+	return "", fmt.Errorf("max_cache=%d, min_cache=%d, doens't support", MaxWays, MinWays)
 }

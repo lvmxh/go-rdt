@@ -7,11 +7,11 @@ import (
 
 	"openstackcore-rdtagent/lib/cache"
 	util "openstackcore-rdtagent/lib/util"
-	. "openstackcore-rdtagent/util/rdtpool/base"
-	. "openstackcore-rdtagent/util/rdtpool/config"
+	"openstackcore-rdtagent/util/rdtpool/base"
+	"openstackcore-rdtagent/util/rdtpool/config"
 )
 
-var cachePoolReserved = make(map[string]*Reserved, 0)
+var cachePoolReserved = make(map[string]*base.Reserved, 0)
 var cachePoolOnce sync.Once
 
 // helper function to get Reserved resource
@@ -19,9 +19,9 @@ func getReservedCache(
 	wayCandidate int,
 	wayOffset, osCacheWays uint,
 	osCPUbm *util.Bitmap,
-	sysc map[string]syscache.SysCache) (*Reserved, error) {
+	sysc map[string]syscache.SysCache) (*base.Reserved, error) {
 
-	r := &Reserved{}
+	r := &base.Reserved{}
 
 	schemata := map[string]*util.Bitmap{}
 	osCPUs := map[string]*util.Bitmap{}
@@ -29,7 +29,7 @@ func getReservedCache(
 
 	for _, sc := range sysc {
 		wc := wayCandidate
-		bm, _ := CpuBitmaps([]string{sc.SharedCpuList})
+		bm, _ := base.CPUBitmaps([]string{sc.SharedCpuList})
 		osCPUs[sc.Id] = osCPUbm.And(bm)
 		// no os group on this cache id
 		if !osCPUs[sc.Id].IsEmpty() {
@@ -37,7 +37,7 @@ func getReservedCache(
 		}
 		wc = wc << wayOffset
 		mask := strconv.FormatUint(uint64(wc), 16)
-		schemata[sc.Id], err = CacheBitmaps(mask)
+		schemata[sc.Id], err = base.CacheBitmaps(mask)
 		if err != nil {
 			return r, err
 		}
@@ -47,26 +47,27 @@ func getReservedCache(
 	return r, nil
 }
 
-func GetCachePoolLayout() (map[string]*Reserved, error) {
-	var return_err error
+// GetCachePoolLayout returns cache pool layout based on configuration
+func GetCachePoolLayout() (map[string]*base.Reserved, error) {
+	var returnErr error
 	cachePoolOnce.Do(func() {
-		poolConf := NewCachePoolConfig()
-		osConf := NewOSConfig()
-		ways := GetCosInfo().CbmMaskLen
+		poolConf := config.NewCachePoolConfig()
+		osConf := config.NewOSConfig()
+		ways := base.GetCosInfo().CbmMaskLen
 
 		if osConf.CacheWays+poolConf.Guarantee+poolConf.Besteffort+poolConf.Shared > uint(ways) {
-			return_err = fmt.Errorf(
-				"Error config: Guarantee + Besteffort + Shared + OS reserved ways should be less or equal to %d.", ways)
+			returnErr = fmt.Errorf(
+				"Error config: Guarantee + Besteffort + Shared + OS reserved ways should be less or equal to %d", ways)
 			return
 		}
 
 		// set layout for cache pool
 		level := syscache.GetLLC()
 		syscaches, err := syscache.GetSysCaches(int(level))
-		osCPUbm, err := CpuBitmaps([]string{osConf.CpuSet})
+		osCPUbm, err := base.CPUBitmaps([]string{osConf.CPUSet})
 
 		if err != nil {
-			return_err = err
+			returnErr = err
 			return
 		}
 
@@ -78,7 +79,7 @@ func GetCachePoolLayout() (map[string]*Reserved, error) {
 				osCPUbm,
 				syscaches)
 			if err != nil {
-				return_err = err
+				returnErr = err
 				return
 			}
 			cachePoolReserved[Guarantee] = resev
@@ -93,7 +94,7 @@ func GetCachePoolLayout() (map[string]*Reserved, error) {
 				syscaches)
 
 			if err != nil {
-				return_err = err
+				returnErr = err
 				return
 			}
 			cachePoolReserved[Besteffort] = resev
@@ -109,7 +110,7 @@ func GetCachePoolLayout() (map[string]*Reserved, error) {
 				syscaches)
 
 			if err != nil {
-				return_err = err
+				returnErr = err
 				return
 			}
 			cachePoolReserved[Shared] = resev
@@ -118,6 +119,5 @@ func GetCachePoolLayout() (map[string]*Reserved, error) {
 		}
 	})
 
-	return cachePoolReserved, return_err
-
+	return cachePoolReserved, returnErr
 }

@@ -11,29 +11,32 @@ import (
 	"github.com/emicklei/go-restful"
 	log "github.com/sirupsen/logrus"
 
-	. "openstackcore-rdtagent/util/acl/config"
+	"openstackcore-rdtagent/util/acl/config"
 )
 
+// Enforcer does enforce
 type Enforcer struct {
 	url      *casbin.Enforcer
 	ip       *casbin.Enforcer
 	protocol *casbin.Enforcer
 }
 
-var VERSION_TRIM = regexp.MustCompile(`^/v\d+/`)
+// VersionTrim is ...
+var VersionTrim = regexp.MustCompile(`^/v\d+/`)
 var enforcer = &Enforcer{}
 var once sync.Once
 
+// NewEnforcer creates enforcer
 func NewEnforcer() (*Enforcer, error) {
-	var return_err error
+	var returnErr error
 	defer func() {
 		if r := recover(); r != nil {
-			return_err = fmt.Errorf("init Enforcer error: %s\n", r)
+			returnErr = fmt.Errorf("init Enforcer error: %s", r)
 		}
 	}()
 
 	once.Do(func() {
-		aclconf := NewACLConfig()
+		aclconf := config.NewACLConfig()
 		for _, filter := range strings.Split(aclconf.Filter, ",") {
 			model := path.Join(aclconf.Path, filter, "model.conf")
 			policy := path.Join(aclconf.Path, filter, "policy.csv")
@@ -48,15 +51,15 @@ func NewEnforcer() (*Enforcer, error) {
 			default:
 				log.Errorf("Unknow acl type %s", filter)
 			}
-
 		}
 	})
-	return enforcer, return_err
+	return enforcer, returnErr
 }
 
+// Enforce does enforce based on request
 func (e *Enforcer) Enforce(request *restful.Request, sub string) bool {
 	allow := false
-	obj := VERSION_TRIM.ReplaceAllString(path.Clean(request.Request.RequestURI), "/")
+	obj := VersionTrim.ReplaceAllString(path.Clean(request.Request.RequestURI), "/")
 	act := request.Request.Method
 	if e.url != nil {
 		allow = e.url.Enforce(sub, obj, act)

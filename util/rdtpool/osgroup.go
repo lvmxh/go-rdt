@@ -8,20 +8,21 @@ import (
 	"openstackcore-rdtagent/lib/cache"
 	"openstackcore-rdtagent/lib/proxyclient"
 	util "openstackcore-rdtagent/lib/util"
-	. "openstackcore-rdtagent/util/rdtpool/base"
-	. "openstackcore-rdtagent/util/rdtpool/config"
+	"openstackcore-rdtagent/util/rdtpool/base"
+	"openstackcore-rdtagent/util/rdtpool/config"
 )
 
-var osGroupReserve = &Reserved{}
+var osGroupReserve = &base.Reserved{}
 var osOnce sync.Once
 
-func GetOSGroupReserve() (Reserved, error) {
-	var return_err error
+// GetOSGroupReserve returns os reserved resource group
+func GetOSGroupReserve() (base.Reserved, error) {
+	var returnErr error
 	osOnce.Do(func() {
-		conf := NewOSConfig()
-		osCPUbm, err := CpuBitmaps([]string{conf.CpuSet})
+		conf := config.NewOSConfig()
+		osCPUbm, err := base.CPUBitmaps([]string{conf.CPUSet})
 		if err != nil {
-			return_err = err
+			returnErr = err
 			return
 		}
 		osGroupReserve.AllCPUs = osCPUbm
@@ -29,7 +30,7 @@ func GetOSGroupReserve() (Reserved, error) {
 		level := syscache.GetLLC()
 		syscaches, err := syscache.GetSysCaches(int(level))
 		if err != nil {
-			return_err = err
+			returnErr = err
 			return
 		}
 
@@ -37,7 +38,7 @@ func GetOSGroupReserve() (Reserved, error) {
 		// FIXME if exception, fix it.
 		ways, _ := strconv.Atoi(syscaches["0"].WaysOfAssociativity)
 		if conf.CacheWays > uint(ways) {
-			return_err = fmt.Errorf("The request OSGroup cache ways %d is larger than available %d.",
+			returnErr = fmt.Errorf("The request OSGroup cache ways %d is larger than available %d",
 				conf.CacheWays, ways)
 			return
 		}
@@ -46,18 +47,18 @@ func GetOSGroupReserve() (Reserved, error) {
 		osCPUs := map[string]*util.Bitmap{}
 
 		for _, sc := range syscaches {
-			bm, _ := CpuBitmaps([]string{sc.SharedCpuList})
+			bm, _ := base.CPUBitmaps([]string{sc.SharedCpuList})
 			osCPUs[sc.Id] = osCPUbm.And(bm)
 			if osCPUs[sc.Id].IsEmpty() {
-				schemata[sc.Id], return_err = CacheBitmaps("0")
-				if return_err != nil {
+				schemata[sc.Id], returnErr = base.CacheBitmaps("0")
+				if returnErr != nil {
 					return
 				}
 			} else {
 				mask := strconv.FormatUint(1<<conf.CacheWays-1, 16)
 				//FIXME (Shaohe) check RMD for the bootcheck.
-				schemata[sc.Id], return_err = CacheBitmaps(mask)
-				if return_err != nil {
+				schemata[sc.Id], returnErr = base.CacheBitmaps(mask)
+				if returnErr != nil {
 					return
 				}
 			}
@@ -66,10 +67,10 @@ func GetOSGroupReserve() (Reserved, error) {
 		osGroupReserve.Schemata = schemata
 	})
 
-	return *osGroupReserve, return_err
-
+	return *osGroupReserve, returnErr
 }
 
+// SetOSGroup sets os group
 func SetOSGroup() error {
 	reserve, err := GetOSGroupReserve()
 	if err != nil {
@@ -78,35 +79,34 @@ func SetOSGroup() error {
 
 	allres := proxyclient.GetResAssociation()
 	osGroup := allres["."]
-	org_bm, err := CpuBitmaps(osGroup.CPUs)
+	originBM, err := base.CPUBitmaps(osGroup.CPUs)
 	if err != nil {
 		return err
 	}
 
 	// NOTE (Shaohe), simpleness, brutal. Stolen CPUs from other groups.
-	new_bm := org_bm.Or(reserve.AllCPUs)
-	osGroup.CPUs = new_bm.ToString()
+	newBM := originBM.Or(reserve.AllCPUs)
+	osGroup.CPUs = newBM.ToString()
 
 	level := syscache.GetLLC()
-	target_lev := strconv.FormatUint(uint64(level), 10)
-	cacheLevel := "L" + target_lev
+	cacheLevel := "L" + strconv.FormatUint(uint64(level), 10)
 	schemata, _ := GetAvailableCacheSchemata(allres, []string{"infra", "."}, "none", cacheLevel)
 
 	for i, v := range osGroup.Schemata[cacheLevel] {
-		cacheId := strconv.Itoa(int(v.ID))
-		if !reserve.CPUsPerNode[cacheId].IsEmpty() {
+		cacheID := strconv.Itoa(int(v.ID))
+		if !reserve.CPUsPerNode[cacheID].IsEmpty() {
 			// OSGroup is the first Group, use the edge cache ways.
 			// FIXME (Shaohe), left or right cache ways, need to be check.
-			conf := NewOSConfig()
-			request, _ := CacheBitmaps(strconv.FormatUint(1<<conf.CacheWays-1, 16))
+			conf := config.NewOSConfig()
+			request, _ := base.CacheBitmaps(strconv.FormatUint(1<<conf.CacheWays-1, 16))
 			// NOTE (Shaohe), simpleness, brutal. Reset Cache for OS Group,
 			// even the cache is occupied by other group.
-			available_ways := schemata[cacheId].Or(request)
-			expect_ways := available_ways.ToBinStrings()[0]
+			availableWays := schemata[cacheID].Or(request)
+			expectWays := availableWays.ToBinStrings()[0]
 
-			osGroup.Schemata[cacheLevel][i].Mask = strconv.FormatUint(1<<uint(len(expect_ways))-1, 16)
+			osGroup.Schemata[cacheLevel][i].Mask = strconv.FormatUint(1<<uint(len(expectWays))-1, 16)
 		} else {
-			osGroup.Schemata[cacheLevel][i].Mask = GetCosInfo().CbmMask
+			osGroup.Schemata[cacheLevel][i].Mask = base.GetCosInfo().CbmMask
 		}
 	}
 	if err := proxyclient.Commit(osGroup, "."); err != nil {

@@ -7,6 +7,7 @@ import (
 	"openstackcore-rdtagent/lib/proxyclient"
 )
 
+// PAMAuthenticate does PAM authenticate with PAM DB or PAM Unix
 func PAMAuthenticate(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 
 	// PAM enabled only for HTTPS requests

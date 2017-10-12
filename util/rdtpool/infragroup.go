@@ -13,17 +13,17 @@ import (
 
 	"openstackcore-rdtagent/lib/proxyclient"
 	util "openstackcore-rdtagent/lib/util"
-	. "openstackcore-rdtagent/util/rdtpool/base"
-	. "openstackcore-rdtagent/util/rdtpool/config"
+	"openstackcore-rdtagent/util/rdtpool/base"
+	"openstackcore-rdtagent/util/rdtpool/config"
 )
 
-var groupName string = "infra"
+var groupName = "infra"
 
-var infraGroupReserve = &Reserved{}
+var infraGroupReserve = &base.Reserved{}
 var infraOnce sync.Once
 
-func GetGlobTasks() []glob.Glob {
-	conf := NewInfraConfig()
+func getGlobTasks() []glob.Glob {
+	conf := config.NewInfraConfig()
 	l := len(conf.Tasks)
 	gs := make([]glob.Glob, l, l)
 	for i, v := range conf.Tasks {
@@ -33,14 +33,15 @@ func GetGlobTasks() []glob.Glob {
 	return gs
 }
 
+// GetInfraGroupReserve returns reserved infra group
 // NOTE (Shaohe) This group can be merged into GetOSGroupReserve
-func GetInfraGroupReserve() (Reserved, error) {
-	var return_err error
+func GetInfraGroupReserve() (base.Reserved, error) {
+	var returnErr error
 	infraOnce.Do(func() {
-		conf := NewInfraConfig()
-		infraCPUbm, err := CpuBitmaps([]string{conf.CpuSet})
+		conf := config.NewInfraConfig()
+		infraCPUbm, err := base.CPUBitmaps([]string{conf.CPUSet})
 		if err != nil {
-			return_err = err
+			returnErr = err
 			return
 		}
 		infraGroupReserve.AllCPUs = infraCPUbm
@@ -48,7 +49,7 @@ func GetInfraGroupReserve() (Reserved, error) {
 		level := syscache.GetLLC()
 		syscaches, err := syscache.GetSysCaches(int(level))
 		if err != nil {
-			return_err = err
+			returnErr = err
 			return
 		}
 
@@ -58,7 +59,7 @@ func GetInfraGroupReserve() (Reserved, error) {
 		// FIXME if exception, fix it.
 		ways, _ := strconv.Atoi(syscaches["0"].WaysOfAssociativity)
 		if conf.CacheWays > uint(ways) {
-			return_err = fmt.Errorf("The request InfraGroup cache ways %d is larger than available %d.",
+			returnErr = fmt.Errorf("The request InfraGroup cache ways %d is larger than available %d",
 				conf.CacheWays, ways)
 			return
 		}
@@ -67,21 +68,21 @@ func GetInfraGroupReserve() (Reserved, error) {
 		infraCPUs := map[string]*util.Bitmap{}
 
 		for _, sc := range syscaches {
-			bm, _ := CpuBitmaps([]string{sc.SharedCpuList})
+			bm, _ := base.CPUBitmaps([]string{sc.SharedCpuList})
 			infraCPUs[sc.Id] = infraCPUbm.And(bm)
 			if infraCPUs[sc.Id].IsEmpty() {
-				schemata[sc.Id], return_err = CacheBitmaps("0")
-				if return_err != nil {
+				schemata[sc.Id], returnErr = base.CacheBitmaps("0")
+				if returnErr != nil {
 					return
 				}
 			} else {
 				// FIXME (Shaohe) We need to confirm the location of DDIO caches.
 				// We Put on the left ways, opposite position of OS group cache ways.
-				ways := uint(GetCosInfo().CbmMaskLen)
+				ways := uint(base.GetCosInfo().CbmMaskLen)
 				mask := strconv.FormatUint((1<<conf.CacheWays-1)<<(ways-conf.CacheWays), 16)
 				//FIXME (Shaohe) check RMD for the bootcheck.
-				schemata[sc.Id], return_err = CacheBitmaps(mask)
-				if return_err != nil {
+				schemata[sc.Id], returnErr = base.CacheBitmaps(mask)
+				if returnErr != nil {
 					return
 				}
 			}
@@ -91,11 +92,13 @@ func GetInfraGroupReserve() (Reserved, error) {
 		infraGroupReserve.Schemata = schemata
 	})
 
-	return *infraGroupReserve, return_err
+	return *infraGroupReserve, returnErr
 
 }
+
+// SetInfraGroup sets infra resource group based on configuration
 func SetInfraGroup() error {
-	conf := NewInfraConfig()
+	conf := config.NewInfraConfig()
 	if conf == nil {
 		return nil
 	}
@@ -106,9 +109,8 @@ func SetInfraGroup() error {
 	}
 
 	level := syscache.GetLLC()
-	target_lev := strconv.FormatUint(uint64(level), 10)
-	cacheLevel := "L" + target_lev
-	ways := GetCosInfo().CbmMaskLen
+	cacheLevel := "L" + strconv.FormatUint(uint64(level), 10)
+	ways := base.GetCosInfo().CbmMaskLen
 
 	allres := proxyclient.GetResAssociation()
 	infraGroup, ok := allres[groupName]
@@ -131,7 +133,7 @@ func SetInfraGroup() error {
 		infraGroup.Schemata[cacheLevel][id] = cc
 	}
 
-	gt := GetGlobTasks()
+	gt := getGlobTasks()
 	tasks := []string{}
 	ps := proc.ListProcesses()
 	for k, v := range ps {

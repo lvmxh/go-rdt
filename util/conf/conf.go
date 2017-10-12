@@ -1,18 +1,20 @@
 package conf
 
 import (
+	// Do init flag
 	_ "flag"
 	"fmt"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
+// Init does config initial
 func Init() error {
 	viper.SetConfigName("rdtagent") // no need to include file extension
 	// TODO (Shaohe) consider to introduce Cobra. let Viper work with Cobra.
-	conf_dir := pflag.Lookup("conf-dir").Value.String()
-	if conf_dir != "" {
-		viper.AddConfigPath(conf_dir)
+	confDir := pflag.Lookup("conf-dir").Value.String()
+	if confDir != "" {
+		viper.AddConfigPath(confDir)
 	}
 	viper.AddConfigPath("/etc/rdtagent/")  // path to look for the config file in
 	viper.AddConfigPath("$HOME/rdtagent")  // call multiple times to add many search paths

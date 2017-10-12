@@ -162,8 +162,8 @@ func Enforce(w *tw.RDTWorkLoad) *rmderror.AppError {
 	}
 
 	if len(w.CoreIDs) >= 0 {
-		bm, _ := rmdbase.CpuBitmaps(w.CoreIDs)
-		oldbm, _ := rmdbase.CpuBitmaps(resAss.CPUs)
+		bm, _ := rmdbase.CPUBitmaps(w.CoreIDs)
+		oldbm, _ := rmdbase.CPUBitmaps(resAss.CPUs)
 		bm = bm.Or(oldbm)
 		resAss.CPUs = bm.ToString()
 	} else {
@@ -222,10 +222,10 @@ func Release(w *tw.RDTWorkLoad) error {
 	}
 
 	r.Tasks = util.SubtractStringSlice(r.Tasks, w.TaskIDs)
-	cpubm, _ := rmdbase.CpuBitmaps(r.CPUs)
+	cpubm, _ := rmdbase.CPUBitmaps(r.CPUs)
 
 	if len(w.CoreIDs) > 0 {
-		wcpubm, _ := rmdbase.CpuBitmaps(w.CoreIDs)
+		wcpubm, _ := rmdbase.CPUBitmaps(w.CoreIDs)
 		cpubm = cpubm.Axor(wcpubm)
 	}
 
@@ -325,7 +325,7 @@ func Update(w, patched *tw.RDTWorkLoad) *rmderror.AppError {
 			w.TaskIDs = patched.TaskIDs
 		}
 		if len(patched.CoreIDs) > 0 {
-			bm, err := rmdbase.CpuBitmaps(patched.CoreIDs)
+			bm, err := rmdbase.CPUBitmaps(patched.CoreIDs)
 			if err != nil {
 				return rmderror.NewAppError(http.StatusBadRequest,
 					"Failed to Pareser workload coreIDs.", err)
@@ -381,7 +381,7 @@ func populateEnforceRequest(req *tw.EnforceRequest, w *tw.RDTWorkLoad) *rmderror
 	w.Status = tw.None
 	cpubitstr := ""
 	if len(w.CoreIDs) >= 0 {
-		bm, err := rmdbase.CpuBitmaps(w.CoreIDs)
+		bm, err := rmdbase.CPUBitmaps(w.CoreIDs)
 		if err != nil {
 			return rmderror.NewAppError(http.StatusBadRequest,
 				"Failed to Parese workload coreIDs.", err)
