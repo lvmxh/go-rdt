@@ -148,14 +148,12 @@ func Initialize(c *Config) (*restful.Container, error) {
 
 	wsContainer.Router(restful.CurlyRouter{})
 
-	cap := v1.CapabilitiesResource{}
 	caches := v1.CachesResource{}
 	policy := v1.PolicyResource{}
 	hospitality := v1.HospitalityResource{}
 	wls := v1.WorkLoadResource{Db: db}
 
 	// Register controller to container
-	cap.Register(wsContainer)
 	caches.Register(wsContainer)
 	policy.Register(wsContainer)
 	hospitality.Register(wsContainer)
