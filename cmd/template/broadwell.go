@@ -1,6 +1,6 @@
-// Should this be a json file?
 package template
 
+// Broadwell options
 var Broadwell = map[string]interface{}{
 	"os_cacheways":    1,
 	"infra_cacheways": 19,

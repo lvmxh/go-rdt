@@ -1,6 +1,6 @@
-// Should this be a json file?
 package template
 
+// Skylake options
 var Skylake = map[string]interface{}{
 	"os_cacheways":    1,
 	"infra_cacheways": 10,

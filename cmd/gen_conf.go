@@ -40,7 +40,7 @@ func genPlatFormMap() map[string]bool {
 
 func genPlatFormList(pfm map[string]bool) []string {
 	pfs := []string{}
-	for k, _ := range pfm {
+	for k := range pfm {
 		pfs = append(pfs, k)
 	}
 	return pfs

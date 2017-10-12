@@ -1,7 +1,8 @@
-// TODO: This template is too sample. need to improve it.
+// Package template TODO: This template is too sample. need to improve it.
 // Not sure golang native template can satify us.
 package template
 
+// Options are options for temlate will be replaced
 var Options = map[string]interface{}{
 	"address":         "localhost",
 	"tcpport":         8081,
@@ -17,6 +18,7 @@ var Options = map[string]interface{}{
 	"shared":          2,
 	"shrink":          false}
 
+// Templ is content of template
 const Templ = `# This is a rdtagent config.
 
 title = "RDTagent Config"
