@@ -18,22 +18,19 @@ import (
 	"openstackcore-rdtagent/lib/resctrl"
 	libutil "openstackcore-rdtagent/lib/util"
 
-	. "openstackcore-rdtagent/api/error"
+	rmderror "openstackcore-rdtagent/api/error"
 	"openstackcore-rdtagent/db"
 	"openstackcore-rdtagent/model/cache"
 	"openstackcore-rdtagent/model/policy"
 	tw "openstackcore-rdtagent/model/types/workload"
 	"openstackcore-rdtagent/util"
 	"openstackcore-rdtagent/util/rdtpool"
-	. "openstackcore-rdtagent/util/rdtpool/base"
+	rmdbase "openstackcore-rdtagent/util/rdtpool/base"
 )
 
-// FIXME this is not a global lock
-// global lock for when doing enforce/update/release for a workload.
-// This is a simple way to control RDAgent to access resctrl one
-// goroutine one time
 var l sync.Mutex
 
+// Validate the request workload object is validated.
 func Validate(w *tw.RDTWorkLoad) error {
 	if len(w.TaskIDs) <= 0 && len(w.CoreIDs) <= 0 {
 		return fmt.Errorf("No task or core id specified")
@@ -49,14 +46,15 @@ func Validate(w *tw.RDTWorkLoad) error {
 
 	if w.Policy == "" {
 		if w.MaxCache == nil || w.MinCache == nil {
-			return fmt.Errorf("Need to provide max_cache and min_cache if no policy specified.")
+			return fmt.Errorf("Need to provide max_cache and min_cache if no policy specified")
 		}
 	}
 
 	return nil
 }
 
-func Enforce(w *tw.RDTWorkLoad) *AppError {
+// Enforce a user request workload based on defined policy
+func Enforce(w *tw.RDTWorkLoad) *rmderror.AppError {
 	w.Status = tw.Failed
 
 	l.Lock()
@@ -71,7 +69,7 @@ func Enforce(w *tw.RDTWorkLoad) *AppError {
 	targetLev := strconv.FormatUint(uint64(libcache.GetLLC()), 10)
 	av, err := rdtpool.GetAvailableCacheSchemata(resaall, []string{"infra", "."}, er.Type, "L"+targetLev)
 	if err != nil {
-		return NewAppError(http.StatusInternalServerError,
+		return rmderror.NewAppError(http.StatusInternalServerError,
 			"Error to get available cache", err)
 	}
 
@@ -80,9 +78,11 @@ func Enforce(w *tw.RDTWorkLoad) *AppError {
 	candidate := make(map[string]*libutil.Bitmap, 0)
 
 	for k, v := range av {
-		cacheId, _ := strconv.Atoi(k)
-		if !inCacheList(uint32(cacheId), er.CacheIDs) && er.Type != rdtpool.Shared {
-			candidate[k], _ = libutil.NewBitmap(GetCosInfo().CbmMaskLen, GetCosInfo().CbmMask)
+		cacheID, _ := strconv.Atoi(k)
+		if !inCacheList(uint32(cacheID), er.CacheIDs) && er.Type != rdtpool.Shared {
+			candidate[k], _ = libutil.NewBitmap(
+				rmdbase.GetCosInfo().CbmMaskLen,
+				rmdbase.GetCosInfo().CbmMask)
 			continue
 		}
 		switch er.Type {
@@ -107,16 +107,16 @@ func Enforce(w *tw.RDTWorkLoad) *AppError {
 			}
 			if maxWays <= 0 {
 				if !reserved[rdtpool.Besteffort].Shrink {
-					return AppErrorf(http.StatusBadRequest,
+					return rmderror.AppErrorf(http.StatusBadRequest,
 						"Not enough cache left on cache_id %s", k)
 				}
 				// Try to Shrink workload in besteffort pool
-				cand, changed, err := shrinkBEPool(resaall, reserved[rdtpool.Besteffort].Schemata[k], cacheId, er.MinWays)
+				cand, changed, err := shrinkBEPool(resaall, reserved[rdtpool.Besteffort].Schemata[k], cacheID, er.MinWays)
 				if err != nil {
-					return AppErrorf(http.StatusInternalServerError,
+					return rmderror.AppErrorf(http.StatusInternalServerError,
 						"Errors while try to shrink cache ways on cache_id %s", k)
 				}
-				log.Printf("Shriking cache ways in besteffort pool, candidate schemata for cache id  %d is %s", cacheId, cand.ToString())
+				log.Printf("Shriking cache ways in besteffort pool, candidate schemata for cache id  %d is %s", cacheID, cand.ToString())
 				candidate[k] = cand
 				// Merge changed association to a map, we will commit this map
 				// later
@@ -137,7 +137,7 @@ func Enforce(w *tw.RDTWorkLoad) *AppError {
 		}
 
 		if candidate[k].IsEmpty() {
-			return AppErrorf(http.StatusBadRequest,
+			return rmderror.AppErrorf(http.StatusBadRequest,
 				"Not enough cache left on cache_id %s", k)
 		}
 	}
@@ -162,8 +162,8 @@ func Enforce(w *tw.RDTWorkLoad) *AppError {
 	}
 
 	if len(w.CoreIDs) >= 0 {
-		bm, _ := CpuBitmaps(w.CoreIDs)
-		oldbm, _ := CpuBitmaps(resAss.CPUs)
+		bm, _ := rmdbase.CpuBitmaps(w.CoreIDs)
+		oldbm, _ := rmdbase.CpuBitmaps(resAss.CPUs)
 		bm = bm.Or(oldbm)
 		resAss.CPUs = bm.ToString()
 	} else {
@@ -175,7 +175,7 @@ func Enforce(w *tw.RDTWorkLoad) *AppError {
 
 	if err = proxyclient.Commit(resAss, grpName); err != nil {
 		log.Errorf("Error while try to commit resource group for workload %s, group name %s", w.ID, grpName)
-		return NewAppError(http.StatusInternalServerError,
+		return rmderror.NewAppError(http.StatusInternalServerError,
 			"Error to commit resource group for workload.", err)
 	}
 
@@ -189,7 +189,7 @@ func Enforce(w *tw.RDTWorkLoad) *AppError {
 		if err = proxyclient.Commit(res, name); err != nil {
 			log.Errorf("Error while try to commit shrinked resource group, name: %s", name)
 			proxyclient.DestroyResAssociation(grpName)
-			return NewAppError(http.StatusInternalServerError,
+			return rmderror.NewAppError(http.StatusInternalServerError,
 				"Error to shrink resource group", err)
 		}
 	}
@@ -198,7 +198,7 @@ func Enforce(w *tw.RDTWorkLoad) *AppError {
 	if err = rdtpool.SetOSGroup(); err != nil {
 		log.Errorf("Error while try to commit resource group for default group")
 		proxyclient.DestroyResAssociation(grpName)
-		return NewAppError(http.StatusInternalServerError,
+		return rmderror.NewAppError(http.StatusInternalServerError,
 			"Error while try to commit resource group for default group.", err)
 	}
 
@@ -222,10 +222,10 @@ func Release(w *tw.RDTWorkLoad) error {
 	}
 
 	r.Tasks = util.SubtractStringSlice(r.Tasks, w.TaskIDs)
-	cpubm, _ := CpuBitmaps(r.CPUs)
+	cpubm, _ := rmdbase.CpuBitmaps(r.CPUs)
 
 	if len(w.CoreIDs) > 0 {
-		wcpubm, _ := CpuBitmaps(w.CoreIDs)
+		wcpubm, _ := rmdbase.CpuBitmaps(w.CoreIDs)
 		cpubm = cpubm.Axor(wcpubm)
 	}
 
@@ -255,7 +255,7 @@ func Release(w *tw.RDTWorkLoad) error {
 }
 
 // Update a workload
-func Update(w, patched *tw.RDTWorkLoad) *AppError {
+func Update(w, patched *tw.RDTWorkLoad) *rmderror.AppError {
 
 	// if we change policy/max_cache/min_cache, release current resource group
 	// and re-enforce it.
@@ -289,7 +289,7 @@ func Update(w, patched *tw.RDTWorkLoad) *AppError {
 
 	if reEnforce == true {
 		if err := Release(w); err != nil {
-			return NewAppError(http.StatusInternalServerError, "Faild to release workload",
+			return rmderror.NewAppError(http.StatusInternalServerError, "Faild to release workload",
 				fmt.Errorf(""))
 		}
 
@@ -310,12 +310,12 @@ func Update(w, patched *tw.RDTWorkLoad) *AppError {
 		!reflect.DeepEqual(patched.TaskIDs, w.TaskIDs) {
 		err := Validate(patched)
 		if err != nil {
-			return NewAppError(http.StatusBadRequest, "Failed to validate workload", err)
+			return rmderror.NewAppError(http.StatusBadRequest, "Failed to validate workload", err)
 		}
 
 		targetResAss, ok := resaall[w.CosName]
 		if !ok {
-			return NewAppError(http.StatusInternalServerError, "Can not find resource group name",
+			return rmderror.NewAppError(http.StatusInternalServerError, "Can not find resource group name",
 				fmt.Errorf(""))
 		}
 
@@ -325,9 +325,9 @@ func Update(w, patched *tw.RDTWorkLoad) *AppError {
 			w.TaskIDs = patched.TaskIDs
 		}
 		if len(patched.CoreIDs) > 0 {
-			bm, err := CpuBitmaps(patched.CoreIDs)
+			bm, err := rmdbase.CpuBitmaps(patched.CoreIDs)
 			if err != nil {
-				return NewAppError(http.StatusBadRequest,
+				return rmderror.NewAppError(http.StatusBadRequest,
 					"Failed to Pareser workload coreIDs.", err)
 			}
 			// TODO: check if this new CoreIDs overwrite other resource group
@@ -337,7 +337,7 @@ func Update(w, patched *tw.RDTWorkLoad) *AppError {
 		// commit changes
 		if err = proxyclient.Commit(targetResAss, w.CosName); err != nil {
 			log.Errorf("Error while try to commit resource group for workload %s, group name %s", w.ID, w.CosName)
-			return NewAppError(http.StatusInternalServerError,
+			return rmderror.NewAppError(http.StatusInternalServerError,
 				"Error to commit resource group for workload.", err)
 		}
 	}
@@ -358,17 +358,17 @@ func getCacheIDs(cpubitmap string, cacheinfos *cache.CacheInfos, cpunum int) []u
 	return CacheIDs
 }
 
-func inCacheList(cache uint32, cache_list []uint32) bool {
+func inCacheList(cache uint32, cacheList []uint32) bool {
 	// TODO: if this case, workload has taskids.
 	// Later we need to have abilitity to discover if has taskset
 	// to pin this taskids on a cpuset or not, for now we allocate
 	// cache on all cache.
 	// FIXME: this shouldn't happen here actually
-	if len(cache_list) == 0 {
+	if len(cacheList) == 0 {
 		return true
 	}
 
-	for _, c := range cache_list {
+	for _, c := range cacheList {
 		if cache == c {
 			return true
 		}
@@ -376,14 +376,14 @@ func inCacheList(cache uint32, cache_list []uint32) bool {
 	return false
 }
 
-func populateEnforceRequest(req *tw.EnforceRequest, w *tw.RDTWorkLoad) *AppError {
+func populateEnforceRequest(req *tw.EnforceRequest, w *tw.RDTWorkLoad) *rmderror.AppError {
 
 	w.Status = tw.None
 	cpubitstr := ""
 	if len(w.CoreIDs) >= 0 {
-		bm, err := CpuBitmaps(w.CoreIDs)
+		bm, err := rmdbase.CpuBitmaps(w.CoreIDs)
 		if err != nil {
-			return NewAppError(http.StatusBadRequest,
+			return rmderror.NewAppError(http.StatusBadRequest,
 				"Failed to Parese workload coreIDs.", err)
 		}
 		cpubitstr = bm.ToString()
@@ -394,7 +394,7 @@ func populateEnforceRequest(req *tw.EnforceRequest, w *tw.RDTWorkLoad) *AppError
 
 	cpunum := cpu.HostCPUNum()
 	if cpunum == 0 {
-		return AppErrorf(http.StatusInternalServerError,
+		return rmderror.AppErrorf(http.StatusInternalServerError,
 			"Unable to get Total CPU numbers on Host")
 	}
 
@@ -413,20 +413,20 @@ func populateEnforceRequest(req *tw.EnforceRequest, w *tw.RDTWorkLoad) *AppError
 	if populatePolicy {
 		p, err := policy.GetDefaultPolicy(w.Policy)
 		if err != nil {
-			return NewAppError(http.StatusInternalServerError,
+			return rmderror.NewAppError(http.StatusInternalServerError,
 				"Could not find the Polciy.", err)
 		}
 
 		maxWays, err := strconv.Atoi(p["MaxCache"])
 		if err != nil {
-			return NewAppError(http.StatusInternalServerError,
+			return rmderror.NewAppError(http.StatusInternalServerError,
 				"Error define MaxCache in Polciy.", err)
 		}
 		req.MaxWays = uint32(maxWays)
 
 		minWays, err := strconv.Atoi(p["MinCache"])
 		if err != nil {
-			return NewAppError(http.StatusInternalServerError,
+			return rmderror.NewAppError(http.StatusInternalServerError,
 				"Error define MinCache in Polciy.", err)
 		}
 		req.MinWays = uint32(minWays)
@@ -435,7 +435,7 @@ func populateEnforceRequest(req *tw.EnforceRequest, w *tw.RDTWorkLoad) *AppError
 	var err error
 	req.Type, err = rdtpool.GetCachePoolName(req.MaxWays, req.MinWays)
 	if err != nil {
-		return NewAppError(http.StatusBadRequest,
+		return rmderror.NewAppError(http.StatusBadRequest,
 			"Bad cache ways request",
 			err)
 	}
@@ -449,8 +449,8 @@ func newResAss(r map[string]*libutil.Bitmap, level string) *resctrl.ResAssociati
 	targetLev := "L" + level
 
 	for k, v := range r {
-		cacheId, _ := strconv.Atoi(k)
-		newcos := resctrl.CacheCos{ID: uint8(cacheId), Mask: v.ToString()}
+		cacheID, _ := strconv.Atoi(k)
+		newcos := resctrl.CacheCos{ID: uint8(cacheID), Mask: v.ToString()}
 		newResAss.Schemata[targetLev] = append(newResAss.Schemata[targetLev], newcos)
 
 		log.Debugf("Newly created Mask for Cache %s is %s", k, newcos.Mask)
@@ -467,7 +467,7 @@ func newResAss(r map[string]*libutil.Bitmap, level string) *resctrl.ResAssociati
 // returns: error if internal error happens.
 func shrinkBEPool(resaall map[string]*resctrl.ResAssociation,
 	reservedSchemata *libutil.Bitmap,
-	cacheId int,
+	cacheID int,
 	reqways uint32) (*libutil.Bitmap, map[string]*resctrl.ResAssociation, error) {
 
 	besteffortRes := make(map[string]*resctrl.ResAssociation)
@@ -484,7 +484,7 @@ func shrinkBEPool(resaall map[string]*resctrl.ResAssociation,
 				return nil, besteffortRes, fmt.Errorf(
 					"Internal error, can not find exsting workload for resource group name %s", name)
 			}
-			cosSchemata, _ := CacheBitmaps(v.Schemata["L"+targetLev][cacheId].Mask)
+			cosSchemata, _ := rmdbase.CacheBitmaps(v.Schemata["L"+targetLev][cacheID].Mask)
 			// TODO: need find a better way to reduce the cache way fragments
 			// as currently we are using map to keep resctrl group, it's non-order
 			// so it's little hard to get which resctrl group next to which.
@@ -501,11 +501,11 @@ func shrinkBEPool(resaall map[string]*resctrl.ResAssociation,
 	// loop besteffortRes to find which assocation need to be changed.
 	changedRes := make(map[string]*resctrl.ResAssociation)
 	for name, v := range besteffortRes {
-		cosSchemata, _ := CacheBitmaps(v.Schemata["L"+targetLev][cacheId].Mask)
+		cosSchemata, _ := rmdbase.CacheBitmaps(v.Schemata["L"+targetLev][cacheID].Mask)
 		tmpSchemataStr := cosSchemata.Axor(candidateSchemata).ToString()
 		if tmpSchemataStr != cosSchemata.ToString() {
 			// Changing pointers, the change will be reflact to the origin one
-			v.Schemata["L"+targetLev][cacheId].Mask = tmpSchemataStr
+			v.Schemata["L"+targetLev][cacheID].Mask = tmpSchemataStr
 			changedRes[name] = v
 		}
 	}

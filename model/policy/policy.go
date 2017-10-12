@@ -15,10 +15,13 @@ import (
 	"openstackcore-rdtagent/lib/cpu"
 )
 
+// Attr is Policy attribute
 type Attr map[string]string
 
+// Policy is the pre-defiend policies
 type Policy map[string][]Attr
 
+// CATConfig represents for all policy config
 type CATConfig struct {
 	Catpolicy map[string][]Policy `yaml:"catpolicy"`
 }
@@ -27,9 +30,11 @@ var supportedConfigType = map[string]int{
 	"yaml": 1,
 	"toml": 1,
 }
+
 var config *CATConfig
 var lock sync.Mutex
 
+// LoadPolicy loads pre-defined polies from configure file
 func LoadPolicy() (*CATConfig, error) {
 	appconf := appConf.NewConfig()
 	configFileExt := filepath.Ext(appconf.Def.PolicyPath)
@@ -50,22 +55,22 @@ func LoadPolicy() (*CATConfig, error) {
 
 	r, err := ioutil.ReadFile(appconf.Def.PolicyPath)
 	if err != nil { // Handle errors reading the config file
-		err := fmt.Errorf("Fatal error config file: %s \n", err)
+		err := fmt.Errorf("Fatal error config file: %s", err)
 		log.Fatalf("error: %v", err)
 		return nil, err
 	}
-	runtime_viper := viper.New()
-	runtime_viper.SetConfigType(configType)
-	err = runtime_viper.ReadConfig(bytes.NewBuffer(r)) // Find and read the config file
-	if err != nil {                                    // Handle errors reading the config file
-		err := fmt.Errorf("Fatal error config file: %s \n", err)
+	runtimeViper := viper.New()
+	runtimeViper.SetConfigType(configType)
+	err = runtimeViper.ReadConfig(bytes.NewBuffer(r)) // Find and read the config file
+	if err != nil {                                   // Handle errors reading the config file
+		err := fmt.Errorf("Fatal error config file: %s", err)
 		log.Fatalf("error: %v", err)
 		return nil, err
 
 	}
 
 	c := CATConfig{}
-	err = runtime_viper.Unmarshal(&c)
+	err = runtimeViper.Unmarshal(&c)
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
@@ -73,6 +78,7 @@ func LoadPolicy() (*CATConfig, error) {
 	return &c, err
 }
 
+// GetPlatformPolicy returns specified platform policies
 func GetPlatformPolicy(cpu string) ([]Policy, error) {
 
 	lock.Lock()
@@ -95,7 +101,7 @@ func GetPlatformPolicy(cpu string) ([]Policy, error) {
 	return p, nil
 }
 
-// GetdefaultPlatformPolicy, wrapper for GetPlatformPolicy
+// GetDefaultPlatformPolicy is wrapper for GetPlatformPolicy
 func GetDefaultPlatformPolicy() ([]Policy, error) {
 	cpu := cpu.GetMicroArch(cpu.GetSignature())
 	if cpu == "" {
@@ -112,7 +118,7 @@ func GetPolicy(cpu, policy string) (map[string]string, error) {
 	platform, err := GetPlatformPolicy(cpu)
 
 	if err != nil {
-		return m, fmt.Errorf("Can not find specified platform policy.")
+		return m, fmt.Errorf("Can not find specified platform policy")
 	}
 
 	var policyCandidate []Policy
@@ -131,9 +137,8 @@ func GetPolicy(cpu, policy string) (map[string]string, error) {
 			}
 		}
 		return m, nil
-	} else {
-		return m, fmt.Errorf("Can not find specified policy %s", policy)
 	}
+	return m, fmt.Errorf("Can not find specified policy %s", policy)
 }
 
 // GetDefaultPolicy return a map of the default policy of the host
