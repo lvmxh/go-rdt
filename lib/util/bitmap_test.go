@@ -184,9 +184,9 @@ func TestBitmapGetConnectiveBits(t *testing.T) {
 	}
 }
 
-func TestGenCpuResStringSimple(t *testing.T) {
+func TestGenCPUResStringSimple(t *testing.T) {
 	map_list := []string{"0-7"}
-	s, e := GenCpuResString(map_list, 88)
+	s, e := GenCPUResString(map_list, 88)
 	if e != nil {
 		t.Errorf("Get CpuResString error: %v", e)
 	}
@@ -196,12 +196,12 @@ func TestGenCpuResStringSimple(t *testing.T) {
 	// 0,0,ff
 }
 
-func TestGenCpuResString(t *testing.T) {
+func TestGenCPUResString(t *testing.T) {
 	map_list := []string{"1-8,^3-4,^7,9", "56-87,^86,^61-65"}
 	map_bin := []string{"1101100110",
 		"00011111000000000000000000000000", "101111111111111111111100"}
 
-	s, e := GenCpuResString(map_list, 88)
+	s, e := GenCPUResString(map_list, 88)
 	if e != nil {
 		t.Errorf("Get CpuResString error: %v", e)
 	}
@@ -222,9 +222,9 @@ func TestGenCpuResString(t *testing.T) {
 	}
 }
 
-func TestGenCpuResStringOutofRange(t *testing.T) {
+func TestGenCPUResStringOutofRange(t *testing.T) {
 	map_list := []string{"1-8,^3-4,^7,9", "56-88,^86,^61-65,1024"}
-	_, e := GenCpuResString(map_list, 88)
+	_, e := GenCPUResString(map_list, 88)
 	if e != nil {
 		reason := fmt.Sprintf(
 			"The biggest index %d is not less than the bit map length %d", 1024, 88)
@@ -240,9 +240,9 @@ func TestGenCpuResStringOutofRange(t *testing.T) {
 
 }
 
-func TestGenCpuResStringWithWrongExpression(t *testing.T) {
+func TestGenCPUResStringWithWrongExpression(t *testing.T) {
 	map_list := []string{"abc1-8,^3-4,^7,9", "56-87,^86,^61-65"}
-	_, e := GenCpuResString(map_list, 88)
+	_, e := GenCPUResString(map_list, 88)
 	if e != nil {
 		reason := "wrong expression"
 		es := fmt.Sprintf("%v", e)

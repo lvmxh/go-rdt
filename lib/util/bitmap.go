@@ -6,16 +6,19 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	. "unsafe"
+	"unsafe"
 )
 
-var ALL_DATAS = regexp.MustCompile(`(\d+)`)
+// AllDatas what?
+var AllDatas = regexp.MustCompile(`(\d+)`)
 
+// Bitmap struct represents bit map
 type Bitmap struct {
 	Len  int
 	Bits []int
 }
 
+// NewBitmap create bit map from string, strings ...
 // We can add a wraper for NewBitmap
 // such as:
 // func NewCPUBitmap( value ...interface{}) (*Bitmap, error) {
@@ -24,8 +27,8 @@ type Bitmap struct {
 // }
 func NewBitmap(value ...interface{}) (*Bitmap, error) {
 	// FIXME, need to this code after refacor genBits.
-	len_human_style := func(scope []string) int {
-		m := ALL_DATAS.FindAllString(strings.Join(scope, ","), -1)
+	lenHumanStyle := func(scope []string) int {
+		m := AllDatas.FindAllString(strings.Join(scope, ","), -1)
 		sort.Sort(sort.Reverse(sort.StringSlice(m)))
 		l, err := strconv.Atoi(m[0])
 		if err != nil {
@@ -54,7 +57,7 @@ func NewBitmap(value ...interface{}) (*Bitmap, error) {
 			case []string:
 				if b.Len == 0 {
 					// After refacor, we should get len by genBits
-					b.Len = len_human_style(v) + 1
+					b.Len = lenHumanStyle(v) + 1
 				}
 				// need to refacor genBits
 				bits, err := genBits(v, b.Len)
@@ -75,7 +78,7 @@ func NewBitmap(value ...interface{}) (*Bitmap, error) {
 					break
 				}
 			default:
-				return b, fmt.Errorf("Unknown value type!")
+				return b, fmt.Errorf("Unknown value type")
 			}
 		}
 		b.Bits = genBitmap(b.Len)
@@ -85,7 +88,7 @@ func NewBitmap(value ...interface{}) (*Bitmap, error) {
 	return b, nil
 }
 
-// Union
+// Or does union
 func (b *Bitmap) Or(m *Bitmap) *Bitmap {
 	// FIXME (Shaohe) The follow code are same with and, any design pattern for it?
 	maxc := len(b.Bits)
@@ -109,7 +112,7 @@ func (b *Bitmap) Or(m *Bitmap) *Bitmap {
 	return r
 }
 
-// Intersection
+// And does intersection
 func (b *Bitmap) And(m *Bitmap) *Bitmap {
 	// FIXME (Shaohe) The follow code are same with or, any design pattern for it?
 	maxc := len(b.Bits)
@@ -132,7 +135,7 @@ func (b *Bitmap) And(m *Bitmap) *Bitmap {
 	return r
 }
 
-// Difference
+// Xor does difference
 func (b *Bitmap) Xor(m *Bitmap) *Bitmap {
 	// FIXME (Shaohe) The follow code are same with or, any design pattern for it?
 	maxc := len(b.Bits)
@@ -156,7 +159,7 @@ func (b *Bitmap) Xor(m *Bitmap) *Bitmap {
 	return r
 }
 
-// asymmetric difference
+// Axor does asymmetric difference
 func (b *Bitmap) Axor(m *Bitmap) *Bitmap {
 	// FIXME (Shaohe) The follow code are same with or, any design pattern for it?
 	maxc := len(b.Bits)
@@ -186,7 +189,7 @@ func (b *Bitmap) Axor(m *Bitmap) *Bitmap {
 	return r
 }
 
-// To hex string
+// ToString returns hex string
 func (b *Bitmap) ToString() string {
 	str := ""
 	l := len(b.Bits)
@@ -208,7 +211,7 @@ func (b *Bitmap) ToString() string {
 	return str
 }
 
-// To binary string
+// ToBinString binary string
 func (b *Bitmap) ToBinString() string {
 	// FIXME(Shaohe) Hard code 32.
 	bs32 := fmt.Sprintf("%032d", 0)
@@ -234,7 +237,7 @@ func (b *Bitmap) ToBinString() string {
 	return ts
 }
 
-// To binary strings
+// ToBinStrings to binary string slice
 func (b *Bitmap) ToBinStrings() []string {
 	ss := []string{}
 	ts := strings.Replace(b.ToBinString(), ",", "", -1)
@@ -242,22 +245,22 @@ func (b *Bitmap) ToBinStrings() []string {
 	if l < 1 {
 		return []string{}
 	}
-	org_v := ts[l-1]
-	org_index := l
+	orgV := ts[l-1]
+	orgIndex := l
 	for i := b.Len - 1; i >= 0; i-- {
-		if ts[i] != org_v {
-			ss = append(ss, ts[i+1:org_index])
-			org_index = i + 1
-			org_v = ts[i]
+		if ts[i] != orgV {
+			ss = append(ss, ts[i+1:orgIndex])
+			orgIndex = i + 1
+			orgV = ts[i]
 		}
 		if i == 0 {
-			ss = append(ss, ts[0:org_index])
+			ss = append(ss, ts[0:orgIndex])
 		}
 	}
 	return ss
 }
 
-// ToHumanString return human string of the bitmap, e.g. 1-2,10-11
+// ToHumanString returns human string of the bitmap, e.g. 1-2,10-11
 func (b *Bitmap) ToHumanString() string {
 	ts := b.ToBinStrings()
 	hs := []string{}
@@ -279,45 +282,45 @@ func (b *Bitmap) ToHumanString() string {
 	return strings.Join(hs, ",")
 }
 
-// Get MaxConnectiveBits
+// MaxConnectiveBits returns MaxConnectiveBits
 func (b *Bitmap) MaxConnectiveBits() *Bitmap {
 	ss := b.ToBinStrings()
-	total_l := 0
-	max_i := 0
-	max_len := 0
+	totalLen := 0
+	maxI := 0
+	maxLen := 0
 	cur := 0
 	for i, v := range ss {
 		l := len(v)
 		if strings.Contains(v, "1") {
-			if max_len < l {
-				max_len = l
-				max_i = i
-				cur = total_l
+			if maxLen < l {
+				maxLen = l
+				maxI = i
+				cur = totalLen
 			}
 		}
-		total_l += l
+		totalLen += l
 	}
 
 	// Generate the new Bitmap
 	var r *Bitmap
 	scope := ""
-	if max_len == 0 {
+	if maxLen == 0 {
 		r, _ = NewBitmap(b.Len)
 		return r
-	} else if len(ss[max_i]) == 1 {
+	} else if len(ss[maxI]) == 1 {
 		scope = fmt.Sprintf("%d", cur)
 	} else {
-		scope = fmt.Sprintf("%d-%d", cur, cur+len(ss[max_i])-1)
+		scope = fmt.Sprintf("%d-%d", cur, cur+len(ss[maxI])-1)
 	}
 	r, _ = NewBitmap(b.Len, []string{scope})
 	return r
 }
 
-// get a connective bits for Bitmap by given ways, offset, and order
+// GetConnectiveBits returns a connective bits for Bitmap by given ways, offset, and order
 func (b *Bitmap) GetConnectiveBits(ways, offset uint32, fromLow bool) *Bitmap {
 	ts := strings.Replace(b.ToBinString(), ",", "", -1)
-	var total uint32 = 0
-	var cur uint32 = 0
+	var total uint32
+	var cur uint32
 
 	// early return
 	if offset+ways > uint32(len(ts)) {
@@ -372,6 +375,7 @@ func (b *Bitmap) GetConnectiveBits(ways, offset uint32, fromLow bool) *Bitmap {
 	return r
 }
 
+// IsEmpty returns empty bit map or not
 func (b *Bitmap) IsEmpty() bool {
 	if len(b.Bits) == 0 {
 		return true
@@ -388,6 +392,7 @@ func (b *Bitmap) IsEmpty() bool {
 	return false
 }
 
+// Maximum returns the highest position of the bit map
 func (b *Bitmap) Maximum() uint32 {
 	l := len(b.Bits)
 
@@ -408,10 +413,11 @@ func (b *Bitmap) Maximum() uint32 {
 	return uint32(max + 8*4*(l-1))
 }
 
-var BITMAP_BAD_EXPRESSION = regexp.MustCompile(`([^\^\d-,]+)|([^\d]+-.*(,|$))|` +
+// BitMapBadExpression is the wrong expression
+var BitMapBadExpression = regexp.MustCompile(`([^\^\d-,]+)|([^\d]+-.*(,|$))|` +
 	`([^,]*-[^\d]+)|(\^[^\d]+)|((\,\s)?\^$)`)
 
-func SliceString2Int(s []string) ([]int, error) {
+func sliceString2Int(s []string) ([]int, error) {
 	// 2^32 -1 = 4294967295
 	// len("4294967295") = 10
 	si := make([]int, len(s), len(s))
@@ -437,7 +443,7 @@ func genBitmap(num int, platform ...int) []int {
 // "2-6,^3-4,^5"
 func fillBitMap(bits int, scope string, platform ...int) (int, error) {
 	// "2-6"
-	hyphen_span := func(scope string, platform ...int) (int, error) {
+	hyphenSpan := func(scope string, platform ...int) (int, error) {
 		p := 32
 		if len(platform) > 0 {
 			p = platform[0]
@@ -459,7 +465,7 @@ func fillBitMap(bits int, scope string, platform ...int) (int, error) {
 	}
 
 	// "5"
-	single_bit := func(bit int) int {
+	singleBit := func(bit int) int {
 		// bit should less than than the platform bits
 		return 1 << uint(bit)
 	}
@@ -472,7 +478,7 @@ func fillBitMap(bits int, scope string, platform ...int) (int, error) {
 	for i, v := range scopes {
 		// negative false, positive ture
 		sign := true
-		var err error = nil
+		var err error
 		sv := 0
 		if strings.Contains(v, "^") {
 			sign = false
@@ -481,7 +487,7 @@ func fillBitMap(bits int, scope string, platform ...int) (int, error) {
 		}
 
 		if strings.Contains(v, "-") {
-			sv, err = hyphen_span(v)
+			sv, err = hyphenSpan(v)
 			if err != nil {
 				// change it to log
 				fmt.Printf("the %d element is %s, can not be parser", i, scopes[i])
@@ -495,7 +501,7 @@ func fillBitMap(bits int, scope string, platform ...int) (int, error) {
 				return bits, err
 			}
 			vi = vi % p
-			sv = single_bit(vi)
+			sv = singleBit(vi)
 		}
 		switch sign {
 		case true:
@@ -508,9 +514,9 @@ func fillBitMap(bits int, scope string, platform ...int) (int, error) {
 }
 
 //{"2-8,^3-4,^7,9", "56-87,^86"}
-func genBits(map_list []string, bit_len int) ([]int, error) {
-	Bitmap := genBitmap(bit_len)
-	is_span := func(span string) bool {
+func genBits(mapList []string, bitLen int) ([]int, error) {
+	Bitmap := genBitmap(bitLen)
+	isSpan := func(span string) bool {
 		return strings.Contains(span, "-")
 	}
 
@@ -522,7 +528,7 @@ func genBits(map_list []string, bit_len int) ([]int, error) {
 		return pos / p
 	}
 
-	span_phypen2int := func(span string) (int, int, error) {
+	spanPhypen2int := func(span string) (int, int, error) {
 		scopes := strings.SplitN(span, "-", 2)
 		low, err := strconv.Atoi(scopes[0])
 		if err != nil {
@@ -537,16 +543,16 @@ func genBits(map_list []string, bit_len int) ([]int, error) {
 
 	// a span maybe a cross span, need to split them into small span.
 	// but we must set the max length of span(step).
-	silit_span := func(span string, steps ...int) ([]string, error) {
+	silitSpan := func(span string, steps ...int) ([]string, error) {
 		step := 32
 		if len(steps) > 0 {
 			step = steps[0]
 		}
 		sign := true
-		var err error = nil
+		var err error
 		v := span
 		spans := []string{}
-		if !is_span(span) {
+		if !isSpan(span) {
 			return spans, nil
 		}
 		if strings.Contains(span, "^") {
@@ -554,7 +560,7 @@ func genBits(map_list []string, bit_len int) ([]int, error) {
 			span = strings.TrimSpace(span)
 			v = strings.TrimLeft(span, "^")
 		}
-		low, high, err := span_phypen2int(v)
+		low, high, err := spanPhypen2int(v)
 		if err != nil {
 			return spans, err
 		}
@@ -579,38 +585,38 @@ func genBits(map_list []string, bit_len int) ([]int, error) {
 		return spans, err
 	}
 
-	if len(map_list) == 0 {
+	if len(mapList) == 0 {
 		return Bitmap, nil
 	}
 
-	m := ALL_DATAS.FindAllString(strings.Join(map_list, ","), -1)
-	si, err := SliceString2Int(m)
+	m := AllDatas.FindAllString(strings.Join(mapList, ","), -1)
+	si, err := sliceString2Int(m)
 	if err != nil {
 		return Bitmap, err
 	}
 	sort.Ints(si)
-	if si[len(si)-1] >= bit_len {
+	if si[len(si)-1] >= bitLen {
 		return Bitmap, fmt.Errorf("The biggest index %d is not less than the bit map length %d",
-			si[len(si)-1], bit_len)
+			si[len(si)-1], bitLen)
 	}
 
-	for _, v := range map_list {
+	for _, v := range mapList {
 		// FIXME, remove to before ALL_DATAS?
-		m := BITMAP_BAD_EXPRESSION.FindAllString(v, -1)
+		m := BitMapBadExpression.FindAllString(v, -1)
 		if len(m) > 0 {
 			return Bitmap, fmt.Errorf("wrong expression : %s", v)
 		}
 		scopes := strings.Split(v, ",")
 		for _, v := range scopes {
 			// negative false, positive ture
-			if is_span(v) {
-				spans, err := silit_span(v)
+			if isSpan(v) {
+				spans, err := silitSpan(v)
 				if err != nil {
 					return Bitmap, err
 				}
 				for _, span := range spans {
 					span = strings.TrimSpace(span)
-					low, _, _ := span_phypen2int(strings.TrimLeft(span, "^"))
+					low, _, _ := spanPhypen2int(strings.TrimLeft(span, "^"))
 					pos := locate(low)
 					Bitmap[pos], _ = fillBitMap(Bitmap[pos], span)
 				}
@@ -627,9 +633,9 @@ func genBits(map_list []string, bit_len int) ([]int, error) {
 	return Bitmap, nil
 }
 
-//{"2-8,^3-4,^7,9", "56-87,^86"}
-func GenCpuResString(map_list []string, bit_len int) (string, error) {
-	Bitmap, err := genBits(map_list, bit_len)
+// GenCPUResString {"2-8,^3-4,^7,9", "56-87,^86"}
+func GenCPUResString(mapList []string, bitLen int) (string, error) {
+	Bitmap, err := genBits(mapList, bitLen)
 	str := ""
 	if err != nil {
 		return str, err
@@ -646,50 +652,51 @@ func GenCpuResString(map_list []string, bit_len int) (string, error) {
 
 func string2data(s string) ([]uint, error) {
 	var dummy uint
-	int_len := int(Sizeof(dummy))
+	intLen := int(unsafe.Sizeof(dummy))
 	s = strings.TrimPrefix(strings.TrimPrefix(s, "0x"), "0X")
 	// a string with comma, such as "ff2fff,f1,ffffff0f"
 	if strings.Contains(s, ",") {
 		ss := strings.Split(s, ",")
-		var l int = len(ss)
+		var l = len(ss)
 		datas := make([]uint, l)
 		for i, v := range ss {
-			if len(v) > int_len {
+			if len(v) > intLen {
 				return datas, fmt.Errorf(
-					"string lenth > %d. I'm not so smart to guest the data type.", int_len)
+					"String lenth > %d. I'm not so smart to guest the data type", intLen)
 			}
 			if ui, err := strconv.ParseUint(v, 16, 32); err == nil {
 				datas[l-1-i] = uint(ui)
 			} else {
-				return datas, fmt.Errorf("Can not parser %s in  %s.", v, s)
-			}
-		}
-		return datas, nil
-	} else { // a string without comma, such as "3df00cfff00ffafff"
-		var l int = len(s)
-		n := (l - 1 + int_len) / int_len
-		datas := make([]uint, n)
-		for i := 0; i < n; i++ {
-			start := l - (i+1)*int_len
-			end := l - i*int_len
-			var ns string = s[:end]
-			if start > 0 {
-				ns = s[start:end]
-			}
-			if ui, err := strconv.ParseUint(ns, 16, 32); err == nil {
-				datas[i] = uint(ui)
-			} else {
-				return datas, fmt.Errorf("Can not parser %s in  %s.", ns, s)
+				return datas, fmt.Errorf("Can not parser %s in %s", v, s)
 			}
 		}
 		return datas, nil
 	}
+
+	var l = len(s)
+	n := (l - 1 + intLen) / intLen
+	datas := make([]uint, n)
+	for i := 0; i < n; i++ {
+		start := l - (i+1)*intLen
+		end := l - i*intLen
+		var ns = s[:end]
+		if start > 0 {
+			ns = s[start:end]
+		}
+		if ui, err := strconv.ParseUint(ns, 16, 32); err == nil {
+			datas[i] = uint(ui)
+		} else {
+			return datas, fmt.Errorf("Can not parser %s in  %s", ns, s)
+		}
+		return datas, nil
+	}
+	return datas, nil
 }
 
 // FIXME(Shaohe) unify []int and []uint.
 func genBitsFromHexString(s string) ([]int, error) {
 	d, e := string2data(s)
-	sd := (*(*[]int)(Pointer(&d)))[:]
+	sd := (*(*[]int)(unsafe.Pointer(&d)))[:]
 	return sd, e
 
 }
