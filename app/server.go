@@ -62,13 +62,13 @@ func buildServerConfig(s *options.ServerRunOptions) *Config {
 		s.TLSPort = strconv.FormatUint(uint64(appconfig.Def.TLSPort), 10)
 	}
 
-	// Default is no client cert option for tls
-	isClientCertAuthOption := false
+	// Default is client cert option for tls
+	isClientCertAuthOption := true
 
 	clientAuthOption, ok := appConf.ClientAuth[appconfig.Def.ClientAuth]
 
-	if ok && clientAuthOption != tls.NoClientCert {
-		isClientCertAuthOption = true
+	if ok && (clientAuthOption == tls.NoClientCert) {
+		isClientCertAuthOption = false
 	}
 
 	genericconfig := GenericConfig{
@@ -137,7 +137,7 @@ func Initialize(c *Config) (*restful.Container, error) {
 	wsContainer := restful.NewContainer()
 	wsContainer.Filter(TLSACL)
 
-	// Enable PAM authentication when invalid or no client cert auth option is provided
+	// Enable PAM authentication when "no" client cert auth option is provided
 	if !c.Generic.IsClientCertAuthOption {
 		wsContainer.Filter(auth.PAMAuthenticate)
 	}

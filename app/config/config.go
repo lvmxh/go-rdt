@@ -61,7 +61,7 @@ var def = &Default{
 	0,
 	"etc/rdtagent/cert/server",
 	"etc/rdtagent/cert/client",
-	"no",
+	"challenge",
 	"",
 	"etc/rdtagent/policy.yaml",
 }
