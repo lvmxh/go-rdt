@@ -32,7 +32,6 @@ const (
 // TODO consider create a new struct for TLSConfig
 type Default struct {
 	Address      string `toml:"address"`
-	Port         uint   `toml:"port"`
 	TLSPort      uint   `toml:"tlsport"`
 	CertPath     string `toml:"certpath"`
 	ClientCAPath string `toml:"certpath"`
@@ -48,17 +47,23 @@ type Database struct {
 	DBName    string `toml:"dbname"`
 }
 
+// Debug configurations
+type Debug struct {
+	Enabled   bool `toml:"enabled"`
+	Debugport uint `toml:"debugport"`
+}
+
 // Config represent the configuration struct
 type Config struct {
-	Def *Default
-	Db  *Database
+	Def Default  `mapstructure:"default"`
+	Db  Database `mapstructure:"database"`
+	Dbg Debug    `mapstructure:"debug"`
 }
 
 var configOnce sync.Once
-var def = &Default{
+var def = Default{
 	"localhost",
-	8081,
-	0,
+	8443,
 	"etc/rdtagent/cert/server",
 	"etc/rdtagent/cert/client",
 	"challenge",
@@ -66,16 +71,26 @@ var def = &Default{
 	"etc/rdtagent/policy.yaml",
 }
 
-var db = &Database{}
-var config = &Config{def, db}
+var db = Database{}
+var dbg = Debug{false, 8081}
+var config = &Config{def, db, dbg}
 
-// NewConfig loads configurations from config file
+// NewConfig loads configurations from config file and pflag
 func NewConfig() Config {
+
 	configOnce.Do(func() {
-		viper.BindPFlag("address", pflag.Lookup("address"))
-		viper.BindPFlag("port", pflag.Lookup("port"))
-		viper.UnmarshalKey("default", config.Def)
-		viper.UnmarshalKey("database", config.Db)
+
+		viper.BindPFlag("default.address", pflag.Lookup("address"))
+		viper.BindPFlag("default.tlsport", pflag.Lookup("tlsport"))
+		viper.BindPFlag("default.unixsock", pflag.Lookup("unixsock"))
+		viper.BindPFlag("debug.enabled", pflag.Lookup("debug"))
+		viper.BindPFlag("debug.debugport", pflag.Lookup("debugport"))
+
+		err := viper.Unmarshal(config)
+		if err != nil {
+			panic(err)
+		}
 	})
+
 	return *config
 }

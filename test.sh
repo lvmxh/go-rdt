@@ -68,7 +68,7 @@ while [[ ! -z $CHECK ]]; do
 done
 
 # TODO will also  support -data 'stdout=true,tasks=["ovs*","dpdk"]'
-go run ./cmd/gen_conf.go -path /tmp/rdtagent.toml -data "{\"tcpport\": $PORT}"
+go run ./cmd/gen_conf.go -path /tmp/rdtagent.toml -data "{\"debugport\": $PORT}"
 if [ $? -ne 0 ]; then
     echo "Failed to generate configure file. Exit."
     exit 1
@@ -92,7 +92,7 @@ if [ $? -ne 0 ]; then
     echo "Failed to build rmd, please correct build issue."
     exit 1
 fi
-sudo ${GOPATH}/bin/openstackcore-rdtagent --conf-dir ${CONFFILE%/*} --log-dir "/tmp/rdagent.log" &
+sudo ${GOPATH}/bin/openstackcore-rdtagent --conf-dir ${CONFFILE%/*} --log-dir "/tmp/rdagent.log" --debug &
 
 sleep 1
 CONF=$CONFFILE go test -v ./test/integration/...

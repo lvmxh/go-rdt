@@ -24,18 +24,20 @@ import (
 	"openstackcore-rdtagent/db"
 	"openstackcore-rdtagent/util/acl"
 	"openstackcore-rdtagent/util/auth"
-	"openstackcore-rdtagent/util/options"
 )
 
 // GenericConfig is the generic config for the application
 type GenericConfig struct {
-	APIServerServiceIP     string
-	APIServerServicePort   string
+	Address                string
+	Port                   string
+	TLSPort                string
+	UnixSock               string
 	EnableUISupport        bool
 	DBBackend              string
 	Transport              string
 	DBName                 string
 	IsClientCertAuthOption bool
+	Debug                  bool
 }
 
 // Config is application configuration
@@ -44,24 +46,9 @@ type Config struct {
 	Swagger *swagger.Config
 }
 
-func buildServerConfig(s *options.ServerRunOptions) *Config {
-	// FIXME (cmd line options does not override the config file options)
+func buildServerConfig() *Config {
+
 	appconfig := appConf.NewConfig()
-
-	s.UnixSock = appconfig.Def.UnixSock
-
-	if s.Addr == "" {
-		s.Addr = appconfig.Def.Address
-	}
-
-	if s.Port == "" {
-		s.Port = strconv.FormatUint(uint64(appconfig.Def.Port), 10)
-	}
-
-	if appconfig.Def.TLSPort != 0 {
-		s.TLSPort = strconv.FormatUint(uint64(appconfig.Def.TLSPort), 10)
-	}
-
 	// Default is client cert option for tls
 	isClientCertAuthOption := true
 
@@ -72,16 +59,19 @@ func buildServerConfig(s *options.ServerRunOptions) *Config {
 	}
 
 	genericconfig := GenericConfig{
-		APIServerServiceIP:     s.Addr,
-		APIServerServicePort:   s.Port,
+		Address:                appconfig.Def.Address,
+		TLSPort:                strconv.FormatUint(uint64(appconfig.Def.TLSPort), 10),
+		Port:                   strconv.FormatUint(uint64(appconfig.Dbg.Debugport), 10),
+		UnixSock:               appconfig.Def.UnixSock,
 		DBBackend:              appconfig.Db.Backend,
 		Transport:              appconfig.Db.Transport,
 		DBName:                 appconfig.Db.DBName,
 		IsClientCertAuthOption: isClientCertAuthOption,
+		Debug: appconfig.Dbg.Enabled,
 	}
 
 	swaggerconfig := swagger.Config{
-		WebServicesUrl: fmt.Sprintf("http://%s:%s", s.Addr, s.Port),
+		WebServicesUrl: fmt.Sprintf("http://%s:%d", appconfig.Def.Address, appconfig.Dbg.Debugport),
 		ApiPath:        "/apidocs.json",
 		SwaggerPath:    "/apidocs/", // Optionally, specifiy where the UI is located
 		// FIXME (eliqiao): this depends on https://github.com/swagger-api/swagger-ui.git need to copy dist from it
@@ -96,6 +86,7 @@ func buildServerConfig(s *options.ServerRunOptions) *Config {
 }
 
 // TLSACL is handler for api server to pass acl of a request
+// TODO: Move this out of here.
 func TLSACL(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 	appconf := appConf.NewConfig()
 	if req.Request.TLS == nil || appConf.ClientAuth[appconf.Def.ClientAuth] < appConf.ClientAuth["challenge_given"] {
@@ -240,19 +231,21 @@ func genTLSConfig() (*tls.Config, error) {
 	}, nil
 }
 
-// RunServer uses the provided options to run the apiserver.
-func RunServer(s *options.ServerRunOptions) {
+// RunServer to run the apiserver.
+func RunServer() {
 
 	var server *http.Server
-	config := buildServerConfig(s)
+	config := buildServerConfig()
 	container, err := Initialize(config)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if s.TLSPort == "" {
+	// TODO cleanup this mass logic, especially for unixsock
+
+	if config.Generic.Debug {
 		server = &http.Server{
-			Addr:    s.Addr + ":" + s.Port,
+			Addr:    config.Generic.Address + ":" + config.Generic.Port,
 			Handler: container}
 	} else {
 		// TODO We need to config server.TLSConfig
@@ -263,19 +256,20 @@ func RunServer(s *options.ServerRunOptions) {
 		}
 
 		server = &http.Server{
-			Addr:      s.Addr + ":" + s.TLSPort,
+			Addr:      config.Generic.Address + ":" + config.Generic.TLSPort,
 			Handler:   container,
 			TLSConfig: tlsconf}
 	}
 
 	serverStart := func() {
-		if s.TLSPort == "" {
+		if config.Generic.Debug {
 			log.Fatal(server.ListenAndServe())
 		} else {
 			log.Fatal(server.ListenAndServeTLS("", "")) // Use certs from TLSConfig.
 		}
 	}
-	if s.UnixSock == "" {
+
+	if config.Generic.UnixSock == "" {
 		serverStart()
 	} else {
 		go func() {
@@ -284,7 +278,6 @@ func RunServer(s *options.ServerRunOptions) {
 	}
 
 	// Unix Socket.
-	config = buildServerConfig(s)
 	container, err = Initialize(config)
 	if err != nil {
 		log.Fatal(err)
@@ -293,7 +286,7 @@ func RunServer(s *options.ServerRunOptions) {
 	userver := &http.Server{
 		Handler: container}
 
-	unixListener, err := net.Listen("unix", s.UnixSock)
+	unixListener, err := net.Listen("unix", config.Generic.UnixSock)
 	if err != nil {
 		log.Info(err, unixListener)
 		return

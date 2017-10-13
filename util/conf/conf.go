@@ -26,6 +26,5 @@ func Init() error {
 		fmt.Println(err)
 		return err
 	}
-	viper.BindPFlags(pflag.CommandLine)
 	return nil
 }

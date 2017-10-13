@@ -6,8 +6,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/spf13/pflag"
-
 	"openstackcore-rdtagent/app"
 	dbconf "openstackcore-rdtagent/db/config"
 	"openstackcore-rdtagent/lib/proxy"
@@ -17,7 +15,6 @@ import (
 	"openstackcore-rdtagent/util/flag"
 	"openstackcore-rdtagent/util/log"
 	logconf "openstackcore-rdtagent/util/log/config"
-	"openstackcore-rdtagent/util/options"
 	"openstackcore-rdtagent/util/pidfile"
 )
 
@@ -26,10 +23,11 @@ var rmduser = "rmd"
 func main() {
 	// use pipe pair to communicate between root and normal process
 	var in, out proxy.PipePair
-	s := options.NewServerRunOptions()
-	s.AddFlags(pflag.CommandLine)
 	flag.InitFlags()
-	conf.Init()
+	if err := conf.Init(); err != nil {
+		fmt.Println("Init config failed:", err)
+		os.Exit(1)
+	}
 	if err := log.Init(); err != nil {
 		fmt.Println("Init log failed:", err)
 		os.Exit(1)
@@ -123,5 +121,5 @@ func main() {
 	// should go after connect rpc server
 	bootcheck.SanityCheck()
 	// should tell root process we are fail or success for the santify check
-	app.RunServer(s)
+	app.RunServer()
 }

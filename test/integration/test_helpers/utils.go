@@ -94,7 +94,7 @@ func GetConfigOption(key string, rawVal interface{}) error {
 
 func GetConfigPort() int {
 	var port int
-	GetConfigOption("default.port", &port)
+	GetConfigOption("debug.debugport", &port)
 	return port
 }
 

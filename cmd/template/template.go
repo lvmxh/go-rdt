@@ -5,7 +5,7 @@ package template
 // Options are options for temlate will be replaced
 var Options = map[string]interface{}{
 	"address":         "localhost",
-	"tcpport":         8081,
+	"debugport":       8081,
 	"logfile":         "/var/log/rdagent.log",
 	"dbbackend":       "bolt",
 	"dbtransport":     "/var/run/rdtagent.db",
@@ -25,7 +25,6 @@ title = "RDTagent Config"
 
 [default]
 address = "{{.address}}"
-port = {{.tcpport}}
 policypath = "/etc/rdtagent/policy.toml"
 # tlsport = 443
 # certpath = "etc/rdtagent/cert/server" # Only support pem format, hard code that CAFile is ca.pem, CertFile is rmd-cert.pem, KeyFile is rmd-key.pem
@@ -43,6 +42,10 @@ stdout = {{.logtostdout}}
 backend = "{{.dbbackend}}" # mgo
 transport = "{{.dbtransport}}" # mongodb://localhost
 dbname = "bolt" # RDTPolicy
+
+[debug]
+enabled = true
+debugport = {{.debugport}}
 
 [OSGroup] # OSGroup is mandatory
 cacheways = {{.os_cacheways}}
