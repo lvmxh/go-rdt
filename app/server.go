@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -21,6 +20,7 @@ import (
 	"github.com/emicklei/go-restful-swagger12"
 	log "github.com/sirupsen/logrus"
 	"openstackcore-rdtagent/api/v1"
+	apptls "openstackcore-rdtagent/app/tls"
 	"openstackcore-rdtagent/db"
 	"openstackcore-rdtagent/util/acl"
 	"openstackcore-rdtagent/util/auth"
@@ -95,15 +95,25 @@ func TLSACL(req *restful.Request, resp *restful.Response, chain *restful.FilterC
 	}
 
 	ou := ""
-	for _, v := range req.Request.TLS.PeerCertificates[0].Subject.OrganizationalUnit {
-		if strings.ToLower(v) == "admin" {
+	for _, s := range apptls.GetAdminCertSignatures() {
+		if strings.Compare(string(req.Request.TLS.PeerCertificates[0].Signature), s) == 0 {
 			ou = "admin"
 			break
 		}
-		if strings.ToLower(v) == "user" {
-			ou = "user"
+	}
+
+	if ou == "" {
+		for _, v := range req.Request.TLS.PeerCertificates[0].Subject.OrganizationalUnit {
+			if strings.ToLower(v) == "admin" {
+				ou = "admin"
+				break
+			}
+			if strings.ToLower(v) == "user" {
+				ou = "user"
+			}
 		}
 	}
+
 	cn := req.Request.TLS.PeerCertificates[0].Subject.CommonName
 	user := cn
 	if ou != "" {
@@ -122,6 +132,10 @@ func TLSACL(req *restful.Request, resp *restful.Response, chain *restful.FilterC
 func Initialize(c *Config) (*restful.Container, error) {
 	db, err := db.NewDB()
 	if err != nil {
+		return nil, err
+	}
+
+	if err := apptls.InitAdminCertSignatures(); err != nil {
 		return nil, err
 	}
 
@@ -154,21 +168,6 @@ func Initialize(c *Config) (*restful.Container, error) {
 	return wsContainer, nil
 }
 
-// TODO an individual go file for TLS. And move these functions to this file.
-func getCertPool(cafile string) (*x509.CertPool, error) {
-	pool := x509.NewCertPool()
-	// Should we get SystemCertPool ?
-	data, err := ioutil.ReadFile(cafile)
-	if err != nil {
-		return nil, err
-	}
-	ok := pool.AppendCertsFromPEM(data)
-	if !ok {
-		return nil, errors.New("failed to parse root certificate")
-	}
-	return pool, nil
-}
-
 func genTLSConfig() (*tls.Config, error) {
 	var roots *x509.CertPool
 	var clientPool *x509.CertPool
@@ -183,7 +182,7 @@ func genTLSConfig() (*tls.Config, error) {
 		switch filepath.Base(f) {
 		case appConf.CAFile:
 			tlsfiles["ca"] = f
-			roots, err = getCertPool(f)
+			roots, err = apptls.GetCertPool(f)
 			if err != nil {
 				return nil, err
 			}
@@ -211,7 +210,7 @@ func genTLSConfig() (*tls.Config, error) {
 			"Unknow ClientAuth config setting: " + appconf.Def.CertPath)
 	}
 	if appConf.ClientAuth[appconf.Def.ClientAuth] >= appConf.ClientAuth["challenge_given"] {
-		clientPool, err = getCertPool(filepath.Join(appconf.Def.ClientCAPath, appConf.ClientCAFile))
+		clientPool, err = apptls.GetCertPool(filepath.Join(appconf.Def.ClientCAPath, appConf.ClientCAFile))
 		if err != nil {
 			return nil, err
 		}

@@ -68,4 +68,5 @@ shared = {{.shared}}
 path = "etc/rdtagent/acl/"  #
 # use CSV format
 filter = "url" # at present just support "url", will support "url,ip,proto"
+admincert = "etc/rdtagent/acl/roles/admin/" # A cert is used to describe user info. These cert files in this path are used to define the which users are admin. Only pem format file at present.
 `

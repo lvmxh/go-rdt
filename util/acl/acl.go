@@ -3,6 +3,7 @@ package acl
 import (
 	"fmt"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -68,4 +69,15 @@ func (e *Enforcer) Enforce(request *restful.Request, sub string) bool {
 	}
 	// TODO support ip and proto Enforce.
 	return allow
+}
+
+// NOTE (Shaohe Feng) admin cert can be deleted or added dynamicly, will support later.
+// In acl path?
+func GetAdminCerts() ([]string, error) {
+	aclconf := config.NewACLConfig()
+	if aclconf.AdminCert == "" {
+		return []string{}, nil
+	}
+
+	return filepath.Glob(aclconf.AdminCert + "/*.pem")
 }
