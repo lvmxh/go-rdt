@@ -1,7 +1,24 @@
 # RMD usage examples:
 
-(e.g. starting the service on: http://127.0.0.1:8888)
+## Run RMD
 
+For security consideration, the RESTAPI service runs as a normal user 'rmd',
+you can manually create rmd user or use the bash script:
+
+```
+./setup_rmd_users.sh
+```
+
+But we need to run rmd as root user, it will then spawn 2 processes, 1 as
+root to do privilege operation (access resctrl), another one provide RESTAPI
+service.
+
+```
+sudo ./rmd --conf-dir ./etc/rdtagent
+```
+
+(e.g. starting the service on: http://127.0.0.1:8888)`
+`
 ## Query cache information on the host
 
 ```
