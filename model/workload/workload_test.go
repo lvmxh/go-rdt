@@ -12,10 +12,10 @@ import (
 )
 
 func TestGetCacheIDs(t *testing.T) {
-	cacheinfos := &cache.CacheInfos{Num: 2,
-		Caches: map[uint32]cache.CacheInfo{
-			0: cache.CacheInfo{ID: 0, ShareCpuList: "0-3"},
-			1: cache.CacheInfo{ID: 1, ShareCpuList: "4-7"},
+	cacheinfos := &cache.Infos{Num: 2,
+		Caches: map[uint32]cache.Info{
+			0: cache.Info{ID: 0, ShareCPUList: "0-3"},
+			1: cache.Info{ID: 1, ShareCPUList: "4-7"},
 		}}
 
 	cpubitmap := "3"
@@ -52,37 +52,37 @@ func TestValidateWorkLoad(t *testing.T) {
 			defer subs.Reset()
 			var cache uint32 = 1
 			wl := &tw.RDTWorkLoad{}
-			err := wl.Validate()
+			err := Validate(wl)
 			So(err, ShouldNotBeNil)
 
 			wl.TaskIDs = []string{"1"}
 			Convey("Validate with task ids", func() {
-				err := wl.Validate()
+				err := Validate(wl)
 				So(err, ShouldNotBeNil)
 
 				wl.Policy = "gold"
 				Convey("Validate with task ids and Policy", func() {
-					err := wl.Validate()
+					err := Validate(wl)
 					So(err, ShouldBeNil)
 				})
 			})
 
 			wl.MaxCache = &cache
 			Convey("Validate with MaxCache is not nil but MinCache is nil", func() {
-				err := wl.Validate()
+				err := Validate(wl)
 				So(err, ShouldNotBeNil)
 
 				wl.MinCache = &cache
 				Convey("Validate with MaxCache & MinCache are not nil", func() {
 
-					err := wl.Validate()
+					err := Validate(wl)
 					So(err, ShouldBeNil)
 				})
 			})
 
 			wl.TaskIDs = []string{"2"}
 			Convey("Validate with task ids does not existed", func() {
-				err := wl.Validate()
+				err := Validate(wl)
 				So(err, ShouldNotBeNil)
 			})
 		})
