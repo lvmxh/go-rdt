@@ -1,3 +1,4 @@
+// +build integration
 package integration
 
 // For integration test, we chose BDD testcase framework.

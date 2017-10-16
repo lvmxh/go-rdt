@@ -95,7 +95,7 @@ fi
 sudo ${GOPATH}/bin/openstackcore-rdtagent --conf-dir ${CONFFILE%/*} --log-dir "/tmp/rdagent.log" --debug &
 
 sleep 1
-CONF=$CONFFILE go test -v ./test/integration/...
+CONF=$CONFFILE ginkgo -v -tags "integration" ./test/integration/...
 
 rev=$?
 
