@@ -81,3 +81,9 @@ func GetAdminCerts() ([]string, error) {
 
 	return filepath.Glob(aclconf.AdminCert + "/*.pem")
 }
+
+// TODO Need to add user certs path
+func GetCertsPath() []string {
+	aclconf := config.NewACLConfig()
+	return []string{aclconf.AdminCert}
+}

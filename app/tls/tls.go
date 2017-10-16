@@ -4,14 +4,16 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"fmt"
+	"github.com/fsnotify/fsnotify"
 	"io/ioutil"
-	"path/filepath"
+	"sync"
 
-	appConf "openstackcore-rdtagent/app/config"
+	log "github.com/sirupsen/logrus"
+
 	acl "openstackcore-rdtagent/util/acl"
 )
 
+var signatureRWM sync.RWMutex
 var adminCertSignature []string
 
 func GetCertPool(cafile string) (*x509.CertPool, error) {
@@ -34,49 +36,70 @@ func NewAdminCertSignatures() ([]string, error) {
 	if err != nil {
 		return signatures, err
 	}
-	appconf := appConf.NewConfig()
-
-	// Only support one client ca at present.
-	clientPool, err := GetCertPool(filepath.Join(appconf.Def.ClientCAPath, appConf.ClientCAFile))
-	if err != nil {
-		return signatures, err
-	}
-
-	opts := x509.VerifyOptions{
-		Roots: clientPool,
-	}
 
 	for _, f := range files {
 		dat, err := ioutil.ReadFile(f)
 		if err != nil {
-			return signatures, err
+			log.Errorf("Unable to read signatures file: %s. Error: %s", f, err)
 		}
 		block, _ := pem.Decode(dat)
 		if block == nil || block.Type != "CERTIFICATE" {
-			return signatures, errors.New("failed to parse root certificate")
+			log.Errorf("Failed to decode client certificate %s. Certificate type: %s", f, block.Type)
 		}
 		cert, err := x509.ParseCertificate(block.Bytes)
 		if err != nil {
-			return signatures, err
+			log.Errorf("Failed to parse client certificate %s. Error: %s", f, err)
+		} else {
+			signatures = append(signatures, string(cert.Signature))
 		}
-		// FIXME support verify cert.
-		fmt.Println(opts.DNSName)
-		// if _, err := cert.Verify(opts); err != nil {
-		// 	return signatures, err
-		// }
-
-		signatures = append(signatures, string(cert.Signature))
 	}
 
 	return signatures, nil
 }
 
 func InitAdminCertSignatures() (err error) {
+	var watcher *fsnotify.Watcher
+	watcher, err = fsnotify.NewWatcher()
+	if err != nil {
+		return err
+	}
+	// No choice to close watcher. V2 will support goroutine gracefully exit.
+	// defer watcher.Close()
+
+	go func() {
+		for {
+			select {
+			case event := <-watcher.Events:
+				if event.Op&(fsnotify.Create+fsnotify.Write+fsnotify.Remove) > 0 {
+					log.Infof("Client cert files are changed, reload. Event: %s", event)
+					cs, err := NewAdminCertSignatures()
+					if err != nil {
+						log.Errorf("Error to get client signatures list. %s", err)
+					}
+					signatureRWM.Lock()
+					adminCertSignature = cs
+					signatureRWM.Unlock()
+					log.Infof("Load %d valid certificate signatures.", len(adminCertSignature))
+				}
+			case err := <-watcher.Errors:
+				log.Errorf("Error to watch client certificate path. Error: %s", err)
+			}
+		}
+	}()
+
+	for _, p := range acl.GetCertsPath() {
+		err = watcher.Add(p)
+		if err != nil {
+			return err
+		}
+	}
 	adminCertSignature, err = NewAdminCertSignatures()
 	return
 }
 
 func GetAdminCertSignatures() []string {
 	// NOTE adminCertSignature should not be get once
+	signatureRWM.RLock()
+	defer signatureRWM.RUnlock()
 	return adminCertSignature
 }
