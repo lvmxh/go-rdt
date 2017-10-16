@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
+	"openstackcore-rdtagent/util"
 	"openstackcore-rdtagent/util/task"
 )
 
@@ -72,7 +73,13 @@ func (t CPUsTask) Rollback() error {
 	if !t.Revert {
 		return nil
 	}
-	// FIXME(Shaohe) need to revert the CPUs in all groups to the snapshort
+	// Well, when Roll back cpus in resctrl, write back it to previous value
+	// if applicable, there's no need to touch other group's cpus, as
+	// workload layer will make sure a commit have no overlap with others
+	res, ok := t.RessSnapshot[t.Group]
+	if ok {
+		return writeFile(t.Path, "cpus", res.CPUs)
+	}
 	return nil
 }
 
@@ -101,7 +108,30 @@ func (t TasksTask) Rollback() error {
 	if !t.Revert {
 		return nil
 	}
-	// FIXME(Shaohe) need to revert the tasks in all groups to the snapshort
+
+	res, ok := t.RessSnapshot[t.Group]
+	if ok {
+		var ts []string
+		// Find if origin tasks list has more tasks than the new commit
+		// when do roll back, try to write back task to the origin group
+		ts = util.SubtractStringSlice(res.Tasks, t.ResAssociation.Tasks)
+		if len(ts) > 0 {
+			// Write back to origin
+			for _, v := range ts {
+				err := writeFile(t.Path, "tasks", v)
+				if err != nil {
+					log.Warningf("Failed to add back task %s wile try to rollbak task for %s", v, t.Group)
+				}
+			}
+		} else {
+			// Find if new commit task has more tasks than origin one.
+			// Remove them to default group
+			ts = util.SubtractStringSlice(t.ResAssociation.Tasks, res.Tasks)
+			if err := RemoveTasks(ts); err != nil {
+				log.Warnln(err)
+			}
+		}
+	}
 	return nil
 }
 
