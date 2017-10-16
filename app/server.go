@@ -101,6 +101,12 @@ func TLSACL(req *restful.Request, resp *restful.Response, chain *restful.FilterC
 			break
 		}
 	}
+	for _, s := range apptls.GetUserCertSignatures() {
+		if strings.Compare(string(req.Request.TLS.PeerCertificates[0].Signature), s) == 0 {
+			ou = "user"
+			break
+		}
+	}
 
 	if ou == "" {
 		for _, v := range req.Request.TLS.PeerCertificates[0].Subject.OrganizationalUnit {
@@ -135,7 +141,7 @@ func Initialize(c *Config) (*restful.Container, error) {
 		return nil, err
 	}
 
-	if err := apptls.InitAdminCertSignatures(); err != nil {
+	if err := apptls.InitCertSignatures(); err != nil {
 		return nil, err
 	}
 

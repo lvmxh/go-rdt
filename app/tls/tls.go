@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/fsnotify/fsnotify"
 	"io/ioutil"
+	"path/filepath"
 	"sync"
 
 	log "github.com/sirupsen/logrus"
@@ -15,6 +16,7 @@ import (
 
 var signatureRWM sync.RWMutex
 var adminCertSignature []string
+var userCertSignature []string
 
 func GetCertPool(cafile string) (*x509.CertPool, error) {
 	pool := x509.NewCertPool()
@@ -30,9 +32,13 @@ func GetCertPool(cafile string) (*x509.CertPool, error) {
 	return pool, nil
 }
 
-func NewAdminCertSignatures() ([]string, error) {
-	signatures := []string{}
-	files, err := acl.GetAdminCerts()
+func NewCertSignatures(admin bool) (signatures []string, err error) {
+	var files []string
+	if admin {
+		files, err = acl.GetAdminCerts()
+	} else {
+		files, err = acl.GetUserCerts()
+	}
 	if err != nil {
 		return signatures, err
 	}
@@ -57,7 +63,7 @@ func NewAdminCertSignatures() ([]string, error) {
 	return signatures, nil
 }
 
-func InitAdminCertSignatures() (err error) {
+func InitCertSignatures() (err error) {
 	var watcher *fsnotify.Watcher
 	watcher, err = fsnotify.NewWatcher()
 	if err != nil {
@@ -72,14 +78,26 @@ func InitAdminCertSignatures() (err error) {
 			case event := <-watcher.Events:
 				if event.Op&(fsnotify.Create+fsnotify.Write+fsnotify.Remove) > 0 {
 					log.Infof("Client cert files are changed, reload. Event: %s", event)
-					cs, err := NewAdminCertSignatures()
-					if err != nil {
-						log.Errorf("Error to get client signatures list. %s", err)
+					paths := acl.GetCertsPath()
+					if filepath.HasPrefix(event.Name, paths[0]) {
+						cs, err := NewCertSignatures(true)
+						if err != nil {
+							log.Errorf("Error to get admin client signatures list. %s", err)
+						}
+						signatureRWM.Lock()
+						adminCertSignature = cs
+						signatureRWM.Unlock()
+						log.Infof("Load %d valid admin certificate signatures.", len(adminCertSignature))
+					} else if filepath.HasPrefix(event.Name, paths[1]) {
+						cs, err := NewCertSignatures(false)
+						if err != nil {
+							log.Errorf("Error to get common user client signatures list. %s", err)
+						}
+						signatureRWM.Lock()
+						userCertSignature = cs
+						signatureRWM.Unlock()
+						log.Infof("Load %d valid common user certificate signatures.", len(userCertSignature))
 					}
-					signatureRWM.Lock()
-					adminCertSignature = cs
-					signatureRWM.Unlock()
-					log.Infof("Load %d valid certificate signatures.", len(adminCertSignature))
 				}
 			case err := <-watcher.Errors:
 				log.Errorf("Error to watch client certificate path. Error: %s", err)
@@ -93,13 +111,22 @@ func InitAdminCertSignatures() (err error) {
 			return err
 		}
 	}
-	adminCertSignature, err = NewAdminCertSignatures()
+	adminCertSignature, err = NewCertSignatures(true)
+	if err != nil {
+		return err
+	}
+	userCertSignature, err = NewCertSignatures(false)
 	return
 }
 
 func GetAdminCertSignatures() []string {
-	// NOTE adminCertSignature should not be get once
 	signatureRWM.RLock()
 	defer signatureRWM.RUnlock()
 	return adminCertSignature
+}
+
+func GetUserCertSignatures() []string {
+	signatureRWM.RLock()
+	defer signatureRWM.RUnlock()
+	return userCertSignature
 }

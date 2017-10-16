@@ -71,8 +71,6 @@ func (e *Enforcer) Enforce(request *restful.Request, sub string) bool {
 	return allow
 }
 
-// NOTE (Shaohe Feng) admin cert can be deleted or added dynamicly, will support later.
-// In acl path?
 func GetAdminCerts() ([]string, error) {
 	aclconf := config.NewACLConfig()
 	if aclconf.AdminCert == "" {
@@ -82,8 +80,16 @@ func GetAdminCerts() ([]string, error) {
 	return filepath.Glob(aclconf.AdminCert + "/*.pem")
 }
 
-// TODO Need to add user certs path
+func GetUserCerts() ([]string, error) {
+	aclconf := config.NewACLConfig()
+	if aclconf.UserCert == "" {
+		return []string{}, nil
+	}
+
+	return filepath.Glob(aclconf.UserCert + "/*.pem")
+}
+
 func GetCertsPath() []string {
 	aclconf := config.NewACLConfig()
-	return []string{aclconf.AdminCert}
+	return []string{aclconf.AdminCert, aclconf.UserCert}
 }
