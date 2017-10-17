@@ -18,6 +18,7 @@ var signatureRWM sync.RWMutex
 var adminCertSignature []string
 var userCertSignature []string
 
+// GetCertPool Get Certification pool
 func GetCertPool(cafile string) (*x509.CertPool, error) {
 	pool := x509.NewCertPool()
 	// Should we get SystemCertPool ?
@@ -32,6 +33,7 @@ func GetCertPool(cafile string) (*x509.CertPool, error) {
 	return pool, nil
 }
 
+// NewCertSignatures Generate a list of Certification Signature
 func NewCertSignatures(admin bool) (signatures []string, err error) {
 	var files []string
 	if admin {
@@ -63,6 +65,8 @@ func NewCertSignatures(admin bool) (signatures []string, err error) {
 	return signatures, nil
 }
 
+// InitCertSignatures Initialize the list of Certification Signature
+// Should be called once.
 func InitCertSignatures() (err error) {
 	var watcher *fsnotify.Watcher
 	watcher, err = fsnotify.NewWatcher()
@@ -119,12 +123,14 @@ func InitCertSignatures() (err error) {
 	return
 }
 
+// GetAdminCertSignatures Get the list of Certification Signature
 func GetAdminCertSignatures() []string {
 	signatureRWM.RLock()
 	defer signatureRWM.RUnlock()
 	return adminCertSignature
 }
 
+// GetUserCertSignatures Get the list of Certification Signature
 func GetUserCertSignatures() []string {
 	signatureRWM.RLock()
 	defer signatureRWM.RUnlock()

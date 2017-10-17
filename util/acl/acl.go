@@ -71,6 +71,7 @@ func (e *Enforcer) Enforce(request *restful.Request, sub string) bool {
 	return allow
 }
 
+// GetAdminCerts Get all Admin certification files from a given path.
 func GetAdminCerts() ([]string, error) {
 	aclconf := config.NewACLConfig()
 	if aclconf.AdminCert == "" {
@@ -80,6 +81,7 @@ func GetAdminCerts() ([]string, error) {
 	return filepath.Glob(aclconf.AdminCert + "/*.pem")
 }
 
+// GetUserCerts Get all user certification files from a given path.
 func GetUserCerts() ([]string, error) {
 	aclconf := config.NewACLConfig()
 	if aclconf.UserCert == "" {
@@ -89,6 +91,7 @@ func GetUserCerts() ([]string, error) {
 	return filepath.Glob(aclconf.UserCert + "/*.pem")
 }
 
+// GetCertsPath Get all certification files include admin's and common user's from a given path.
 func GetCertsPath() []string {
 	aclconf := config.NewACLConfig()
 	return []string{aclconf.AdminCert, aclconf.UserCert}
