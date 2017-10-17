@@ -10,8 +10,8 @@ import (
 
 func TestGetByRequest(t *testing.T) {
 	Convey("Test get hosptility score by request", t, func() {
-		h := &HospitalityRaw{}
-		req := &HospitalityRequest{}
+		h := &Hospitality{}
+		req := &Request{}
 
 		Convey("Test get hosptility score bad request min=0 ", func() {
 			req.MaxCache = 1

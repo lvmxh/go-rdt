@@ -1,22 +1,25 @@
 package error
 
 import (
+	"testing"
+
 	"errors"
 	"fmt"
 	"net/http"
 )
 
-func ExampleError() {
+func TestAppError(t *testing.T) {
 	err := func() error {
-		return errors.New("Return a error just for test.")
+		return errors.New("Return a error just for test")
 	}
 	// In a model, after we catch an error, reform it and return AppError.
-	appErr := AppError{http.StatusNotFound, "Reason Message.", err()}
-	fmt.Printf("%v\n", appErr)
+	appErr := AppError{http.StatusNotFound, "Reason Message", err()}
+	fmt.Printf("%v", appErr)
 	fmt.Println(appErr.Error(), appErr.Code)
 
-	ep := NewAppError(http.StatusNotFound, err(), "Reason Message.")
+	ep := NewAppError(http.StatusNotFound, err(), "Reason Message")
 	fmt.Println(ep.Err, ep.Code)
+	// build from formated string
 	e := AppErrorf(ep.Code, "Error for test, reason: %d\n", ep.Code)
 	fmt.Printf("%T, %s\n", e, e.Error())
 	// Output:

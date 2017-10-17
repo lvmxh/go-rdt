@@ -672,7 +672,7 @@ func string2data(s string) ([]uint, error) {
 		}
 		return datas, nil
 	}
-
+	// else: a string without comma, such as "3df00cfff00ffafff"
 	var l = len(s)
 	n := (l - 1 + intLen) / intLen
 	datas := make([]uint, n)
@@ -688,7 +688,6 @@ func string2data(s string) ([]uint, error) {
 		} else {
 			return datas, fmt.Errorf("Can not parser %s in  %s", ns, s)
 		}
-		return datas, nil
 	}
 	return datas, nil
 }
