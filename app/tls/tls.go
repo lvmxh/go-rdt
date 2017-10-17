@@ -1,22 +1,138 @@
 package tls
 
 import (
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 	"sync"
 
+	"github.com/emicklei/go-restful"
 	log "github.com/sirupsen/logrus"
 
+	appConf "openstackcore-rdtagent/app/config"
 	acl "openstackcore-rdtagent/util/acl"
 )
 
 var signatureRWM sync.RWMutex
 var adminCertSignature []string
 var userCertSignature []string
+
+// GenTLSConfig  generate TLS configure.
+func GenTLSConfig() (*tls.Config, error) {
+	var roots *x509.CertPool
+	var clientPool *x509.CertPool
+	tlsfiles := map[string]string{}
+	appconf := appConf.NewConfig()
+	files, err := filepath.Glob(appconf.Def.CertPath + "/*.pem")
+	if err != nil {
+		return nil, err
+	}
+	// avoid to check whether files exist.
+	for _, f := range files {
+		switch filepath.Base(f) {
+		case appConf.CAFile:
+			tlsfiles["ca"] = f
+			roots, err = GetCertPool(f)
+			if err != nil {
+				return nil, err
+			}
+		case appConf.CertFile:
+			tlsfiles["cert"] = f
+		case appConf.KeyFile:
+			tlsfiles["key"] = f
+		}
+	}
+	if len(tlsfiles) < 3 {
+		missing := []string{}
+		for _, k := range []string{"cert", "ca", "key"} {
+			_, ok := tlsfiles[k]
+			if !ok {
+				missing = append(missing, k)
+			}
+		}
+		return nil, fmt.Errorf("Missing enough files for tls config: %s", strings.Join(missing, ", "))
+	}
+
+	// In product env, ClientAuth should >= challenge_given
+	clientauth, ok := appConf.ClientAuth[appconf.Def.ClientAuth]
+	if !ok {
+		return nil, errors.New(
+			"Unknow ClientAuth config setting: " + appconf.Def.CertPath)
+	}
+	if appConf.ClientAuth[appconf.Def.ClientAuth] >= appConf.ClientAuth["challenge_given"] {
+		clientPool, err = GetCertPool(filepath.Join(appconf.Def.ClientCAPath, appConf.ClientCAFile))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	tlsCert, err := tls.LoadX509KeyPair(tlsfiles["cert"], tlsfiles["key"])
+	if err != nil {
+		return nil, err
+	}
+
+	return &tls.Config{
+		RootCAs:      roots,
+		ClientAuth:   clientauth,
+		Certificates: []tls.Certificate{tlsCert},
+		ClientCAs:    clientPool,
+		MinVersion:   tls.VersionTLS11,
+	}, nil
+}
+
+// ACL is handler for api server to pass acl of a request
+func ACL(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+	appconf := appConf.NewConfig()
+	if req.Request.TLS == nil || appConf.ClientAuth[appconf.Def.ClientAuth] < appConf.ClientAuth["challenge_given"] {
+		chain.ProcessFilter(req, resp)
+		return
+	}
+
+	ou := ""
+	for _, s := range GetAdminCertSignatures() {
+		if strings.Compare(string(req.Request.TLS.PeerCertificates[0].Signature), s) == 0 {
+			ou = "admin"
+			break
+		}
+	}
+	for _, s := range GetUserCertSignatures() {
+		if strings.Compare(string(req.Request.TLS.PeerCertificates[0].Signature), s) == 0 {
+			ou = "user"
+			break
+		}
+	}
+
+	if ou == "" {
+		for _, v := range req.Request.TLS.PeerCertificates[0].Subject.OrganizationalUnit {
+			if strings.ToLower(v) == "admin" {
+				ou = "admin"
+				break
+			}
+			if strings.ToLower(v) == "user" {
+				ou = "user"
+			}
+		}
+	}
+
+	cn := req.Request.TLS.PeerCertificates[0].Subject.CommonName
+	user := cn
+	if ou != "" {
+		user = ou
+	}
+	e, _ := acl.NewEnforcer()
+	if e.Enforce(req, user) != true {
+		log.Errorf("User is not allow to access this resource")
+		resp.WriteErrorString(401, cn+" is not Authorized")
+		return
+	}
+	chain.ProcessFilter(req, resp)
+}
 
 // GetCertPool Get Certification pool
 func GetCertPool(cafile string) (*x509.CertPool, error) {
