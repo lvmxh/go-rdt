@@ -17,6 +17,7 @@ import (
 
 	appConf "openstackcore-rdtagent/app/config"
 	acl "openstackcore-rdtagent/util/acl"
+	aclConf "openstackcore-rdtagent/util/acl/config"
 )
 
 var signatureRWM sync.RWMutex
@@ -88,50 +89,60 @@ func GenTLSConfig() (*tls.Config, error) {
 
 // ACL is handler for api server to pass acl of a request
 func ACL(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+	check := func(user string) {
+		e, _ := acl.NewEnforcer()
+		if e.Enforce(req, user) != true {
+			log.Errorf("User is not allow to access this resource")
+			resp.WriteErrorString(401, user+" is not Authorized")
+			return
+		}
+		chain.ProcessFilter(req, resp)
+	}
+
 	appconf := appConf.NewConfig()
 	if req.Request.TLS == nil || appConf.ClientAuth[appconf.Def.ClientAuth] < appConf.ClientAuth["challenge_given"] {
 		chain.ProcessFilter(req, resp)
 		return
 	}
 
-	ou := ""
-	for _, s := range GetAdminCertSignatures() {
-		if strings.Compare(string(req.Request.TLS.PeerCertificates[0].Signature), s) == 0 {
-			ou = "admin"
-			break
-		}
-	}
-	for _, s := range GetUserCertSignatures() {
-		if strings.Compare(string(req.Request.TLS.PeerCertificates[0].Signature), s) == 0 {
-			ou = "user"
-			break
-		}
-	}
-
-	if ou == "" {
-		for _, v := range req.Request.TLS.PeerCertificates[0].Subject.OrganizationalUnit {
-			if strings.ToLower(v) == "admin" {
-				ou = "admin"
-				break
-			}
-			if strings.ToLower(v) == "user" {
-				ou = "user"
-			}
-		}
-	}
-
 	cn := req.Request.TLS.PeerCertificates[0].Subject.CommonName
-	user := cn
-	if ou != "" {
-		user = ou
-	}
-	e, _ := acl.NewEnforcer()
-	if e.Enforce(req, user) != true {
-		log.Errorf("User is not allow to access this resource")
-		resp.WriteErrorString(401, cn+" is not Authorized")
+	author := aclConf.NewACLConfig().Authorization
+	if author == aclConf.Signature {
+		sig := string(req.Request.TLS.PeerCertificates[0].Signature)
+		for _, s := range GetAdminCertSignatures() {
+			if strings.Compare(string(sig), s) == 0 {
+				chain.ProcessFilter(req, resp)
+				return
+			}
+		}
+		for _, s := range GetUserCertSignatures() {
+			if strings.Compare(string(sig), s) == 0 {
+				check(aclConf.CertClientUserRole)
+				return
+			}
+		}
+		log.Errorf(cn + "is not allow to access this resource, with its signature : " + sig)
+		resp.WriteErrorString(401, cn+" is not Authorized.")
 		return
 	}
-	chain.ProcessFilter(req, resp)
+
+	if author == aclConf.OU {
+		e, _ := acl.NewEnforcer()
+		OU := req.Request.TLS.PeerCertificates[0].Subject.OrganizationalUnit
+		for _, v := range OU {
+			if e.Enforce(req, strings.ToLower(v)) == true {
+				chain.ProcessFilter(req, resp)
+				return
+			}
+		}
+		log.Errorf("User is not allow to access this resource")
+		resp.WriteErrorString(401, "OU: "+strings.Join(OU, ", ")+" is not Authorized")
+		return
+	}
+
+	if author == aclConf.CN {
+		check(cn)
+	}
 }
 
 // GetCertPool Get Certification pool

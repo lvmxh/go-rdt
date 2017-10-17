@@ -43,7 +43,10 @@ func NewEnforcer() (*Enforcer, error) {
 			policy := path.Join(aclconf.Path, filter, "policy.csv")
 			switch filter {
 			case "url":
-				enforcer.url = casbin.NewEnforcer(model, policy)
+				e := casbin.NewEnforcer(model, policy)
+				// NOTE, the policy file should define a role named user.
+				e.AddRoleForUser(config.CertClientUserRole, "user")
+				enforcer.url = e
 				log.Infof("succssfully set %s acl", filter)
 			case "ip":
 				log.Infof("Do not support %s acl at present", filter)
