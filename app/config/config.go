@@ -34,7 +34,7 @@ type Default struct {
 	Address      string `toml:"address"`
 	TLSPort      uint   `toml:"tlsport"`
 	CertPath     string `toml:"certpath"`
-	ClientCAPath string `toml:"certpath"`
+	ClientCAPath string `toml:"clientcapath"`
 	ClientAuth   string `toml:"clientauth"`
 	UnixSock     string `toml:"unixsock"`
 	PolicyPath   string `toml:"policypath"`
