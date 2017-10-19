@@ -3,11 +3,16 @@ package proc
 import (
 	"bufio"
 	"fmt"
+	"golang.org/x/sys/unix"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
+	"unsafe"
+
+	"openstackcore-rdtagent/lib/util"
 )
 
 const (
@@ -133,4 +138,65 @@ var ListProcesses = func() map[string]Process {
 	}
 
 	return processes
+}
+
+// GetCPUAffinity returns the affinity of a given task id
+func GetCPUAffinity(Pid string) (*util.Bitmap, error) {
+	// each uint is 64 bits
+	// max support 16 * 64 cpus
+	var mask [16]uintptr
+
+	pid, err := strconv.Atoi(Pid)
+	if err != nil {
+		return nil, err
+	}
+
+	_, _, ierr := syscall.RawSyscall(
+		unix.SYS_SCHED_GETAFFINITY,
+		uintptr(pid),
+		uintptr(len(mask)*8),
+		uintptr(unsafe.Pointer(&mask[0])),
+	)
+
+	// util.Bitmap.Bits accept 32 bit int type, need to covert it
+	var bits []int
+	for _, i := range mask {
+		val := uint(i)
+		// FIXME: what's the hell, find low 32 bits
+		bits = append(bits, int((val<<32)>>32))
+		bits = append(bits, int(val>>32))
+	}
+	if ierr != 0 {
+		return nil, ierr
+	}
+	// this is so hacking to construct a Bitmap,
+	// Bitmap shouldn't expose detail to other package at all
+	return &util.Bitmap{
+		// Need to set correctly and carefully, this is the total cpu
+		// number
+		Len:  16 * 64,
+		Bits: bits,
+	}, nil
+}
+
+// SetCPUAffinity set a process/thread's CPU affinity
+//func SetCPUAffinity(Pid string, affinity []int) error {
+func SetCPUAffinity(Pid string, cpus *util.Bitmap) error {
+	var mask [16]uintptr
+
+	pid, err := strconv.Atoi(Pid)
+	if err != nil {
+		return err
+	}
+
+	for idx, bit := range cpus.Bits {
+		ubit := uintptr(bit)
+		mask[idx/2] |= ubit
+	}
+
+	_, _, ierr := syscall.RawSyscall(unix.SYS_SCHED_SETAFFINITY, uintptr(pid), uintptr(len(mask)*8), uintptr(unsafe.Pointer(&mask[0])))
+	if ierr != 0 {
+		return ierr
+	}
+	return nil
 }

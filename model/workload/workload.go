@@ -344,10 +344,21 @@ func Update(w, patched *tw.RDTWorkLoad) *rmderror.AppError {
 	return nil
 }
 
-func getCacheIDs(cpubitmap string, cacheinfos *cache.Infos, cpunum int) []uint32 {
+func getCacheIDs(taskids []string, cpubitmap string, cacheinfos *cache.Infos, cpunum int) []uint32 {
 	var CacheIDs []uint32
 	cpubm, _ := libutil.NewBitmap(cpunum, cpubitmap)
 
+	for _, t := range taskids {
+		af, err := proc.GetCPUAffinity(t)
+		if err != nil {
+			log.Warningf("Failed to get cpu affinity for task %s", t)
+			// FIXME get default affinity instead of a hard code 400 cpus
+			af, _ = libutil.NewBitmap(cpunum, strings.Repeat("f", 100))
+		}
+		cpubm = cpubm.Or(af)
+	}
+
+	// No warry, cpubitmap is empty if taskids is None
 	for _, c := range cacheinfos.Caches {
 		// Okay, NewBitmap only support string list if we using human style
 		bm, _ := libutil.NewBitmap(cpunum, strings.Split(c.ShareCPUList, "\n"))
@@ -398,7 +409,7 @@ func populateEnforceRequest(req *tw.EnforceRequest, w *tw.RDTWorkLoad) *rmderror
 			"Unable to get Total CPU numbers on Host")
 	}
 
-	req.CacheIDs = getCacheIDs(cpubitstr, cacheinfo, cpunum)
+	req.CacheIDs = getCacheIDs(w.TaskIDs, cpubitstr, cacheinfo, cpunum)
 
 	populatePolicy := true
 
