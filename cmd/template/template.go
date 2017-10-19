@@ -44,7 +44,7 @@ transport = "{{.dbtransport}}" # mongodb://localhost
 dbname = "bolt" # RDTPolicy
 
 [debug]
-enabled = true
+enabled = false
 debugport = {{.debugport}}
 
 [OSGroup] # OSGroup is mandatory

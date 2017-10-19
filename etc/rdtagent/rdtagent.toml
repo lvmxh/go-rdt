@@ -12,7 +12,7 @@ policypath = "etc/rdtagent/policy.toml"
 # unixsock = "./var/run/rmd.sock"
 
 [debug]
-enable = false
+enabled = false
 debugport = 8081
 
 [log]
