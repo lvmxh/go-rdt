@@ -72,7 +72,7 @@ var def = Default{
 }
 
 var db = Database{}
-var dbg = Debug{false, 8081}
+var dbg = Debug{}
 var config = &Config{def, db, dbg}
 
 // NewConfig loads configurations from config file and pflag
@@ -80,6 +80,9 @@ func NewConfig() Config {
 
 	configOnce.Do(func() {
 
+		// Take the value from pflag which was defined in flag.go
+		// The default value of the struct as not taken if we
+		// bind pflag to viper
 		viper.BindPFlag("default.address", pflag.Lookup("address"))
 		viper.BindPFlag("default.tlsport", pflag.Lookup("tlsport"))
 		viper.BindPFlag("default.unixsock", pflag.Lookup("unixsock"))

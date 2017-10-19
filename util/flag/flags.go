@@ -45,11 +45,11 @@ func InitFlags() {
 	pflag.CommandLine.SetNormalizeFunc(WordSepNormalizeFunc)
 	pflag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 
-	pflag.String("address", "", "Listen address")
-	pflag.Int("tlsport", 0, "TLS listen port")
+	pflag.String("address", "localhost", "Listen address")
+	pflag.Int("tlsport", 8443, "TLS listen port")
 	pflag.BoolP("debug", "d", false, "Enable debug")
 	pflag.String("unixsock", "", "Unix sock file path")
-	pflag.Int("debugport", 0, "Debug listen port")
+	pflag.Int("debugport", 8081, "Debug listen port")
 	pflag.String("conf-dir", "", "Directy of config file")
 
 	pflag.Parse()
