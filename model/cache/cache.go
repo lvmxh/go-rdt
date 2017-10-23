@@ -12,6 +12,7 @@ import (
 
 	rmderror "openstackcore-rdtagent/api/error"
 	"openstackcore-rdtagent/lib/cache"
+	"openstackcore-rdtagent/lib/cpu"
 	"openstackcore-rdtagent/lib/proc"
 	"openstackcore-rdtagent/lib/resctrl"
 	"openstackcore-rdtagent/model/policy"
@@ -205,6 +206,9 @@ func (c *Infos) GetByLevel(level uint32) *rmderror.AppError {
 			newCachdinfo.TotalSize = convertCacheSize(sc.Size)
 			newCachdinfo.ShareCPUList = sc.SharedCPUList
 			newCachdinfo.CacheLevel = level
+
+			socketid := strings.SplitN(sc.SharedCPUList, "-", 2)[0]
+			newCachdinfo.Location, _ = cpu.LocateOnSocket(socketid)
 
 			newCachdinfo.AvaliableWays = av[sc.ID].ToString()
 

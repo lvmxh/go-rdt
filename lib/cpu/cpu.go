@@ -97,3 +97,14 @@ func IsolatedCPUs() string {
 	})
 	return isolatedCPUs
 }
+
+// LocateOnSocket return the cpus on which socket.
+func LocateOnSocket(cpuid string) (id string, err error) {
+	path := filepath.Join(SysCPU, "cpu"+cpuid, "topology/physical_package_id")
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	id = strings.TrimSpace(string(data))
+	return id, err
+}
