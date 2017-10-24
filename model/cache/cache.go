@@ -39,6 +39,7 @@ type Info struct {
 	WayContention    uint64
 	CacheLevel       uint32
 	Location         string            `json:"location_on_socket"`
+	Node             string            `json:"location_on_node"`
 	ShareCPUList     string            `json:"share_cpu_list"`
 	AvaliableWays    string            `json:"avaliable_ways"`
 	AvaliableCPUs    string            `json:"avaliable_cpus"`
@@ -207,8 +208,9 @@ func (c *Infos) GetByLevel(level uint32) *rmderror.AppError {
 			newCachdinfo.ShareCPUList = sc.SharedCPUList
 			newCachdinfo.CacheLevel = level
 
-			socketid := strings.SplitN(sc.SharedCPUList, "-", 2)[0]
-			newCachdinfo.Location, _ = cpu.LocateOnSocket(socketid)
+			cpuid := strings.SplitN(sc.SharedCPUList, "-", 2)[0]
+			newCachdinfo.Location, _ = cpu.LocateOnSocket(cpuid)
+			newCachdinfo.Node = cpu.LocateOnNode(cpuid)
 
 			newCachdinfo.AvaliableWays = av[sc.ID].ToString()
 

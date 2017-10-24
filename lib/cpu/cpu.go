@@ -108,3 +108,15 @@ func LocateOnSocket(cpuid string) (id string, err error) {
 	id = strings.TrimSpace(string(data))
 	return id, err
 }
+
+// LocateOnNode return the cpus on which node.
+func LocateOnNode(cpuid string) string {
+	pattern := filepath.Join(SysCPU, "cpu"+cpuid, "node*")
+	files, _ := filepath.Glob(pattern)
+	if len(files) > 0 {
+		_, file := filepath.Split(files[0])
+		nodeid := strings.Split(file, "node")
+		return nodeid[1]
+	}
+	return ""
+}
