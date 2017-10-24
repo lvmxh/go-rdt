@@ -5,11 +5,9 @@ if [[ $EUID != 0 ]]; then
   exit 1
 fi
 
-USER="rmd"
-sudo useradd $USER || echo "User rmd already exists."
-
-BERKELYDBFILE="/etc/rdtagent/pam/rmd_users.db"
-echo 'Setup berkely db users'
+BERKELYDBDIR="/etc/rdtagent/pam"
+BERKELYDBFILENAME="rmd_users.db"
+echo 'Setup Berkely db users'
 while true
 do
     echo 'Enter username or 0 to stop'
@@ -23,6 +21,10 @@ do
     openssl passwd -crypt $p >> users
 done
 
-db_load -T -t hash -f users $BERKELYDBFILE
-sudo chown $USER:$USER $BERKELYDBFILE
-rm -rf users
+# If input file was created
+if [ -f "users" ]; then
+    mkdir -p $BERKELYDBDIR
+    # Berkely DB is access restricted to root only
+    db_load -T -t hash -f users $BERKELYDBDIR"/"$BERKELYDBFILENAME
+    rm -rf users
+fi

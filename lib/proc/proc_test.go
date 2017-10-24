@@ -8,7 +8,7 @@ import (
 	//"openstackcore-rdtagent/lib/cpu"
 	"openstackcore-rdtagent/lib/util"
 	// Better to make that package a util package
-	"openstackcore-rdtagent/test/integration/test_helpers"
+	"openstackcore-rdtagent/test/test_helpers"
 )
 
 func TestListProcesses(t *testing.T) {

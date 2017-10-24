@@ -24,11 +24,8 @@ if [ ! -d ${DBFILE%/*} ]; then
     sudo chown $USER:$USER  ${DBFILE%/*}
 fi
 
-PAMSRCFILE="/etc/rdtagent/pam/rmd"
-PAMDIR="/etc/pam.d"
-if [ -d $PAMDIR ]; then
-    cp $PAMSRCFILE $PAMDIR
-fi
+./setup_pam_files.sh
 
 DATA="\"logfile\":\"$LOGFILE\", \"dbtransport\":\"$DBFILE\", \"logtostdout\":false"
 go run ./cmd/gen_conf.go -path /etc/rdtagent/rdtagent.toml -data "{$DATA}"
+

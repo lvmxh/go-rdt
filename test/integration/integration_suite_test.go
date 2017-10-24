@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"openstackcore-rdtagent/test/integration/test_helpers"
+	"openstackcore-rdtagent/test/test_helpers"
 )
 
 func TestIntegration(t *testing.T) {
@@ -27,7 +27,7 @@ var _ = BeforeSuite(func() {
 	Pids, err = testhelpers.CreateNewProcesses("sleep 100", PidNumber)
 	Expect(err).NotTo(HaveOccurred())
 
-	v1url = testhelpers.GetV1URL()
+	v1url = testhelpers.GetHTTPV1URL()
 })
 
 var _ = AfterSuite(func() {

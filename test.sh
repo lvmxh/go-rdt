@@ -9,7 +9,7 @@ if [ "$1" == "-u" ]; then
     exit 0
 fi
 
-if [ "$1" != "-i" ]; then
+if [ "$1" != "-i" -a "$1" != "-s" ]; then
     # NOTE please use -short for unittest.
     go test -short -v -cover $(go list ./... | grep -v /vendor/ | grep -v /test/)
 fi
@@ -26,7 +26,6 @@ GOPATH=${GOPATH#\"}
 export GOROOT
 export GOPATH
 export PATH=${PATH}:${GOROOT}/bin:${GOPATH}/bin
-
 
 RESDIR="/sys/fs/resctrl"
 PID="/var/run/rmd.pid"
@@ -67,8 +66,20 @@ while [[ ! -z $CHECK ]]; do
     CHECK=$(sudo netstat -ap | grep $PORT)
 done
 
+DATA=""
 # TODO will also  support -data 'stdout=true,tasks=["ovs*","dpdk"]'
-go run ./cmd/gen_conf.go -path /tmp/rdtagent.toml -data "{\"debugport\": $PORT}"
+if [ "$1" == "-s" ]; then
+    if [ "$2" == "-nocert" ]; then
+        DATA="\"clientauth\":\"no\", \"tlsport\":$PORT"
+    else
+        DATA="\"tlsport\":$PORT"
+    fi
+else
+    DATA="\"debugport\":$PORT"
+fi
+
+go run ./cmd/gen_conf.go -path /tmp/rdtagent.toml -data "{$DATA}"
+
 if [ $? -ne 0 ]; then
     echo "Failed to generate configure file. Exit."
     exit 1
@@ -84,18 +95,41 @@ sed -i -e 's/\(stdout = \)\(.*\)/\1false/g' $CONFFILE
 
 cat $CONFFILE
 
+if [ "$1" == "-s" -a "$2" == "-nocert" ]; then
+    ./setup_pam_files.sh
+    if [ $? -ne 0 ]; then
+        echo "Failed to setup pam files"
+        exit 1
+    fi
+fi
+
 # Use godep to build rmd binary instead of using dependicies of user's
 # GOPATH
 # TODO change it to rmd
-godep go install openstackcore-rdtagent
+godep go install openstackcore-rdtagent && sudo cp -r etc/rdtagent /etc
 if [ $? -ne 0 ]; then
     echo "Failed to build rmd, please correct build issue."
     exit 1
 fi
-sudo ${GOPATH}/bin/openstackcore-rdtagent --conf-dir ${CONFFILE%/*} --log-dir "/tmp/rdagent.log" --debug &
+
+if [ "$1" == "-s" ]; then
+    sudo ${GOPATH}/bin/openstackcore-rdtagent --conf-dir ${CONFFILE%/*} --log-dir "/tmp/rdagent.log" &
+else
+    sudo ${GOPATH}/bin/openstackcore-rdtagent --conf-dir ${CONFFILE%/*} --log-dir "/tmp/rdagent.log" --debug &
+fi
+
 
 sleep 1
-CONF=$CONFFILE ginkgo -v -tags "integration" ./test/integration/...
+
+if [ "$1" == "-s" ]; then
+    if [ "$2" == "-nocert" ]; then
+        CONF=$CONFFILE ginkgo -v -tags "integration_https" --focus="PAMAuth" ./test/integration_https/...
+    else
+        CONF=$CONFFILE ginkgo -v -tags "integration_https" --focus="CertAuth" ./test/integration_https/...
+    fi
+else
+    CONF=$CONFFILE ginkgo -v -tags "integration" ./test/integration/...
+fi
 
 rev=$?
 

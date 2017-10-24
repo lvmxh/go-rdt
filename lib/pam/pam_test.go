@@ -1,12 +1,11 @@
-package test
+package pam
 
 import (
-	"openstackcore-rdtagent/lib/pam"
 	"testing"
 )
 
 func TestPAMStartFunc(t *testing.T) {
-	_, err := pam.PAMStartFunc("", "", nil)
+	_, err := PAMStartFunc("", "", nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -14,17 +13,17 @@ func TestPAMStartFunc(t *testing.T) {
 
 func TestPAMTxAuthenticate(t *testing.T) {
 	// valid credential
-	c := pam.Credential{"user", "user1"}
+	c := Credential{"user", "user1"}
 
 	// valid service name
 	service := "rmd"
 
-	tx, err := pam.PAMStartFunc(service, c.Username, c.PAMResponseHandler)
+	tx, err := PAMStartFunc(service, c.Username, c.PAMResponseHandler)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = pam.PAMTxAuthenticate(tx)
+	err = PAMTxAuthenticate(tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -33,7 +32,7 @@ func TestPAMTxAuthenticate(t *testing.T) {
 func TestPAMAuthenticate(t *testing.T) {
 
 	// Litmus test start func
-	_, err := pam.PAMStartFunc("", "", nil)
+	_, err := PAMStartFunc("", "", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +52,7 @@ func TestPAMAuthenticate(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.description, func(t *testing.T) {
-			c := pam.Credential{testCase.username, testCase.password}
+			c := Credential{testCase.username, testCase.password}
 			err := c.PAMAuthenticate()
 			if testCase.desiredResult == "" {
 				if err != nil {

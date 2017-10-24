@@ -10,7 +10,7 @@ import (
 	"gopkg.in/gavv/httpexpect.v1"
 
 	"openstackcore-rdtagent/lib/cache"
-	"openstackcore-rdtagent/test/integration/test_helpers"
+	"openstackcore-rdtagent/test/test_helpers"
 )
 
 var cacheSchemaTemplate string = `{
@@ -68,7 +68,7 @@ var _ = Describe("Caches", func() {
 
 	BeforeEach(func() {
 		By("set url")
-		v1url = testhelpers.GetV1URL()
+		v1url = testhelpers.GetHTTPV1URL()
 		he = httpexpect.New(GinkgoT(), v1url)
 	})
 

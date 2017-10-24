@@ -6,6 +6,8 @@ package template
 var Options = map[string]interface{}{
 	"address":         "localhost",
 	"debugport":       8081,
+	"tlsport":         8443,
+	"clientauth":      "challenge",
 	"logfile":         "/var/log/rdagent.log",
 	"dbbackend":       "bolt",
 	"dbtransport":     "/var/run/rdtagent.db",
@@ -26,10 +28,10 @@ title = "RDTagent Config"
 [default]
 address = "{{.address}}"
 policypath = "/etc/rdtagent/policy.toml"
-# tlsport = 443
+tlsport = {{.tlsport}}
 # certpath = "etc/rdtagent/cert/server" # Only support pem format, hard code that CAFile is ca.pem, CertFile is rmd-cert.pem, KeyFile is rmd-key.pem
 # clientcapath = "etc/rdtagent/cert/client" # Only support pem format, hard code that CAFile is ca.pem
-# clientauth = "challenge"  # can be "no, require, require_any, challenge_given, challenge", challenge means require and verify.
+clientauth = "{{.clientauth}}"  # can be "no, require, require_any, challenge_given, challenge", challenge means require and verify.
 # unixsock = "./var/run/rmd.sock"
 
 [log]

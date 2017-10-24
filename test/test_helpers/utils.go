@@ -92,9 +92,15 @@ func GetConfigOption(key string, rawVal interface{}) error {
 	return viper.UnmarshalKey(key, rawVal)
 }
 
-func GetConfigPort() int {
+func GetConfigDebugPort() int {
 	var port int
 	GetConfigOption("debug.debugport", &port)
+	return port
+}
+
+func GetConfigTLSPort() int {
+	var port int
+	GetConfigOption("default.tlsport", &port)
 	return port
 }
 
@@ -104,9 +110,20 @@ func GetConfigAddr() string {
 	return addr
 }
 
-func GetV1URL() string {
+func GetHTTPV1URL() string {
 	return fmt.Sprintf(
-		"http://%s:%d/v1/", GetConfigAddr(), GetConfigPort())
+		"http://%s:%d/v1/", GetConfigAddr(), GetConfigDebugPort())
+}
+
+func GetHTTPSV1URL() string {
+	return fmt.Sprintf(
+		"https://%s:%d/v1/", GetConfigAddr(), GetConfigTLSPort())
+}
+
+func GetClientAuthType() string {
+	var clientAuthTypePath string
+	GetConfigOption("default.clientauth", &clientAuthTypePath)
+	return clientAuthTypePath
 }
 
 func GetPolicyPath() string {

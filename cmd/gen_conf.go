@@ -10,7 +10,7 @@ import (
 
 	"openstackcore-rdtagent/cmd/template"
 	"openstackcore-rdtagent/lib/cpu"
-	"openstackcore-rdtagent/test/integration/test_helpers" // TODO: should move it to source path
+	"openstackcore-rdtagent/test/test_helpers" // TODO: should move it to source path
 )
 
 var gopherType string

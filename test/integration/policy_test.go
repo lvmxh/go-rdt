@@ -15,7 +15,7 @@ import (
 
 	"openstackcore-rdtagent/lib/cpu"
 	"openstackcore-rdtagent/model/policy"
-	"openstackcore-rdtagent/test/integration/test_helpers"
+	"openstackcore-rdtagent/test/test_helpers"
 )
 
 var _ = Describe("Policy", func() {
@@ -28,7 +28,7 @@ var _ = Describe("Policy", func() {
 
 	BeforeEach(func() {
 		By("set url")
-		v1url = testhelpers.GetV1URL()
+		v1url = testhelpers.GetHTTPV1URL()
 		he = httpexpect.New(GinkgoT(), v1url)
 		policyPath := testhelpers.GetPolicyPath()
 
