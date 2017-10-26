@@ -19,17 +19,31 @@ var _ = Describe("PAMAuth", func() {
 				path = "/policy"
 			})
 
-			Context("Get policy with valid Berkely db credentials", func() {
+			Context("Get policy with valid Berkely db credentials that is also authorized", func() {
 				BeforeEach(func() {
 					username = "user"
 					password = "user1"
 				})
-				It("Should return 200OK", func() {
+				It("Should return 200 StatusOK", func() {
 					he.GET(path).
 						WithHeader("Content-Type", "application/json").
 						WithBasicAuth(username, password).
 						Expect().
 						Status(http.StatusOK)
+				})
+			})
+
+			Context("Get policy with valid Berkely db credentials that is not authorized", func() {
+				BeforeEach(func() {
+					username = "test"
+					password = "test1"
+				})
+				It("Should return 403 StatusForbidden", func() {
+					he.GET(path).
+						WithHeader("Content-Type", "application/json").
+						WithBasicAuth(username, password).
+						Expect().
+						Status(http.StatusForbidden)
 				})
 			})
 
@@ -65,18 +79,33 @@ var _ = Describe("PAMAuth", func() {
 				})
 			})
 
-			Context("Get policy with valid unix credentials", func() {
+			Context("Get policy with valid unix credentials that is also authorized", func() {
 				// Please use credentials different from those defined in Berkely db for a consistent error message
 				BeforeEach(func() {
 					username = "root"
 					password = "s"
 				})
-				It("Should return 200OK", func() {
+				It("Should return 200 StatusOK", func() {
 					he.GET(path).
 						WithHeader("Content-Type", "application/json").
 						WithBasicAuth(username, password).
 						Expect().
 						Status(http.StatusOK)
+				})
+			})
+
+			Context("Get policy with valid unix credentials that is not authorized", func() {
+				// Please use credentials different from those defined in Berkely db for a consistent error message
+				BeforeEach(func() {
+					username = "common"
+					password = "common"
+				})
+				It("Should return 403 StatusForbidden", func() {
+					he.GET(path).
+						WithHeader("Content-Type", "application/json").
+						WithBasicAuth(username, password).
+						Expect().
+						Status(http.StatusForbidden)
 				})
 			})
 

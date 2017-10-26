@@ -108,6 +108,8 @@ if [ "$1" == "-s" -a "$2" == "-nocert" ]; then
     BERKELYDBFILENAME="rmd_users.db"
     echo "user" >> users
     openssl passwd -crypt "user1" >> users
+    echo "test" >> users
+    openssl passwd -crypt "test1" >> users
     db_load -T -t hash -f users "/tmp/"$BERKELYDBFILENAME
     if [ $? -ne 0 ]; then
         rm -rf users
