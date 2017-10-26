@@ -86,6 +86,7 @@ func NewConfig() Config {
 		viper.BindPFlag("default.address", pflag.Lookup("address"))
 		viper.BindPFlag("default.tlsport", pflag.Lookup("tlsport"))
 		viper.BindPFlag("default.unixsock", pflag.Lookup("unixsock"))
+		viper.BindPFlag("default.clientauth", pflag.Lookup("clientauth"))
 		viper.BindPFlag("debug.enabled", pflag.Lookup("debug"))
 		viper.BindPFlag("debug.debugport", pflag.Lookup("debugport"))
 

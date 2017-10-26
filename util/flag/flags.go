@@ -51,6 +51,7 @@ func InitFlags() {
 	pflag.String("unixsock", "", "Unix sock file path")
 	pflag.Int("debugport", 8081, "Debug listen port")
 	pflag.String("conf-dir", "", "Directy of config file")
+	pflag.String("clientauth", "challenge", "The policy the server will follow for TLS Client Authentication")
 
 	pflag.Parse()
 }
