@@ -92,13 +92,13 @@ func Initialize(c *Config) (*restful.Container, error) {
 	}
 
 	wsContainer := restful.NewContainer()
-	wsContainer.Filter(apptls.ACL)
 
 	// Enable PAM authentication when "no" client cert auth option is provided
 	if !c.Generic.IsClientCertAuthOption {
 		wsContainer.Filter(auth.PAMAuthenticate)
 	}
 
+	wsContainer.Filter(apptls.ACL)
 	wsContainer.Router(restful.CurlyRouter{})
 
 	caches := v1.CachesResource{}

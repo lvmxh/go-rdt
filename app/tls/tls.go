@@ -15,6 +15,7 @@ import (
 	"github.com/emicklei/go-restful"
 	log "github.com/sirupsen/logrus"
 
+	"net/http"
 	appConf "openstackcore-rdtagent/app/config"
 	acl "openstackcore-rdtagent/util/acl"
 	aclConf "openstackcore-rdtagent/util/acl/config"
@@ -92,16 +93,34 @@ func ACL(req *restful.Request, resp *restful.Response, chain *restful.FilterChai
 	check := func(user string) {
 		e, _ := acl.NewEnforcer()
 		if e.Enforce(req, user) != true {
-			log.Errorf("User is not allow to access this resource")
-			resp.WriteErrorString(401, user+" is not Authorized")
+			log.Errorf("User " + user + " is not authorized to access this resource")
+			resp.WriteErrorString(http.StatusForbidden, "User \""+user+"\" is not authorized to access this resource\n")
 			return
 		}
 		chain.ProcessFilter(req, resp)
 	}
 
 	appconf := appConf.NewConfig()
-	if req.Request.TLS == nil || appConf.ClientAuth[appconf.Def.ClientAuth] < appConf.ClientAuth["challenge_given"] {
+	if req.Request.TLS == nil || (appConf.ClientAuth[appconf.Def.ClientAuth] > tls.NoClientCert &&
+		appConf.ClientAuth[appconf.Def.ClientAuth] < tls.RequireAndVerifyClientCert) {
 		chain.ProcessFilter(req, resp)
+		return
+	}
+
+	if appConf.ClientAuth[appconf.Def.ClientAuth] == tls.NoClientCert {
+		// Validate user obtained from basic authentication.
+		// The credentials have passed the PAM authentication test.
+
+		// Get user credentials
+		u, _, ok := req.Request.BasicAuth()
+
+		if !ok {
+			resp.WriteErrorString(http.StatusBadRequest, "Malformed credentials\n")
+			return
+		}
+
+		// Check user against ACL rules
+		check(u)
 		return
 	}
 
