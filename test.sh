@@ -96,11 +96,25 @@ sed -i -e 's/\(stdout = \)\(.*\)/\1false/g' $CONFFILE
 cat $CONFFILE
 
 if [ "$1" == "-s" -a "$2" == "-nocert" ]; then
-    ./setup_pam_files.sh
+
+    # setup PAM files
+    PAMSRCFILE="etc/rdtagent/pam/test/rmd"
+    PAMDIR="/etc/pam.d"
+    if [ -d $PAMDIR ]; then
+        cp $PAMSRCFILE $PAMDIR
+    fi
+
+    # setup PAM test user
+    BERKELYDBFILENAME="rmd_users.db"
+    echo "user" >> users
+    openssl passwd -crypt "user1" >> users
+    db_load -T -t hash -f users "/tmp/"$BERKELYDBFILENAME
     if [ $? -ne 0 ]; then
+        rm -rf users
         echo "Failed to setup pam files"
         exit 1
     fi
+    rm -rf users
 fi
 
 # Use godep to build rmd binary instead of using dependicies of user's
@@ -137,6 +151,12 @@ rev=$?
 sudo kill -TERM `cat $PID`
 sudo umount /sys/fs/resctrl
 rm ${GOPATH}/bin/openstackcore-rdtagent
+
+# cleanup PAM files
+if [ "$1" == "-s" -a "$2" == "-nocert" ]; then
+    rm -rf "/tmp/"$BERKELYDBFILENAME
+    rm -rf $PAMDIR"/rmd"
+fi
 
 if [[ $rev -ne 0 ]]; then
     echo ":( <<< Functional testing fail, retual value $rev ."
