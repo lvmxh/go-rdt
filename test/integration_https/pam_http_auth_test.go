@@ -68,8 +68,8 @@ var _ = Describe("PAMAuth", func() {
 			Context("Get policy with valid unix credentials", func() {
 				// Please use credentials different from those defined in Berkely db for a consistent error message
 				BeforeEach(func() {
-					username = "common"
-					password = "common"
+					username = "root"
+					password = "s"
 				})
 				It("Should return 200OK", func() {
 					he.GET(path).
@@ -100,7 +100,7 @@ var _ = Describe("PAMAuth", func() {
 			Context("Get policy with incorrect unix credentials", func() {
 				// Please use credentials different from those defined in Berkely db for a consistent error message
 				BeforeEach(func() {
-					username = "common"
+					username = "root"
 					password = "com"
 				})
 				It("Should return 401 StatusUnauthorized", func() {

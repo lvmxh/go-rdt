@@ -65,9 +65,9 @@ func GenTLSConfig() (*tls.Config, error) {
 	clientauth, ok := appConf.ClientAuth[appconf.Def.ClientAuth]
 	if !ok {
 		return nil, errors.New(
-			"Unknow ClientAuth config setting: " + appconf.Def.CertPath)
+			"Unknow ClientAuth config setting: " + appconf.Def.ClientAuth)
 	}
-	if appConf.ClientAuth[appconf.Def.ClientAuth] >= appConf.ClientAuth["challenge_given"] {
+	if clientauth >= appConf.ClientAuth["challenge_given"] {
 		clientPool, err = GetCertPool(filepath.Join(appconf.Def.ClientCAPath, appConf.ClientCAFile))
 		if err != nil {
 			return nil, err
@@ -101,13 +101,20 @@ func ACL(req *restful.Request, resp *restful.Response, chain *restful.FilterChai
 	}
 
 	appconf := appConf.NewConfig()
-	if req.Request.TLS == nil || (appConf.ClientAuth[appconf.Def.ClientAuth] > tls.NoClientCert &&
-		appConf.ClientAuth[appconf.Def.ClientAuth] < tls.RequireAndVerifyClientCert) {
+	clientauth, ok := appConf.ClientAuth[appconf.Def.ClientAuth]
+
+	if !ok {
+		log.Errorf("Bad client auth option configuration:" + appconf.Def.ClientAuth)
+		resp.WriteErrorString(http.StatusInternalServerError, "Bad client auth option configuration\n")
+		return
+	}
+
+	if req.Request.TLS == nil || (clientauth > tls.NoClientCert && clientauth < tls.RequireAndVerifyClientCert) {
 		chain.ProcessFilter(req, resp)
 		return
 	}
 
-	if appConf.ClientAuth[appconf.Def.ClientAuth] == tls.NoClientCert {
+	if clientauth == tls.NoClientCert {
 		// Validate user obtained from basic authentication.
 		// The credentials have passed the PAM authentication test.
 

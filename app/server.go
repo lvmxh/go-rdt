@@ -49,6 +49,7 @@ func buildServerConfig() *Config {
 
 	clientAuthOption, ok := appConf.ClientAuth[appconfig.Def.ClientAuth]
 
+	// Default to cert option if invalid client auth option is specified
 	if ok && (clientAuthOption == tls.NoClientCert) {
 		isClientCertAuthOption = false
 	}

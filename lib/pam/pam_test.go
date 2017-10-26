@@ -47,9 +47,9 @@ func TestPAMAuthenticate(t *testing.T) {
 		{"user", "user1", "Valid Berkeley db user", ""},
 		{"x", "y", "Invalid Berkeley db user", "User not known to the underlying authentication module"},
 		{"user", "user", "Incorrect Berkeley db user", "Authentication failure"},
-		{"common", "common", "Valid unix user", ""},
+		{"root", "s", "Valid unix user", ""},
 		{"a", "b", "Invalid unix user", "User not known to the underlying authentication module"},
-		{"common", "c", "Incorrect unix user", "User not known to the underlying authentication module"},
+		{"root", "s1", "Incorrect unix user", "User not known to the underlying authentication module"},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.description, func(t *testing.T) {
