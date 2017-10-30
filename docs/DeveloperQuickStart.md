@@ -21,7 +21,16 @@ Clone or copy the code into $GOPATH/src/github.com/intel/rmd
 
 ```
 $ go get github.com/tools/godep
+
+(goto source code topdir)
+# get vendor packages
+$ go run cmd/get_vendor.go
+# generage configuration file
+$ go run cmd/gen_conf.go
+
+# install rdtagent into $GOPATH/bin
 $ ./install-deps
+
 ```
 
 ## Run rmd
@@ -51,6 +60,9 @@ Read test.sh to understand what functional test cases do.
 ## Godep
 
 Use godep (https://github.com/tools/godep) to add/update dependencies.
+
+As we don't commit vendor into our release code, it is somehow hacking to
+add/update/remove dependencies from Godeps.json .
 
 ## Swagger
 
