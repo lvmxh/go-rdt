@@ -5,13 +5,13 @@
 
 if [ "$1" == "-u" ]; then
     # NOTE please use -short for unittest.
-    go test -short -v -cover $(go list ./... | grep -v /vendor/ | grep -v /test/)
-    exit 0
+    godep go test -short -v -cover $(go list ./... | grep -v /vendor/ | grep -v /test/)
+    exit $?
 fi
 
 if [ "$1" != "-i" -a "$1" != "-s" ]; then
     # NOTE please use -short for unittest.
-    go test -short -v -cover $(go list ./... | grep -v /vendor/ | grep -v /test/)
+    godep go test -short -v -cover $(go list ./... | grep -v /vendor/ | grep -v /test/)
 fi
 
 
@@ -33,7 +33,6 @@ CONFFILE="/tmp/rdtagent.toml"
 
 if [ -f "$PID" ]; then
     pid=`cat "$PID"`
-    echo "peleas check RMD: $pid is running."
     if [ -n "$pid" ]; then
         if [ -d "/proc/$pid" ]; then
             echo "RMD: $pid is already running. exit!"
@@ -43,11 +42,12 @@ if [ -f "$PID" ]; then
 fi
 
 # clean up, force remove resctrl
-if [ -d "$RESDIR" ] && mountpoint $RESDIR; then
+if [ -d "$RESDIR" ] && mountpoint $RESDIR > /dev/null 2>&1 ; then
     sudo umount /sys/fs/resctrl
     if [ $? -ne 0 ]; then
         echo "--------------------------------------------------"
-        echo "They are used by these Process:"
+        echo "Please unmount /sys/fs/resctrl manually"
+        echo "It is used by these processes:"
         sudo lsof "$RESDIR"
         exit 1
     fi
@@ -78,7 +78,7 @@ else
     DATA="\"debugport\":$PORT"
 fi
 
-go run ./cmd/gen_conf.go -path /tmp/rdtagent.toml -data "{$DATA}"
+godep go run ./cmd/gen_conf.go -path /tmp/rdtagent.toml -data "{$DATA}"
 
 if [ $? -ne 0 ]; then
     echo "Failed to generate configure file. Exit."
