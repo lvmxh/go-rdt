@@ -29,10 +29,10 @@ title = "RDTagent Config"
 address = "{{.address}}"
 policypath = "/etc/rdtagent/policy.toml"
 tlsport = {{.tlsport}}
-# certpath = "etc/rdtagent/cert/server" # Only support pem format, hard code that CAFile is ca.pem, CertFile is rmd-cert.pem, KeyFile is rmd-key.pem
-# clientcapath = "etc/rdtagent/cert/client" # Only support pem format, hard code that CAFile is ca.pem
+# certpath = "/etc/rdtagent/cert/server" # Only support pem format, hard code that CAFile is ca.pem, CertFile is rmd-cert.pem, KeyFile is rmd-key.pem
+# clientcapath = "/etc/rdtagent/cert/client" # Only support pem format, hard code that CAFile is ca.pem
 clientauth = "{{.clientauth}}"  # can be "no, require, require_any, challenge_given, challenge", challenge means require and verify.
-# unixsock = "./var/run/rmd.sock"
+# unixsock = "/var/run/rmd.sock"
 
 [log]
 path = "{{.logfile}} "
@@ -67,12 +67,12 @@ besteffort = {{.besteffort}}
 shared = {{.shared}}
 
 [acl]
-path = "etc/rdtagent/acl/"  #
+path = "/etc/rdtagent/acl/"  #
 # use CSV format
 filter = "url" # at present just support "url", will support "url,ip,proto"
 authorization = "role" # authorize the client, can identify client by signature, role(OU) or username(CN). Default value is signature. If value is signature, admincert and usercert should be set.
-admincert = "etc/rdtagent/acl/roles/admin/" # A cert is used to describe user info. These cert files in this path are used to define the users that are admin. Only pem format file at present. The files can be updated dynamicly.
-usercert = "etc/rdtagent/acl/roles/user/" # A cert is used to describe user info. These cert files in this path are used to define the user with low privilege. Only pem format file at present. The files can be updated dynamicly.
+admincert = "/etc/rdtagent/acl/roles/admin/" # A cert is used to describe user info. These cert files in this path are used to define the users that are admin. Only pem format file at present. The files can be updated dynamicly.
+usercert = "/etc/rdtagent/acl/roles/user/" # A cert is used to describe user info. These cert files in this path are used to define the user with low privilege. Only pem format file at present. The files can be updated dynamicly.
 
 [pam]
 service = "rmd"
