@@ -50,7 +50,7 @@ func validateWorkload(w workload.RDTWorkLoad, ws []workload.RDTWorkLoad) error {
 	if w.ID != "" {
 		for _, i := range ws {
 			if w.ID == i.ID {
-				return fmt.Errorf("Workload id %s has existed %s", w.ID)
+				return fmt.Errorf("Workload id %s has existed", w.ID)
 			}
 		}
 	}

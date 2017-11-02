@@ -3,8 +3,8 @@ package pam
 import (
 	"errors"
 	"fmt"
-	"github.com/msteinert/pam"
 	"github.com/intel/rmd/lib/pam/config"
+	"github.com/msteinert/pam"
 )
 
 // Credential represents user provided credential
@@ -22,7 +22,7 @@ func (c Credential) PAMResponseHandler(s pam.Style, msg string) (string, error) 
 		fmt.Println(msg)
 		return c.Password, nil
 	case pam.ErrorMsg:
-		fmt.Errorf(msg)
+		fmt.Println(msg)
 		return "", nil
 	case pam.TextInfo:
 		fmt.Println(msg)

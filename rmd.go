@@ -44,7 +44,7 @@ func main() {
 	if os.Getuid() == 0 {
 		if !util.IsUserExist(rmduser) {
 			if err := util.CreateUser(rmduser); err != nil {
-				fmt.Println("Failed to create %s user", rmduser)
+				fmt.Printf("Failed to create %s user", rmduser)
 				os.Exit(1)
 			}
 		}

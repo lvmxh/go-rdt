@@ -3,10 +3,10 @@ package rdtpool
 import (
 	"fmt"
 	"github.com/gobwas/glob"
-	log "github.com/sirupsen/logrus"
 	"github.com/intel/rmd/lib/cache"
 	"github.com/intel/rmd/lib/proc"
 	"github.com/intel/rmd/lib/resctrl"
+	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 	"sync"
@@ -129,7 +129,10 @@ func SetInfraGroup() error {
 		} else {
 			mask = strconv.FormatUint(1<<uint(ways)-1, 16)
 		}
-		cc := resctrl.CacheCos{uint8(id), mask}
+		cc := resctrl.CacheCos{
+			ID:   uint8(id),
+			Mask: mask,
+		}
 		infraGroup.Schemata[cacheLevel][id] = cc
 	}
 

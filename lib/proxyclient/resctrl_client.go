@@ -24,7 +24,10 @@ func IsIntelRdtMounted() bool {
 // Commit resctrl.ResAssociation with given name
 func Commit(r *resctrl.ResAssociation, name string) error {
 	// TODO how to get error reason
-	req := proxy.Request{name, *r}
+	req := proxy.Request{
+		Name: name,
+		Res:  *r,
+	}
 	// Add checking before using client and do reconnect
 	return proxy.Client.Call("Proxy.Commit", req, nil)
 }

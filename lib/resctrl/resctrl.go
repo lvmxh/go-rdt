@@ -85,9 +85,9 @@ type CacheCos struct {
 // ResAssociation is the resource group in resctrl
 // TODO (Shaohe) need to paser the tag for field setting.
 type ResAssociation struct {
-	Tasks    []string              `"taks"`
-	CPUs     string                `"cpus"`
-	Schemata map[string][]CacheCos `"schemata"`
+	Tasks    []string
+	CPUs     string
+	Schemata map[string][]CacheCos
 }
 
 // NewResAssociation gives new empty ResAssociation
@@ -144,8 +144,6 @@ func parserResAssociation(basepath string, ignore []string, ps map[string]*ResAs
 			libutil.SetField(res, name, strs[:len(strs)-1])
 			return nil
 		}
-		return nil
-
 	}
 
 	return func(path string, info os.FileInfo, err error) error {
