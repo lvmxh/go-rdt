@@ -28,4 +28,3 @@ fi
 
 DATA="\"logfile\":\"$LOGFILE\", \"dbtransport\":\"$DBFILE\", \"logtostdout\":false"
 go run ./cmd/gen_conf.go -path /etc/rdtagent/rdtagent.toml -data "{$DATA}"
-

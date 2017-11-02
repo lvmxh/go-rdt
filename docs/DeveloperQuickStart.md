@@ -2,26 +2,25 @@
 
 ## Prepare GO development environment
 
+Follow https://golang.org/doc/install to install golang.
 Make sure you have your $GOPATH, $PATH setup correctly
 
 ```
 e.g.
 export GOPATH=$HOME/go
 export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+# check if your go path set correctlly
+go env
 ```
 
 ## Clone openstackcore-rdtagent code
 
-Clone the code into $GOPATH/src/openstackcore-rdtagent
+Clone or copy the code into $GOPATH/src/openstackcore-rdtagent
 
 ## Build & install openstackcore-rdtagent
 
 ```
 $ go get github.com/tools/godep
-
-(goto source code topdir)
-$ git submodule init
-$ git submodule update
 $ ./install-deps
 ```
 
@@ -37,7 +36,7 @@ $ $GOPATH/bin/openstackcore-rdtagent
 There's a bash shell script `hacking.sh` will help to checking coding style
 by `go fmt` and `golint`.
 
-After you commit your changes, run `./hacking.sh` and address errors before
+Before you commit your changes, run `./hacking.sh` and address errors before
 push your changes.
 
 ## Test
@@ -47,6 +46,7 @@ functional testing.
 
 `./test.sh -u` to run all unit test cases.
 `./test.sh -i` to run all functional test cases.
+`./test.sh -i -s` to run all functional test cases with https suport.
 
 To read test.sh to understand what functional test case do.
 
