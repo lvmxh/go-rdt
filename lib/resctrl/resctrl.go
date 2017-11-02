@@ -13,7 +13,7 @@ import (
 	"strings"
 	"sync"
 
-	libutil "openstackcore-rdtagent/lib/util"
+	libutil "github.com/intel/rmd/lib/util"
 )
 
 const (

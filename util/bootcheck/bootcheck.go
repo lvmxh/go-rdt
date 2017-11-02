@@ -5,11 +5,11 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"openstackcore-rdtagent/db"
-	"openstackcore-rdtagent/lib/cpu"
-	"openstackcore-rdtagent/lib/proxyclient"
-	"openstackcore-rdtagent/util/acl"
-	"openstackcore-rdtagent/util/rdtpool"
+	"github.com/intel/rmd/db"
+	"github.com/intel/rmd/lib/cpu"
+	"github.com/intel/rmd/lib/proxyclient"
+	"github.com/intel/rmd/util/acl"
+	"github.com/intel/rmd/util/rdtpool"
 )
 
 // SanityCheck before string rmd process

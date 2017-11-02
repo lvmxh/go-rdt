@@ -5,7 +5,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"openstackcore-rdtagent/util/log/config"
+	"github.com/intel/rmd/util/log/config"
 )
 
 // Init does log config init

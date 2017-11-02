@@ -6,8 +6,8 @@ if [ ! -f install-deps ]; then
 fi
 
 go fmt
-godep go install openstackcore-rdtagent && \
-sudo cp -r etc/rdtagent /etc
+godep go install github.com/intel/rmd && \
+sudo cp -r etc/rmd /etc
 
 USER="rmd"
 sudo useradd $USER || echo "User rmd already exists."
@@ -24,7 +24,7 @@ if [ ! -d ${DBFILE%/*} ]; then
     sudo chown $USER:$USER  ${DBFILE%/*}
 fi
 
-./setup_pam_files.sh
+sudo ./setup_pam_files.sh
 
 DATA="\"logfile\":\"$LOGFILE\", \"dbtransport\":\"$DBFILE\", \"logtostdout\":false"
-go run ./cmd/gen_conf.go -path /etc/rdtagent/rdtagent.toml -data "{$DATA}"
+go run ./cmd/gen_conf.go -path /etc/rmd/rmd.toml -data "{$DATA}"

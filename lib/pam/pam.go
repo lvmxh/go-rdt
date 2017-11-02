@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/msteinert/pam"
-	"openstackcore-rdtagent/lib/pam/config"
+	"github.com/intel/rmd/lib/pam/config"
 )
 
 // Credential represents user provided credential

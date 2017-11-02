@@ -8,12 +8,12 @@ import (
 	"strconv"
 
 	log "github.com/sirupsen/logrus"
-	rmderror "openstackcore-rdtagent/api/error"
-	"openstackcore-rdtagent/db"
-	libcache "openstackcore-rdtagent/lib/cache"
-	"openstackcore-rdtagent/lib/proxyclient"
-	"openstackcore-rdtagent/model/policy"
-	"openstackcore-rdtagent/util/rdtpool"
+	rmderror "github.com/intel/rmd/api/error"
+	"github.com/intel/rmd/db"
+	libcache "github.com/intel/rmd/lib/cache"
+	"github.com/intel/rmd/lib/proxyclient"
+	"github.com/intel/rmd/model/policy"
+	"github.com/intel/rmd/util/rdtpool"
 )
 
 // Request represents the hospitality request

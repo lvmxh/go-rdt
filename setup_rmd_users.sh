@@ -5,7 +5,7 @@ if [[ $EUID != 0 ]]; then
   exit 1
 fi
 
-BERKELYDBDIR="/etc/rdtagent/pam"
+BERKELYDBDIR="/etc/rmd/pam"
 BERKELYDBFILENAME="rmd_users.db"
 echo 'Setup Berkely db users'
 while true

@@ -3,11 +3,11 @@ package rdtpool
 import (
 	"sync"
 
-	"openstackcore-rdtagent/lib/cache"
-	"openstackcore-rdtagent/lib/cpu"
-	util "openstackcore-rdtagent/lib/util"
-	"openstackcore-rdtagent/util/rdtpool/base"
-	"openstackcore-rdtagent/util/rdtpool/config"
+	"github.com/intel/rmd/lib/cache"
+	"github.com/intel/rmd/lib/cpu"
+	util "github.com/intel/rmd/lib/util"
+	"github.com/intel/rmd/util/rdtpool/base"
+	"github.com/intel/rmd/util/rdtpool/config"
 )
 
 // Workload can only get CPUs from this pool.

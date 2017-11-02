@@ -16,9 +16,9 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"net/http"
-	appConf "openstackcore-rdtagent/app/config"
-	acl "openstackcore-rdtagent/util/acl"
-	aclConf "openstackcore-rdtagent/util/acl/config"
+	appConf "github.com/intel/rmd/app/config"
+	acl "github.com/intel/rmd/util/acl"
+	aclConf "github.com/intel/rmd/util/acl/config"
 )
 
 var signatureRWM sync.RWMutex

@@ -1,7 +1,7 @@
 package proxy
 
 import (
-	"openstackcore-rdtagent/lib/resctrl"
+	"github.com/intel/rmd/lib/resctrl"
 )
 
 // Request struct of to rpc server

@@ -33,9 +33,9 @@ func NewCPUMap() map[uint32]string {
 		// supported extensions are "json", "toml", "yaml", "yml", "properties", "props", "prop"
 		rtViper.SetConfigType("toml")
 		rtViper.SetConfigName("cpu_map")         // no need to include file extension
-		rtViper.AddConfigPath("/etc/rdtagent/")  // path to look for the config file in
-		rtViper.AddConfigPath("$HOME/rdtagent")  // call multiple times to add many search paths
-		rtViper.AddConfigPath("./etc/rdtagent/") // set the path of your config file
+		rtViper.AddConfigPath("/etc/rmd/")  // path to look for the config file in
+		rtViper.AddConfigPath("$HOME/rmd")  // call multiple times to add many search paths
+		rtViper.AddConfigPath("./etc/rmd/") // set the path of your config file
 		err := rtViper.ReadInConfig()
 
 		if err != nil {

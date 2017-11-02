@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"sync"
 
-	"openstackcore-rdtagent/lib/cache"
-	util "openstackcore-rdtagent/lib/util"
-	"openstackcore-rdtagent/util/rdtpool/base"
-	"openstackcore-rdtagent/util/rdtpool/config"
+	"github.com/intel/rmd/lib/cache"
+	util "github.com/intel/rmd/lib/util"
+	"github.com/intel/rmd/util/rdtpool/base"
+	"github.com/intel/rmd/util/rdtpool/config"
 )
 
 var cachePoolReserved = make(map[string]*base.Reserved, 0)

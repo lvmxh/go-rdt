@@ -9,8 +9,8 @@ import (
 
 	"gopkg.in/gavv/httpexpect.v1"
 
-	"openstackcore-rdtagent/lib/cache"
-	"openstackcore-rdtagent/test/test_helpers"
+	"github.com/intel/rmd/lib/cache"
+	"github.com/intel/rmd/test/test_helpers"
 )
 
 var cacheSchemaTemplate string = `{

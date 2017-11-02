@@ -13,22 +13,22 @@ export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
 go env
 ```
 
-## Clone openstackcore-rdtagent code
+## Clone rmd code
 
-Clone or copy the code into $GOPATH/src/openstackcore-rdtagent
+Clone or copy the code into $GOPATH/src/github.com/intel/rmd
 
-## Build & install openstackcore-rdtagent
+## Build & install rmd
 
 ```
 $ go get github.com/tools/godep
 $ ./install-deps
 ```
 
-## Run openstackcore-rdtagent
+## Run rmd
 
 ```
-$ $GOPATH/bin/openstackcore-rdtagent --help
-$ $GOPATH/bin/openstackcore-rdtagent
+$ $GOPATH/bin/rmd --help
+$ $GOPATH/bin/rmd
 ```
 
 ## Commit code

@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 	"gopkg.in/gavv/httpexpect.v1"
 	"net/http"
-	"openstackcore-rdtagent/test/test_helpers"
+	"github.com/intel/rmd/test/test_helpers"
 	"os"
 	"testing"
 )

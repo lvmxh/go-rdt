@@ -21,7 +21,7 @@ func TestGetPolicy(t *testing.T) {
 
 	pflag.Parse()
 
-	viper.Set("default.policypath", "../../etc/rdtagent/policy.yaml")
+	viper.Set("default.policypath", "../../etc/rmd/policy.yaml")
 	_, err := GetPolicy("broadwell", "gold")
 
 	if err != nil {

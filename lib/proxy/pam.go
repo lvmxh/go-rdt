@@ -1,7 +1,7 @@
 package proxy
 
 import (
-	"openstackcore-rdtagent/lib/pam"
+	"github.com/intel/rmd/lib/pam"
 )
 
 // PAMRequest is request from rpc client

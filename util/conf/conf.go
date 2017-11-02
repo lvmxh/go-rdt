@@ -10,15 +10,15 @@ import (
 
 // Init does config initial
 func Init() error {
-	viper.SetConfigName("rdtagent") // no need to include file extension
+	viper.SetConfigName("rmd") // no need to include file extension
 	// TODO (Shaohe) consider to introduce Cobra. let Viper work with Cobra.
 	confDir := pflag.Lookup("conf-dir").Value.String()
 	if confDir != "" {
 		viper.AddConfigPath(confDir)
 	}
-	viper.AddConfigPath("/etc/rdtagent/")  // path to look for the config file in
-	viper.AddConfigPath("$HOME/rdtagent")  // call multiple times to add many search paths
-	viper.AddConfigPath("./etc/rdtagent/") // set the path of your config file
+	viper.AddConfigPath("/etc/rmd/")  // path to look for the config file in
+	viper.AddConfigPath("$HOME/rmd")  // call multiple times to add many search paths
+	viper.AddConfigPath("./etc/rmd/") // set the path of your config file
 	err := viper.ReadInConfig()
 	if err != nil {
 		// NOTE (ShaoHe Feng): only can use fmt.Println, can not use log.

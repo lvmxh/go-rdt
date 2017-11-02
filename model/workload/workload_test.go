@@ -5,10 +5,10 @@ import (
 
 	. "github.com/prashantv/gostub"
 	. "github.com/smartystreets/goconvey/convey"
-	"openstackcore-rdtagent/lib/proc"
-	"openstackcore-rdtagent/model/cache"
+	"github.com/intel/rmd/lib/proc"
+	"github.com/intel/rmd/model/cache"
 
-	tw "openstackcore-rdtagent/model/types/workload"
+	tw "github.com/intel/rmd/model/types/workload"
 )
 
 func TestGetCacheIDs(t *testing.T) {

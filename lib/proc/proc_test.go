@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"testing"
 
-	//"openstackcore-rdtagent/lib/cpu"
-	"openstackcore-rdtagent/lib/util"
+	//"github.com/intel/rmd/lib/cpu"
+	"github.com/intel/rmd/lib/util"
 	// Better to make that package a util package
-	"openstackcore-rdtagent/test/test_helpers"
+	"github.com/intel/rmd/test/test_helpers"
 )
 
 func TestListProcesses(t *testing.T) {

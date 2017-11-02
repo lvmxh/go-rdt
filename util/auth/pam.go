@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"github.com/emicklei/go-restful"
 	"net/http"
-	"openstackcore-rdtagent/lib/proxyclient"
+	"github.com/intel/rmd/lib/proxyclient"
 )
 
 // PAMAuthenticate does PAM authenticate with PAM DB or PAM Unix

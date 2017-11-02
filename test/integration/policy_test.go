@@ -13,9 +13,9 @@ import (
 	"github.com/spf13/viper"
 	"gopkg.in/gavv/httpexpect.v1"
 
-	"openstackcore-rdtagent/lib/cpu"
-	"openstackcore-rdtagent/model/policy"
-	"openstackcore-rdtagent/test/test_helpers"
+	"github.com/intel/rmd/lib/cpu"
+	"github.com/intel/rmd/model/policy"
+	"github.com/intel/rmd/test/test_helpers"
 )
 
 var _ = Describe("Policy", func() {

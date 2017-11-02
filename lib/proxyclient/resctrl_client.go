@@ -2,8 +2,8 @@ package proxyclient
 
 import (
 	"fmt"
-	"openstackcore-rdtagent/lib/proxy"
-	"openstackcore-rdtagent/lib/resctrl"
+	"github.com/intel/rmd/lib/proxy"
+	"github.com/intel/rmd/lib/resctrl"
 )
 
 // GetResAssociation returns all resource group association

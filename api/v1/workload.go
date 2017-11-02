@@ -5,9 +5,9 @@ import (
 
 	"github.com/emicklei/go-restful"
 	log "github.com/sirupsen/logrus"
-	"openstackcore-rdtagent/db"
-	tw "openstackcore-rdtagent/model/types/workload"
-	"openstackcore-rdtagent/model/workload"
+	"github.com/intel/rmd/db"
+	tw "github.com/intel/rmd/model/types/workload"
+	"github.com/intel/rmd/model/workload"
 )
 
 // WorkLoadResource is workload api resource

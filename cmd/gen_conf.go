@@ -8,9 +8,9 @@ import (
 	"os"
 	"strings"
 
-	"openstackcore-rdtagent/cmd/template"
-	"openstackcore-rdtagent/lib/cpu"
-	"openstackcore-rdtagent/test/test_helpers" // TODO: should move it to source path
+	"github.com/intel/rmd/cmd/template"
+	"github.com/intel/rmd/lib/cpu"
+	"github.com/intel/rmd/test/test_helpers" // TODO: should move it to source path
 )
 
 var gopherType string

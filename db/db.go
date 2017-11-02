@@ -5,10 +5,10 @@ import (
 
 	// from app import an config is really not a good idea.
 	// uncouple it from APP. Or we can add it in a rmd/config
-	"openstackcore-rdtagent/db/config"
-	libutil "openstackcore-rdtagent/lib/util"
-	"openstackcore-rdtagent/model/types/workload"
-	"openstackcore-rdtagent/util"
+	"github.com/intel/rmd/db/config"
+	libutil "github.com/intel/rmd/lib/util"
+	"github.com/intel/rmd/model/types/workload"
+	"github.com/intel/rmd/util"
 )
 
 // WorkloadTableName is the table name for workload

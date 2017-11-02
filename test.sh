@@ -29,7 +29,8 @@ export PATH=${PATH}:${GOROOT}/bin:${GOPATH}/bin
 
 RESDIR="/sys/fs/resctrl"
 PID="/var/run/rmd.pid"
-CONFFILE="/tmp/rdtagent.toml"
+CONFFILE="/tmp/rmd.toml"
+LOGFILE="/tmp/rmd.log"
 
 if [ -f "$PID" ]; then
     pid=`cat "$PID"`
@@ -56,8 +57,6 @@ fi
 # sudo not support -o cdp
 sudo mount -t resctrl resctrl /sys/fs/resctrl
 
-# FIXME will change to use template. Sed is not readable.
-# cp etc/rdtagent/rdtagent.toml /tmp/
 # Set a unused random port
 CHECK="do while"
 
@@ -78,14 +77,14 @@ else
     DATA="\"debugport\":$PORT"
 fi
 
-godep go run ./cmd/gen_conf.go -path /tmp/rdtagent.toml -data "{$DATA}"
+godep go run ./cmd/gen_conf.go -path ${CONFFILE} -data "{$DATA}"
 
 if [ $? -ne 0 ]; then
     echo "Failed to generate configure file. Exit."
     exit 1
 fi
 
-cp etc/rdtagent/policy.toml /tmp/
+cp etc/rmd/policy.toml /tmp/
 
 # TODO need to remove these sed command.
 # Set DB transport to avoid change the system DB
@@ -98,7 +97,7 @@ cat $CONFFILE
 if [ "$1" == "-s" -a "$2" == "-nocert" ]; then
 
     # setup PAM files
-    PAMSRCFILE="etc/rdtagent/pam/test/rmd"
+    PAMSRCFILE="etc/rmd/pam/test/rmd"
     PAMDIR="/etc/pam.d"
     if [ -d $PAMDIR ]; then
         cp $PAMSRCFILE $PAMDIR
@@ -121,17 +120,16 @@ fi
 
 # Use godep to build rmd binary instead of using dependicies of user's
 # GOPATH
-# TODO change it to rmd
-godep go install openstackcore-rdtagent && sudo cp -r etc/rdtagent /etc
+godep go install github.com/intel/rmd && sudo cp -r etc/rmd /etc
 if [ $? -ne 0 ]; then
     echo "Failed to build rmd, please correct build issue."
     exit 1
 fi
 
 if [ "$1" == "-s" ]; then
-    sudo ${GOPATH}/bin/openstackcore-rdtagent --conf-dir ${CONFFILE%/*} --log-dir "/tmp/rdagent.log" &
+    sudo ${GOPATH}/bin/rmd --conf-dir ${CONFFILE%/*} --log-dir ${LOGFILE} &
 else
-    sudo ${GOPATH}/bin/openstackcore-rdtagent --conf-dir ${CONFFILE%/*} --log-dir "/tmp/rdagent.log" --debug &
+    sudo ${GOPATH}/bin/rmd --conf-dir ${CONFFILE%/*} --log-dir ${LOGFILE} --debug &
 fi
 
 
@@ -152,7 +150,7 @@ rev=$?
 # cleanup
 sudo kill -TERM `cat $PID`
 sudo umount /sys/fs/resctrl
-rm ${GOPATH}/bin/openstackcore-rdtagent
+rm ${GOPATH}/bin/rmd
 
 # cleanup PAM files
 if [ "$1" == "-s" -a "$2" == "-nocert" ]; then

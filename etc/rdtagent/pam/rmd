@@ -1,2 +1,0 @@
-auth sufficient pam_unix.so
-auth requisite pam_userdb.so db=/etc/rdtagent/pam/rmd_users crypt=crypt

@@ -1,6 +1,6 @@
 package workload
 
-import "openstackcore-rdtagent/lib/resctrl"
+import "github.com/intel/rmd/lib/resctrl"
 
 const (
 	// Successful status

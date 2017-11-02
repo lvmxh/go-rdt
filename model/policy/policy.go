@@ -11,8 +11,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
-	appConf "openstackcore-rdtagent/app/config"
-	"openstackcore-rdtagent/lib/cpu"
+	appConf "github.com/intel/rmd/app/config"
+	"github.com/intel/rmd/lib/cpu"
 )
 
 // Attr is Policy attribute

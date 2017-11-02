@@ -10,14 +10,14 @@ import (
 	"strconv"
 	"strings"
 
-	rmderror "openstackcore-rdtagent/api/error"
-	"openstackcore-rdtagent/lib/cache"
-	"openstackcore-rdtagent/lib/cpu"
-	"openstackcore-rdtagent/lib/proc"
-	"openstackcore-rdtagent/lib/resctrl"
-	"openstackcore-rdtagent/model/policy"
-	"openstackcore-rdtagent/util/rdtpool"
-	"openstackcore-rdtagent/util/rdtpool/base"
+	rmderror "github.com/intel/rmd/api/error"
+	"github.com/intel/rmd/lib/cache"
+	"github.com/intel/rmd/lib/cpu"
+	"github.com/intel/rmd/lib/proc"
+	"github.com/intel/rmd/lib/resctrl"
+	"github.com/intel/rmd/model/policy"
+	"github.com/intel/rmd/util/rdtpool"
+	"github.com/intel/rmd/util/rdtpool/base"
 )
 
 // SizeMap is the map to bits of unit

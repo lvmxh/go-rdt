@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"sync"
 
-	"openstackcore-rdtagent/lib/resctrl"
-	libutil "openstackcore-rdtagent/lib/util"
-	"openstackcore-rdtagent/util"
-	"openstackcore-rdtagent/util/rdtpool/base"
+	"github.com/intel/rmd/lib/resctrl"
+	libutil "github.com/intel/rmd/lib/util"
+	"github.com/intel/rmd/util"
+	"github.com/intel/rmd/util/rdtpool/base"
 )
 
 // A map that contains all reserved resource information

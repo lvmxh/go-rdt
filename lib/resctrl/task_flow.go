@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-	"openstackcore-rdtagent/util"
-	"openstackcore-rdtagent/util/task"
+	"github.com/intel/rmd/util"
+	"github.com/intel/rmd/util/task"
 )
 
 // Task is task for resctrl

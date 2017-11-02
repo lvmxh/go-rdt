@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-PAMSRCFILE="etc/rdtagent/pam/rmd"
+PAMSRCFILE="etc/rmd/pam/rmd"
 PAMDIR="/etc/pam.d"
 if [ -d $PAMDIR ]; then
     cp $PAMSRCFILE $PAMDIR
 fi
 
-BERKELYDBFILE="/etc/rdtagent/pam/rmd_users.db"
+BERKELYDBFILE="/etc/rmd/pam/rmd_users.db"
 
 if [ -f $BERKELYDBFILE ]; then
     echo "Do you want to create/update users in RMD Berkely DB file?(y/n)"

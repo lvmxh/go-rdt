@@ -14,7 +14,7 @@ root to do privilege operation (access resctrl), another one provide RESTAPI
 service.
 
 ```
-sudo ./rmd --conf-dir ./etc/rdtagent
+sudo ./rmd --conf-dir ./etc/rmd
 ```
 
 (e.g. starting the service on: http://127.0.0.1:8888)`
@@ -27,13 +27,13 @@ curl -i http://127.0.0.1:8888/v1/cache/l3
 curl -i http://127.0.0.1:8888/v1/cache/l3/0
 ```
 
-## Query pre-fedefined policy in RDTAgent
+## Query pre-fedefined policy in RMD
 
 ```
 curl http://127.0.0.1:8888/v1/policy
 ```
 
-The backend for policy is a yaml file: /etc/rdtagent/policy.yaml, it pre-defines
+The backend for policy is a yaml file: /etc/rmd/policy.yaml, it pre-defines
 some `policy` on specific intel platform. This file can be changed.
 
 
@@ -102,7 +102,7 @@ The post body could contains:
 {
     "task_ids": A validate task id list
     "core_ids": cpu core list, for the topology, check cache information
-    "policy": pre-defined policy in RDTAgent
+    "policy": pre-defined policy in RMD
     "max_cache": maximum cache ways which can be benefited
     "min_cache": minmum cache ways which can be benefited
 }
@@ -133,7 +133,7 @@ Admin can change and add new policies by editing an toml/yaml file which is
 pointed in the configuration file.
 
 ```
-policypath = "etc/rdtagent/policy.toml"
+policypath = "etc/rmd/policy.toml"
 ```
 
 ## Hospitality score API usage:
@@ -193,7 +193,7 @@ User can generate certs by themselves.
 
 If you want to get cache info, your can run this command:
 ```
-curl https://hostname:port/v1/cache --cert etc/rdtagent/cert/client/cert.pem \
-         --key etc/rdtagent/cert/client/key.pem \
-         --cacert  etc/rdtagent/cert/client/ca.pem
+curl https://hostname:port/v1/cache --cert etc/rmd/cert/client/cert.pem \
+         --key etc/rmd/cert/client/key.pem \
+         --cacert  etc/rmd/cert/client/ca.pem
 ```

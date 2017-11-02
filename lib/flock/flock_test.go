@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "openstackcore-rdtagent/lib/flock"
+	. "github.com/intel/rmd/lib/flock"
 )
 
 var _ = Describe("Flock", func() {

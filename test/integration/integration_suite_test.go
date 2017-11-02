@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"openstackcore-rdtagent/test/test_helpers"
+	"github.com/intel/rmd/test/test_helpers"
 )
 
 func TestIntegration(t *testing.T) {

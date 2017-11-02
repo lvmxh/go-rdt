@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"openstackcore-rdtagent/lib/util"
+	"github.com/intel/rmd/lib/util"
 )
 
 const (

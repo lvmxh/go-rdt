@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/emicklei/go-restful"
-	"openstackcore-rdtagent/model/policy"
+	"github.com/intel/rmd/model/policy"
 )
 
 // PolicyResource represents policy API resource

@@ -9,8 +9,8 @@ import (
 	"github.com/emicklei/go-restful"
 	log "github.com/sirupsen/logrus"
 
-	"openstackcore-rdtagent/lib/cache"
-	m_cache "openstackcore-rdtagent/model/cache"
+	"github.com/intel/rmd/lib/cache"
+	m_cache "github.com/intel/rmd/model/cache"
 )
 
 // CachesResource represents Cache Info api resource

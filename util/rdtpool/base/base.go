@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"sync"
 
-	"openstackcore-rdtagent/lib/cache"
-	"openstackcore-rdtagent/lib/cpu"
-	"openstackcore-rdtagent/lib/proxyclient"
-	"openstackcore-rdtagent/lib/util"
+	"github.com/intel/rmd/lib/cache"
+	"github.com/intel/rmd/lib/cpu"
+	"github.com/intel/rmd/lib/proxyclient"
+	"github.com/intel/rmd/lib/util"
 )
 
 // CosInfo is class of service infor

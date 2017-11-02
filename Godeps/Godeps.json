@@ -1,5 +1,5 @@
 {
-	"ImportPath": "openstackcore-rdtagent",
+	"ImportPath": "github.com/intel/rmd",
 	"GoVersion": "go1.8",
 	"GodepVersion": "v79",
 	"Packages": [

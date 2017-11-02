@@ -6,8 +6,8 @@ import (
 	"github.com/emicklei/go-restful"
 	log "github.com/sirupsen/logrus"
 
-	rmderror "openstackcore-rdtagent/api/error"
-	hospitality "openstackcore-rdtagent/model/hospitality"
+	rmderror "github.com/intel/rmd/api/error"
+	hospitality "github.com/intel/rmd/model/hospitality"
 )
 
 // HospitalityResource is the API resource

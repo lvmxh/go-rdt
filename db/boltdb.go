@@ -8,8 +8,8 @@ import (
 
 	bolt "github.com/coreos/bbolt"
 
-	"openstackcore-rdtagent/db/config"
-	"openstackcore-rdtagent/model/types/workload"
+	"github.com/intel/rmd/db/config"
+	"github.com/intel/rmd/model/types/workload"
 )
 
 var boltSession *bolt.DB

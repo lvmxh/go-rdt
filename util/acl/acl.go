@@ -12,7 +12,7 @@ import (
 	"github.com/emicklei/go-restful"
 	log "github.com/sirupsen/logrus"
 
-	"openstackcore-rdtagent/util/acl/config"
+	"github.com/intel/rmd/util/acl/config"
 )
 
 // Enforcer does enforce

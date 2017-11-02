@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/ginkgo"
 
 	"gopkg.in/gavv/httpexpect.v1"
-	"openstackcore-rdtagent/test/test_helpers"
+	"github.com/intel/rmd/test/test_helpers"
 )
 
 var _ = Describe("Workload", func() {

@@ -10,15 +10,15 @@ import (
 	"strconv"
 	"syscall"
 
-	appConf "openstackcore-rdtagent/app/config"
+	appConf "github.com/intel/rmd/app/config"
 
 	"github.com/emicklei/go-restful"
 	"github.com/emicklei/go-restful-swagger12"
 	log "github.com/sirupsen/logrus"
-	"openstackcore-rdtagent/api/v1"
-	apptls "openstackcore-rdtagent/app/tls"
-	"openstackcore-rdtagent/db"
-	"openstackcore-rdtagent/util/auth"
+	"github.com/intel/rmd/api/v1"
+	apptls "github.com/intel/rmd/app/tls"
+	"github.com/intel/rmd/db"
+	"github.com/intel/rmd/util/auth"
 )
 
 // GenericConfig is the generic config for the application

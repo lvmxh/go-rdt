@@ -1,7 +1,7 @@
 package proxyclient
 
 import (
-	"openstackcore-rdtagent/lib/proxy"
+	"github.com/intel/rmd/lib/proxy"
 )
 
 // PAMAuthenticate leverage PAM to do authentication
