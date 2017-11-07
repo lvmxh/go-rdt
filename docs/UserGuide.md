@@ -1,36 +1,49 @@
-# RMD usage examples:
+# RMD User Guide:
 
-## Run RMD
+## RMD processes
 
-For security consideration, the RESTAPI service runs as a normal user 'rmd',
-you can manually create rmd user or use the bash script:
+For security considerations, RMD daemon runs the RESTAPI service (a spawned child) as a normal unix user 'rmd'
+process and performs privileged operations (PAM authentication or resctrl) as 'root' unix user.
+
+Ensure the following libraries are installed on your target system to use PAM
+Debian
+```
+sudo apt-get install openssl libpam0g-dev db-util
+```
+Redhat
+```
+sudo dnf install openssl pam-devel db4-utils
+```
+
+Clients are validated against host unix credentials or credentials setup in a Berkeley database file.
+To setup users in Berkeley database use the bash script:
 
 ```
 ./setup_rmd_users.sh
 ```
+Note: Only root user can setup or access users in Berkeley database.
 
-But we need to run rmd as root user, it will then spawn 2 processes, 1 as
-root to do privilege operation (access resctrl), another one provide RESTAPI
-service.
+Launch RMD by supplying configuration directory using the command
 
 ```
 sudo ./rmd --conf-dir ./etc/rmd
 ```
 
-(e.g. starting the service on: http://127.0.0.1:8888)`
+`RMD can be launched in debug mode that exposes RESTAPI service on HTTP. By default it is launched on port 8081.
+(http://127.0.0.1:8081)`
 `
 ## Query cache information on the host
 
 ```
-curl -i http://127.0.0.1:8888/v1/cache/
-curl -i http://127.0.0.1:8888/v1/cache/l3
-curl -i http://127.0.0.1:8888/v1/cache/l3/0
+curl -i http://127.0.0.1:8081/v1/cache/
+curl -i http://127.0.0.1:8081/v1/cache/l3
+curl -i http://127.0.0.1:8081/v1/cache/l3/0
 ```
 
-## Query pre-fedefined policy in RMD
+## Query pre-defined policy in RMD
 
 ```
-curl http://127.0.0.1:8888/v1/policy
+curl http://127.0.0.1:8081/v1/policy
 ```
 
 The backend for policy is a yaml file: /etc/rmd/policy.yaml, it pre-defines
