@@ -31,7 +31,7 @@ func (c Credential) PAMResponseHandler(s pam.Style, msg string) (string, error) 
 	return "", errors.New("Unrecognized message style")
 }
 
-// PAMTxAuthenticate authenticates a PAM transaction
+// pamTxAuthenticate authenticates a PAM transaction
 func pamTxAuthenticate(transaction *pam.Transaction) error {
 	err := transaction.Authenticate(0)
 	return err
@@ -47,7 +47,7 @@ func (c Credential) PAMAuthenticate() error {
 	return err
 }
 
-// PAMStartFunc starts the conversation between PAM client and PAM module
+// pamStartFunc starts the conversation between PAM client and PAM module
 func pamStartFunc(service string, user string, handler func(pam.Style, string) (string, error)) (*pam.Transaction, error) {
 	tx, err := pam.StartFunc(service, user, handler)
 	if err != nil {
