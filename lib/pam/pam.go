@@ -13,7 +13,7 @@ type Credential struct {
 	Password string
 }
 
-// PAMResponseHandler handles communication between PAM client and PAM module
+// PAMResponseHandler handles the communication between PAM client and PAM module
 func (c Credential) PAMResponseHandler(s pam.Style, msg string) (string, error) {
 	switch s {
 	case pam.PromptEchoOff:
@@ -22,7 +22,7 @@ func (c Credential) PAMResponseHandler(s pam.Style, msg string) (string, error) 
 		fmt.Println(msg)
 		return c.Password, nil
 	case pam.ErrorMsg:
-		fmt.Println(msg)
+		fmt.Errorf(msg)
 		return "", nil
 	case pam.TextInfo:
 		fmt.Println(msg)
@@ -31,24 +31,24 @@ func (c Credential) PAMResponseHandler(s pam.Style, msg string) (string, error) 
 	return "", errors.New("Unrecognized message style")
 }
 
-// TxAuthenticate does transaction
-func TxAuthenticate(transaction *pam.Transaction) error {
+// PAMTxAuthenticate authenticates a PAM transaction
+func PAMTxAuthenticate(transaction *pam.Transaction) error {
 	err := transaction.Authenticate(0)
 	return err
 }
 
-// PAMAuthenticate does PAM authentication
+// PAMAuthenticate performs PAM authentication for the user credentials provided
 func (c Credential) PAMAuthenticate() error {
 	tx, err := c.PAMStartFunc()
 	if err != nil {
 		return err
 	}
-	err = TxAuthenticate(tx)
+	err = PAMTxAuthenticate(tx)
 	return err
 }
 
-// StartFunc does start
-func StartFunc(service string, user string, handler func(pam.Style, string) (string, error)) (*pam.Transaction, error) {
+// PAMStartFunc starts the conversation between PAM client and PAM module
+func PAMStartFunc(service string, user string, handler func(pam.Style, string) (string, error)) (*pam.Transaction, error) {
 	tx, err := pam.StartFunc(service, user, handler)
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func StartFunc(service string, user string, handler func(pam.Style, string) (str
 	return tx, nil
 }
 
-// PAMStartFunc establishes connection to PAM module
+// PAMStartFunc establishes the connection to PAM module
 func (c Credential) PAMStartFunc() (*pam.Transaction, error) {
-	return StartFunc(config.GetPAMConfig().Service, c.Username, c.PAMResponseHandler)
+	return PAMStartFunc(config.GetPAMConfig().Service, c.Username, c.PAMResponseHandler)
 }
