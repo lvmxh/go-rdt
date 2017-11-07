@@ -39,6 +39,9 @@ func GetInfraGroupReserve() (base.Reserved, error) {
 	var returnErr error
 	infraOnce.Do(func() {
 		conf := config.NewInfraConfig()
+		if conf == nil {
+			return
+		}
 		infraCPUbm, err := base.CPUBitmaps([]string{conf.CPUSet})
 		if err != nil {
 			returnErr = err

@@ -21,6 +21,9 @@ func GetCPUPools() (map[string]map[string]*util.Bitmap, error) {
 	var returnErr error
 
 	cpuPoolOnce.Do(func() {
+
+		var osCPUbm, infraCPUbm, isolatedCPUbm *util.Bitmap
+
 		osconf := config.NewOSConfig()
 		osCPUbm, err := base.CPUBitmaps([]string{osconf.CPUSet})
 		if err != nil {
@@ -28,10 +31,14 @@ func GetCPUPools() (map[string]map[string]*util.Bitmap, error) {
 			return
 		}
 		infraconf := config.NewInfraConfig()
-		infraCPUbm, err := base.CPUBitmaps([]string{infraconf.CPUSet})
-		if err != nil {
-			returnErr = err
-			return
+		if infraconf != nil {
+			infraCPUbm, err = base.CPUBitmaps([]string{infraconf.CPUSet})
+			if err != nil {
+				returnErr = err
+				return
+			}
+		} else {
+			infraCPUbm, _ = base.CPUBitmaps("Ox0")
 		}
 
 		level := syscache.GetLLC()
@@ -42,7 +49,7 @@ func GetCPUPools() (map[string]map[string]*util.Bitmap, error) {
 		}
 
 		isocpu := cpu.IsolatedCPUs()
-		var isolatedCPUbm *util.Bitmap
+
 		if isocpu != "" {
 			isolatedCPUbm, _ = base.CPUBitmaps([]string{cpu.IsolatedCPUs()})
 		} else {

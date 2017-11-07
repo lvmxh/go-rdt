@@ -60,9 +60,9 @@ func GetReservedInfo() map[string]*base.Reserved {
 			ReservedInfo[OS] = &r
 		}
 
-		r, err = GetInfraGroupReserve()
+		fr, err := GetInfraGroupReserve()
 		if err == nil {
-			ReservedInfo[Infra] = &r
+			ReservedInfo[Infra] = &fr
 		}
 
 		poolinfo, err := GetCachePoolLayout()
