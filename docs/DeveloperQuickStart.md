@@ -50,7 +50,7 @@ Before you commit your changes, run `./hacking.sh` and address errors before you
 
 Bash shell script `test.sh` is a helper script to do unit testing and functional testing.
 
-`./test.sh -u` to run all unit test cases.
+`./test.sh -u` to run all unit test cases. Note: Run `./install-deps` before performing unit tests.
 `./test.sh -i` to run all functional test cases.
 `./test.sh -i -s` to run all functional test cases with certificate based https support.
 `./test.sh -i -s -nocert` to run all functional test cases with PAM based https support.
