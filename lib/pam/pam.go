@@ -32,7 +32,7 @@ func (c Credential) PAMResponseHandler(s pam.Style, msg string) (string, error) 
 }
 
 // PAMTxAuthenticate authenticates a PAM transaction
-func PAMTxAuthenticate(transaction *pam.Transaction) error {
+func pamTxAuthenticate(transaction *pam.Transaction) error {
 	err := transaction.Authenticate(0)
 	return err
 }
@@ -43,12 +43,12 @@ func (c Credential) PAMAuthenticate() error {
 	if err != nil {
 		return err
 	}
-	err = PAMTxAuthenticate(tx)
+	err = pamTxAuthenticate(tx)
 	return err
 }
 
 // PAMStartFunc starts the conversation between PAM client and PAM module
-func PAMStartFunc(service string, user string, handler func(pam.Style, string) (string, error)) (*pam.Transaction, error) {
+func pamStartFunc(service string, user string, handler func(pam.Style, string) (string, error)) (*pam.Transaction, error) {
 	tx, err := pam.StartFunc(service, user, handler)
 	if err != nil {
 		return nil, err
@@ -58,5 +58,5 @@ func PAMStartFunc(service string, user string, handler func(pam.Style, string) (
 
 // PAMStartFunc establishes the connection to PAM module
 func (c Credential) PAMStartFunc() (*pam.Transaction, error) {
-	return PAMStartFunc(config.GetPAMConfig().Service, c.Username, c.PAMResponseHandler)
+	return pamStartFunc(config.GetPAMConfig().Service, c.Username, c.PAMResponseHandler)
 }

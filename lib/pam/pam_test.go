@@ -5,7 +5,7 @@ import (
 )
 
 func TestPAMStartFunc(t *testing.T) {
-	_, err := PAMStartFunc("", "", nil)
+	_, err := pamStartFunc("", "", nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -18,12 +18,12 @@ func TestPAMTxAuthenticate(t *testing.T) {
 	// valid service name
 	service := "rmd"
 
-	tx, err := PAMStartFunc(service, c.Username, c.PAMResponseHandler)
+	tx, err := pamStartFunc(service, c.Username, c.PAMResponseHandler)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = PAMTxAuthenticate(tx)
+	err = pamTxAuthenticate(tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -32,7 +32,7 @@ func TestPAMTxAuthenticate(t *testing.T) {
 func TestPAMAuthenticate(t *testing.T) {
 
 	// Litmus test start func
-	_, err := PAMStartFunc("", "", nil)
+	_, err := pamStartFunc("", "", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
