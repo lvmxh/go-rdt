@@ -3,15 +3,36 @@
 # TODO add a simple script for functional test.
 # All these are hardcode and it only support BDW platform.
 
+# setup PAM files
+PAMSRCFILE="etc/rmd/pam/test/rmd"
+PAMDIR="/etc/pam.d"
+if [ -d $PAMDIR ]; then
+    cp $PAMSRCFILE $PAMDIR
+fi
+
+# setup PAM test user
+BERKELYDBFILENAME="rmd_users.db"
+echo "user" >> users
+openssl passwd -crypt "user1" >> users
+echo "test" >> users
+openssl passwd -crypt "test1" >> users
+db_load -T -t hash -f users "/tmp/"$BERKELYDBFILENAME
+if [ $? -ne 0 ]; then
+    rm -rf users
+    echo "Failed to setup pam files"
+    exit 1
+fi
+rm -rf users
+
 if [ "$1" == "-u" ]; then
     # NOTE please use -short for unittest.
-    godep go test -short -v -cover $(go list ./... | grep -v /vendor/ | grep -v /test/)
+    godep go test -short -v -cover $(go list ./... | grep -v /vendor/ | grep -v /test/ | grep -v /cmd)
     exit $?
 fi
 
 if [ "$1" != "-i" -a "$1" != "-s" ]; then
     # NOTE please use -short for unittest.
-    godep go test -short -v -cover $(go list ./... | grep -v /vendor/ | grep -v /test/)
+    godep go test -short -v -cover $(go list ./... | grep -v /vendor/ | grep -v /test/ | grep -v /cmd)
 fi
 
 
@@ -93,30 +114,6 @@ sed -i -e 's/\(transport = \)\(.*\)/\1"\/tmp\/rmd.db"/g' $CONFFILE
 sed -i -e 's/\(stdout = \)\(.*\)/\1false/g' $CONFFILE
 
 cat $CONFFILE
-
-if [ "$1" == "-s" -a "$2" == "-nocert" ]; then
-
-    # setup PAM files
-    PAMSRCFILE="etc/rmd/pam/test/rmd"
-    PAMDIR="/etc/pam.d"
-    if [ -d $PAMDIR ]; then
-        cp $PAMSRCFILE $PAMDIR
-    fi
-
-    # setup PAM test user
-    BERKELYDBFILENAME="rmd_users.db"
-    echo "user" >> users
-    openssl passwd -crypt "user1" >> users
-    echo "test" >> users
-    openssl passwd -crypt "test1" >> users
-    db_load -T -t hash -f users "/tmp/"$BERKELYDBFILENAME
-    if [ $? -ne 0 ]; then
-        rm -rf users
-        echo "Failed to setup pam files"
-        exit 1
-    fi
-    rm -rf users
-fi
 
 # Use godep to build rmd binary instead of using dependicies of user's
 # GOPATH
