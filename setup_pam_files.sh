@@ -6,16 +6,25 @@ if [ -d $PAMDIR ]; then
     cp $PAMSRCFILE $PAMDIR
 fi
 
-BERKELYDBFILE="/etc/rmd/pam/rmd_users.db"
+BERKELEYDBFILE="/etc/rmd/pam/rmd_users.db"
 
-if [ -f $BERKELYDBFILE ]; then
-    echo "Do you want to create/update users in RMD Berkely DB file?(y/n)"
-    read -r a
-    if [ $a == "y" -o $a == "Y" ]; then
+function SetupRMDUsersByResponse {
+    if [ $1 == "y" -o $1 == "Y" ]; then
         ./setup_rmd_users.sh
-    elif [ $a != "n" -a $a != "N" ]; then
+    elif [ $1 != "n" -a $1 != "N" ]; then
         echo "Invalid input. No action taken."
     fi
+}
+
+if [ "$1" == "--skip-pam-userdb" ]; then
+    SetupRMDUsersByResponse 'n'
+    exit 0
+fi
+
+if [ -f $BERKELEYDBFILE ]; then
+    echo "Do you want to create/update users in RMD Berkeley DB file?(y/n)"
+    read -r a
+    SetupRMDUsersByResponse $a
 else
-    ./setup_rmd_users.sh
+    SetupRMDUsersByResponse 'y'
 fi

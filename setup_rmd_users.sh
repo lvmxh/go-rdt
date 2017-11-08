@@ -5,9 +5,9 @@ if [[ $EUID != 0 ]]; then
   exit 1
 fi
 
-BERKELYDBDIR="/etc/rmd/pam"
-BERKELYDBFILENAME="rmd_users.db"
-echo 'Setup Berkely db users'
+BERKELEYDBDIR="/etc/rmd/pam"
+BERKELEYDBFILENAME="rmd_users.db"
+echo 'Setup Berkeley db users'
 while true
 do
     echo 'Enter username or 0 to stop'
@@ -23,8 +23,8 @@ done
 
 # If input file was created
 if [ -f "users" ]; then
-    mkdir -p $BERKELYDBDIR
-    # Berkely DB is access restricted to root only
-    db_load -T -t hash -f users $BERKELYDBDIR"/"$BERKELYDBFILENAME
+    mkdir -p $BERKELEYDBDIR
+    # Berkeley DB is access restricted to root only
+    db_load -T -t hash -f users $BERKELEYDBDIR"/"$BERKELEYDBFILENAME
     rm -rf users
 fi

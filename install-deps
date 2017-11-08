@@ -24,7 +24,11 @@ if [ ! -d ${DBFILE%/*} ]; then
     sudo chown $USER:$USER  ${DBFILE%/*}
 fi
 
-sudo ./setup_pam_files.sh
+if [ "$1" == "--skip-pam-userdb" ]; then
+    sudo ./setup_pam_files.sh $1
+else
+    sudo ./setup_pam_files.sh
+fi
 
 DATA="\"logfile\":\"$LOGFILE\", \"dbtransport\":\"$DBFILE\", \"logtostdout\":false"
 go run ./cmd/gen_conf.go -path /etc/rmd/rmd.toml -data "{$DATA}"

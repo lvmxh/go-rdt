@@ -20,7 +20,7 @@ var _ = Describe("PAMAuth", func() {
 				path = "/policy"
 			})
 
-			Context("Get policy with valid Berkely db credentials that is also authorized", func() {
+			Context("Get policy with valid Berkeley db credentials that is also authorized", func() {
 				BeforeEach(func() {
 					username = "user"
 					password = "user1"
@@ -34,7 +34,7 @@ var _ = Describe("PAMAuth", func() {
 				})
 			})
 
-			Context("Get policy with valid Berkely db credentials that is not authorized", func() {
+			Context("Get policy with valid Berkeley db credentials that is not authorized", func() {
 				BeforeEach(func() {
 					username = "test"
 					password = "test1"
@@ -48,7 +48,7 @@ var _ = Describe("PAMAuth", func() {
 				})
 			})
 
-			Context("Get policy with invalid Berkely db user", func() {
+			Context("Get policy with invalid Berkeley db user", func() {
 				BeforeEach(func() {
 					username = "use"
 					password = "user1"
@@ -64,7 +64,7 @@ var _ = Describe("PAMAuth", func() {
 				})
 			})
 
-			Context("Get policy with incorrect Berkely db credentials", func() {
+			Context("Get policy with incorrect Berkeley db credentials", func() {
 				BeforeEach(func() {
 					username = "user"
 					password = "user2"
@@ -83,7 +83,7 @@ var _ = Describe("PAMAuth", func() {
 			// Edit unix credentials here according to your testing platform
 			/*
 				Context("Get policy with valid unix credentials that is also authorized", func() {
-					// Please use credentials different from those defined in Berkely db for a consistent error message
+					// Please use credentials different from those defined in Berkeley db for a consistent error message
 					BeforeEach(func() {
 						username = "root"
 						password = "s"
@@ -98,7 +98,7 @@ var _ = Describe("PAMAuth", func() {
 				})
 
 				Context("Get policy with valid unix credentials that is not authorized", func() {
-					// Please use credentials different from those defined in Berkely db for a consistent error message
+					// Please use credentials different from those defined in Berkeley db for a consistent error message
 					BeforeEach(func() {
 						username = "common"
 						password = "common"
@@ -114,7 +114,7 @@ var _ = Describe("PAMAuth", func() {
 			*/
 
 			Context("Get policy with invalid unix user", func() {
-				// Please use credentials different from those defined in Berkely db for a consistent error message
+				// Please use credentials different from those defined in Berkeley db for a consistent error message
 				BeforeEach(func() {
 					username = "com"
 					password = "common"
@@ -131,7 +131,7 @@ var _ = Describe("PAMAuth", func() {
 			})
 
 			Context("Get policy with incorrect unix credentials", func() {
-				// Please use credentials different from those defined in Berkely db for a consistent error message
+				// Please use credentials different from those defined in Berkeley db for a consistent error message
 				BeforeEach(func() {
 					username = "root"
 					password = "com"

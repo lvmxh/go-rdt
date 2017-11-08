@@ -11,13 +11,13 @@ if [ -d $PAMDIR ]; then
 fi
 
 # setup PAM test user
-BERKELYDBFILENAME="rmd_users.db"
+BERKELEYDBFILENAME="rmd_users.db"
 echo "user" >> users
 openssl passwd -crypt "user1" >> users
 echo "test" >> users
 openssl passwd -crypt "test1" >> users
 mkdir -p "/tmp"
-db_load -T -t hash -f users "/tmp/"$BERKELYDBFILENAME
+db_load -T -t hash -f users "/tmp/"$BERKELEYDBFILENAME
 if [ $? -ne 0 ]; then
     rm -rf users
     echo "Failed to setup pam files"
@@ -152,7 +152,7 @@ rm ${GOPATH}/bin/rmd
 
 # cleanup PAM files
 if [ "$1" == "-s" -a "$2" == "-nocert" ]; then
-    rm -rf "/tmp/"$BERKELYDBFILENAME
+    rm -rf "/tmp/"$BERKELEYDBFILENAME
     rm -rf $PAMDIR"/rmd"
 fi
 

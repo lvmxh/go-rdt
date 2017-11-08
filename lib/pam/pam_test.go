@@ -37,7 +37,7 @@ func TestPAMAuthenticate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Please use credentials different from those defined in Berkely db for a consistent error message
+	// Please use credentials different from those defined in Berkeley db for a consistent error message
 	testCases := []struct {
 		username      string
 		password      string
