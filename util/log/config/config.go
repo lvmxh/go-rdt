@@ -23,7 +23,7 @@ var log = &Log{"var/log/rmd.log", "dev", "debug", true}
 // NewConfig loads log config
 func NewConfig() Log {
 	configOnce.Do(func() {
-		// FIXME (Shaohe), we are planing to use logrusHelper. Seems we still
+		// FIXME , we are planing to use logrusHelper. Seems we still
 		// need missing some initialization for logrus. But it repors error as
 		// follow:
 		// # github.com/heirko/go-contrib/logrusHelper
@@ -38,7 +38,7 @@ func NewConfig() Log {
 			log.Path = logDir
 		}
 
-		// FIXME (Shaohe), we should get the value of logtostderr by reflect
+		// FIXME , we should get the value of logtostderr by reflect
 		// or flag directly, instead of strconv.ParseBool
 		tostd, _ := strconv.ParseBool(pflag.Lookup("logtostderr").Value.String())
 		if tostd == true {

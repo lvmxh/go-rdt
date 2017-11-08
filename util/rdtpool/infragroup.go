@@ -34,7 +34,7 @@ func getGlobTasks() []glob.Glob {
 }
 
 // GetInfraGroupReserve returns reserved infra group
-// NOTE (Shaohe) This group can be merged into GetOSGroupReserve
+// NOTE  This group can be merged into GetOSGroupReserve
 func GetInfraGroupReserve() (base.Reserved, error) {
 	var returnErr error
 	infraOnce.Do(func() {
@@ -56,7 +56,7 @@ func GetInfraGroupReserve() (base.Reserved, error) {
 			return
 		}
 
-		// NOTE (Shaohe) here we do not guarantee OS and Infra Group will avoid overlap.
+		// NOTE  here we do not guarantee OS and Infra Group will avoid overlap.
 		// We can FIX it on bootcheek.
 		// We though the ways number are same on all caches ID
 		// FIXME if exception, fix it.
@@ -79,11 +79,11 @@ func GetInfraGroupReserve() (base.Reserved, error) {
 					return
 				}
 			} else {
-				// FIXME (Shaohe) We need to confirm the location of DDIO caches.
+				// FIXME  We need to confirm the location of DDIO caches.
 				// We Put on the left ways, opposite position of OS group cache ways.
 				ways := uint(base.GetCosInfo().CbmMaskLen)
 				mask := strconv.FormatUint((1<<conf.CacheWays-1)<<(ways-conf.CacheWays), 16)
-				//FIXME (Shaohe) check RMD for the bootcheck.
+				//FIXME  check RMD for the bootcheck.
 				schemata[sc.ID], returnErr = base.CacheBitmaps(mask)
 				if returnErr != nil {
 					return

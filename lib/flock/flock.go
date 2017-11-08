@@ -41,7 +41,7 @@ func Flock(file *os.File, timeout time.Duration, exclusive ...bool) error {
 		}
 	}
 
-	// FIXME(Shaohe, Feng) uniform error.
+	// FIXME uniform error.
 	return fmt.Errorf("Timeout to get flock")
 }
 

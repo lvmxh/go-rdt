@@ -55,14 +55,14 @@ func (cache CachesResource) Register(container *restful.Container) {
 		Operation("CachesLevelGet").
 		Writes(CachesLevelResource{}))
 
-	// FIXME (Shaohe): should use pattern, \d\{1,3\}
+	// FIXME : should use pattern, \d\{1,3\}
 	ws.Route(ws.GET("/{cache-level:^l([2-3]|lc)$}/{id:^[0-9]{1,9}$").To(cache.CacheGet).
 		Doc("Get the info of a specified cache.").
 		Param(ws.PathParameter("cache-level", "cache level").DataType("string")).
 		Param(ws.PathParameter("id", "cache id").DataType("uint")).
 		Operation("CacheGet").
 		Writes(CachesLevelResource{}))
-	// NOTE (Shaohe): seems DataType("uint") just for check?
+	// NOTE : seems DataType("uint") just for check?
 
 	container.Add(ws)
 }
@@ -71,7 +71,7 @@ func (cache CachesResource) Register(container *restful.Container) {
 func (cache CachesResource) CachesGet(request *restful.Request, response *restful.Response) {
 	c := &m_cache.CachesSummary{}
 	err := c.Get()
-	// FIXME (Shaohe): We should classify the error.
+	// FIXME : We should classify the error.
 	if err != nil {
 		response.WriteError(http.StatusInternalServerError, err)
 		return
@@ -98,7 +98,7 @@ func (cache CachesResource) CacheGet(request *restful.Request, response *restful
 	c := &m_cache.Infos{}
 
 	ilev := getCacheLevelFromURL(request)
-	// FIXME (Shaohe): should use pattern, \d\{1,3\}
+	// FIXME : should use pattern, \d\{1,3\}
 	id, err := strconv.Atoi(request.PathParameter("id"))
 	if err != nil {
 		err := fmt.Errorf("Please input the correct id, it shoudl be digital")
@@ -108,7 +108,7 @@ func (cache CachesResource) CacheGet(request *restful.Request, response *restful
 	log.Printf("Request Level%d, id: %d\n", ilev, id)
 
 	e := c.GetByLevel(ilev)
-	// FIXME (Shaohe): We should classify the error.
+	// FIXME : We should classify the error.
 	if e != nil {
 		response.WriteErrorString(e.Code, e.Error())
 		return

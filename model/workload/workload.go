@@ -320,7 +320,7 @@ func Update(w, patched *tw.RDTWorkLoad) *rmderror.AppError {
 		}
 
 		if len(patched.TaskIDs) > 0 {
-			// FIXME (Shaohe) Is this a bug? Seems the targetResAss.Tasks is inconsistent with w.TaskIDs
+			// FIXME  Is this a bug? Seems the targetResAss.Tasks is inconsistent with w.TaskIDs
 			targetResAss.Tasks = append(targetResAss.Tasks, patched.TaskIDs...)
 			w.TaskIDs = patched.TaskIDs
 		}

@@ -14,11 +14,11 @@ import (
 
 	"github.com/emicklei/go-restful"
 	"github.com/emicklei/go-restful-swagger12"
-	log "github.com/sirupsen/logrus"
 	"github.com/intel/rmd/api/v1"
 	apptls "github.com/intel/rmd/app/tls"
 	"github.com/intel/rmd/db"
 	"github.com/intel/rmd/util/auth"
+	log "github.com/sirupsen/logrus"
 )
 
 // GenericConfig is the generic config for the application
@@ -70,7 +70,7 @@ func buildServerConfig() *Config {
 		WebServicesUrl: fmt.Sprintf("http://%s:%d", appconfig.Def.Address, appconfig.Dbg.Debugport),
 		ApiPath:        "/apidocs.json",
 		SwaggerPath:    "/apidocs/", // Optionally, specifiy where the UI is located
-		// FIXME (eliqiao): this depends on https://github.com/swagger-api/swagger-ui.git need to copy dist from it
+		// FIXME this depends on https://github.com/swagger-api/swagger-ui.git need to copy dist from it
 		SwaggerFilePath: "/usr/local/share/go/src/github.com/wordnik/swagger-ui/dist",
 		ApiVersion:      "1.0",
 	}

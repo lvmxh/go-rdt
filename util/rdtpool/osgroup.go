@@ -56,7 +56,7 @@ func GetOSGroupReserve() (base.Reserved, error) {
 				}
 			} else {
 				mask := strconv.FormatUint(1<<conf.CacheWays-1, 16)
-				//FIXME (Shaohe) check RMD for the bootcheck.
+				//FIXME  check RMD for the bootcheck.
 				schemata[sc.ID], returnErr = base.CacheBitmaps(mask)
 				if returnErr != nil {
 					return
@@ -84,7 +84,7 @@ func SetOSGroup() error {
 		return err
 	}
 
-	// NOTE (Shaohe), simpleness, brutal. Stolen CPUs from other groups.
+	// NOTE , simpleness, brutal. Stolen CPUs from other groups.
 	newBM := originBM.Or(reserve.AllCPUs)
 	osGroup.CPUs = newBM.ToString()
 
@@ -96,10 +96,10 @@ func SetOSGroup() error {
 		cacheID := strconv.Itoa(int(v.ID))
 		if !reserve.CPUsPerNode[cacheID].IsEmpty() {
 			// OSGroup is the first Group, use the edge cache ways.
-			// FIXME (Shaohe), left or right cache ways, need to be check.
+			// FIXME , left or right cache ways, need to be check.
 			conf := config.NewOSConfig()
 			request, _ := base.CacheBitmaps(strconv.FormatUint(1<<conf.CacheWays-1, 16))
-			// NOTE (Shaohe), simpleness, brutal. Reset Cache for OS Group,
+			// NOTE , simpleness, brutal. Reset Cache for OS Group,
 			// even the cache is occupied by other group.
 			availableWays := schemata[cacheID].Or(request)
 			expectWays := availableWays.ToBinStrings()[0]

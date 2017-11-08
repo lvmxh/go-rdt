@@ -11,7 +11,7 @@ import (
 // Init does config initial
 func Init() error {
 	viper.SetConfigName("rmd") // no need to include file extension
-	// TODO (Shaohe) consider to introduce Cobra. let Viper work with Cobra.
+	// TODO  consider to introduce Cobra. let Viper work with Cobra.
 	confDir := pflag.Lookup("conf-dir").Value.String()
 	if confDir != "" {
 		viper.AddConfigPath(confDir)

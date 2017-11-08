@@ -84,7 +84,7 @@ func GetAvailableCacheSchemata(allres map[string]*resctrl.ResAssociation,
 	cacheLevel string) (map[string]*libutil.Bitmap, error) {
 
 	GetReservedInfo()
-	// FIXME (Shaohe) A central util to generate schemata Bitmap
+	// FIXME  A central util to generate schemata Bitmap
 	schemata := map[string]*libutil.Bitmap{}
 
 	if len(allres) >= base.GetCosInfo().NumClosids {

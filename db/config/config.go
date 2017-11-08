@@ -14,13 +14,13 @@ type Database struct {
 
 var configOnce sync.Once
 
-// FIXME (Shaohe), the DBName should not be "bolt", "rmd" is more better.
+// FIXME , the DBName should not be "bolt", "rmd" is more better.
 var db = &Database{"bolt", "var/run/rmd.db", "bolt"}
 
 // NewConfig is Concurrency safe.
 func NewConfig() Database {
 	configOnce.Do(func() {
-		// FIXME (Shaohe), we are planing to use logrusHelper. Seems we still
+		// FIXME , we are planing to use logrusHelper. Seems we still
 		// need missing some initialization for logrus. But it repors error as
 		// follow:
 		// # github.com/heirko/go-contrib/logrusHelper

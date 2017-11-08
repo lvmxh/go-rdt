@@ -9,7 +9,7 @@ import (
 )
 
 // Init does log config init
-// TODO (Shaohe): Need to support Model name and file line fields.
+// TODO : Need to support Model name and file line fields.
 func Init() error {
 	config := config.NewConfig()
 	l, _ := logrus.ParseLevel(config.Level)

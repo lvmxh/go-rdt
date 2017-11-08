@@ -90,7 +90,7 @@ func NewBitmap(value ...interface{}) (*Bitmap, error) {
 
 // Or does union
 func (b *Bitmap) Or(m *Bitmap) *Bitmap {
-	// FIXME (Shaohe) The follow code are same with and, any design pattern for it?
+	// FIXME  The follow code are same with and, any design pattern for it?
 	maxc := len(b.Bits)
 	minc := len(m.Bits)
 	maxl := b.Len
@@ -114,7 +114,7 @@ func (b *Bitmap) Or(m *Bitmap) *Bitmap {
 
 // And does intersection
 func (b *Bitmap) And(m *Bitmap) *Bitmap {
-	// FIXME (Shaohe) The follow code are same with or, any design pattern for it?
+	// FIXME  The follow code are same with or, any design pattern for it?
 	maxc := len(b.Bits)
 	minc := len(m.Bits)
 	maxl := b.Len
@@ -137,7 +137,7 @@ func (b *Bitmap) And(m *Bitmap) *Bitmap {
 
 // Xor does difference
 func (b *Bitmap) Xor(m *Bitmap) *Bitmap {
-	// FIXME (Shaohe) The follow code are same with or, any design pattern for it?
+	// FIXME  The follow code are same with or, any design pattern for it?
 	maxc := len(b.Bits)
 	minc := len(m.Bits)
 	maxl := b.Len
@@ -161,7 +161,7 @@ func (b *Bitmap) Xor(m *Bitmap) *Bitmap {
 
 // Axor does asymmetric difference
 func (b *Bitmap) Axor(m *Bitmap) *Bitmap {
-	// FIXME (Shaohe) The follow code are same with or, any design pattern for it?
+	// FIXME  The follow code are same with or, any design pattern for it?
 	maxc := len(b.Bits)
 	minc := len(m.Bits)
 	maxl := b.Len
@@ -199,7 +199,7 @@ func (b *Bitmap) ToString() string {
 			// NOTE Should we limit the length by b.Len?
 			s = fmt.Sprintf("%x", v)
 		} else {
-			// FIXME(Shaohe) Hard code 8.
+			// FIXME Hard code 8.
 			s = fmt.Sprintf("%08x", v)
 		}
 		if i == 0 {
@@ -213,7 +213,7 @@ func (b *Bitmap) ToString() string {
 
 // ToBinString binary string
 func (b *Bitmap) ToBinString() string {
-	// FIXME(Shaohe) Hard code 32.
+	// FIXME Hard code 32.
 	bs32 := fmt.Sprintf("%032d", 0)
 	ts := ""
 	for i, v := range b.Bits {
@@ -341,7 +341,7 @@ func (b *Bitmap) GetConnectiveBits(ways, offset uint32, fromLow bool) *Bitmap {
 			}
 		}
 	} else {
-		// FIXME(Shaohe)  duplicated code
+		// FIXME  duplicated code
 		for i := offset; i < uint32(b.Len); i++ {
 			if ts[i] == '1' {
 				total++
@@ -692,7 +692,7 @@ func string2data(s string) ([]uint, error) {
 	return datas, nil
 }
 
-// FIXME(Shaohe) unify []int and []uint.
+// FIXME unify []int and []uint.
 func genBitsFromHexString(s string) ([]int, error) {
 	d, e := string2data(s)
 	sd := (*(*[]int)(unsafe.Pointer(&d)))[:]

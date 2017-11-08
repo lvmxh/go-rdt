@@ -83,7 +83,7 @@ type CacheCos struct {
 }
 
 // ResAssociation is the resource group in resctrl
-// TODO (Shaohe) need to paser the tag for field setting.
+// TODO  need to paser the tag for field setting.
 type ResAssociation struct {
 	Tasks    []string
 	CPUs     string
@@ -196,7 +196,7 @@ func GetResAssociation() map[string]*ResAssociation {
 }
 
 // Commit resources in resctrl
-// FIXME(Shaohe) Commit should be a transaction.
+// FIXME Commit should be a transaction.
 // So we use taskFlow to guarantee the consistency.
 // Also we need a coarse granularity lock for IPC. We already has it.
 // Also we need a file lock for consistency among different processes. In plan.
