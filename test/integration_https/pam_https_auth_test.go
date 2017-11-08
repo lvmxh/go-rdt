@@ -79,6 +79,8 @@ var _ = Describe("PAMAuth", func() {
 				})
 			})
 
+			// Edit unix credentials here according to your testing platform
+			/*
 			Context("Get policy with valid unix credentials that is also authorized", func() {
 				// Please use credentials different from those defined in Berkely db for a consistent error message
 				BeforeEach(func() {
@@ -93,6 +95,7 @@ var _ = Describe("PAMAuth", func() {
 						Status(http.StatusOK)
 				})
 			})
+			*/
 
 			Context("Get policy with valid unix credentials that is not authorized", func() {
 				// Please use credentials different from those defined in Berkely db for a consistent error message
