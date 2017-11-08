@@ -1,6 +1,6 @@
 # This is a rmd config.
 
-title = "RDTagent Config"
+title = "RMD config"
 
 [default]
 address = "localhost"

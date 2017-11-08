@@ -1,6 +1,6 @@
 package workload
 
-// workload api objects to represent resources in RDTAgent
+// workload api objects to represent resources in RMD
 
 import (
 	"fmt"

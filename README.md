@@ -1,4 +1,4 @@
-# RDTagent - the system agent for Intel RDT controlling
+# RMD - the resource management daemon
 
 ## Documents
 

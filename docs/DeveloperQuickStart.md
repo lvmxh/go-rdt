@@ -28,7 +28,7 @@ $ go run cmd/get_vendor.go
 # generage configuration file
 $ go run cmd/gen_conf.go
 
-# install rdtagent into $GOPATH/bin
+# install RMD into $GOPATH/bin
 $ ./install-deps
 
 ```

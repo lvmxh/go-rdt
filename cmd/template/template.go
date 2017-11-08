@@ -23,7 +23,7 @@ var Options = map[string]interface{}{
 // Templ is content of template
 const Templ = `# This is a rmd config.
 
-title = "RDTagent Config"
+title = "RMD Config"
 
 [default]
 address = "{{.address}}"
