@@ -7,13 +7,13 @@ import (
 	"net/http"
 	"strconv"
 
-	log "github.com/sirupsen/logrus"
 	rmderror "github.com/intel/rmd/api/error"
 	"github.com/intel/rmd/db"
 	libcache "github.com/intel/rmd/lib/cache"
 	"github.com/intel/rmd/lib/proxyclient"
 	"github.com/intel/rmd/model/policy"
 	"github.com/intel/rmd/util/rdtpool"
+	log "github.com/sirupsen/logrus"
 )
 
 // Request represents the hospitality request

@@ -15,10 +15,10 @@ import (
 	"github.com/emicklei/go-restful"
 	log "github.com/sirupsen/logrus"
 
-	"net/http"
 	appConf "github.com/intel/rmd/app/config"
 	acl "github.com/intel/rmd/util/acl"
 	aclConf "github.com/intel/rmd/util/acl/config"
+	"net/http"
 )
 
 var signatureRWM sync.RWMutex

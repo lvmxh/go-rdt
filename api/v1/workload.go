@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/emicklei/go-restful"
-	log "github.com/sirupsen/logrus"
 	"github.com/intel/rmd/db"
 	tw "github.com/intel/rmd/model/types/workload"
 	"github.com/intel/rmd/model/workload"
+	log "github.com/sirupsen/logrus"
 )
 
 // WorkLoadResource is workload api resource

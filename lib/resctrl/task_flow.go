@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/intel/rmd/util"
 	"github.com/intel/rmd/util/task"
+	log "github.com/sirupsen/logrus"
 )
 
 // Task is task for resctrl

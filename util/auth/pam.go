@@ -3,8 +3,8 @@ package auth
 import (
 	"bytes"
 	"github.com/emicklei/go-restful"
-	"net/http"
 	"github.com/intel/rmd/lib/proxyclient"
+	"net/http"
 )
 
 // PAMAuthenticate does PAM authenticate with PAM DB or PAM Unix
