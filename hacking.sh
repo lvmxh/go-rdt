@@ -14,8 +14,14 @@ function hack {
     local rev
 
     rev=$($cmd "$file")
-    if [[ ! -z $rev ]]; then
-        echo "$rev"
+
+    if [[ $? -ne 0 ]] || [[ ! -z $rev ]]; then
+        if [[ ! -z $rev ]]; then
+            echo -e "\033[1;91m${rev} \033[0m"
+        else
+            # FIXME go tool vet does not give output
+            echo -e "\033[1;91mgo tool vet $file failed \033[0m"
+        fi
     else
         echo "0"
     fi
@@ -23,14 +29,14 @@ function hack {
 
 function do_check {
     local f=$1
+    local rev
     if [ -f "${f}" ]; then
         for ((i = 0; i < ${#cmds[@]}; i++)) do
 
-            echo "checking "${cmds[$i]}" $f ..."
             rev=$(hack "${cmds[$i]}" $f)
 
             if [[ ! -z ${rev} && ${rev} != "0" ]]; then
-                echo ${rev}
+                echo $rev
                 RET=-1
             fi
         done
@@ -46,8 +52,8 @@ if [ $# -eq 1 ] && [ "$1" == "-f" ]; then
     while IFS='' read -r line || [[ -n "$line" ]]; do
         do_check $line
     done < "tmp"
-    echo "Total code lines:"
-    wc -l `find ./ | grep -v vendor | grep -v .git | grep -v test |grep ".go"`
+    # echo "Total code lines:"
+    # wc -l `find ./ | grep -v vendor | grep -v .git | grep -v test |grep ".go"`
 
     rm "tmp"
 else
@@ -63,4 +69,4 @@ else
     echo ":) >>> No errors for coding style"
 fi
 
-exit $ret
+exit $RET
