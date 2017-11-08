@@ -1,5 +1,6 @@
-// +build integration_https
-package integration_https
+// +build integrationHTTPS
+
+package integrationHTTPS
 
 import (
 	. "github.com/onsi/ginkgo"

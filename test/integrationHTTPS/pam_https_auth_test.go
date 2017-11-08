@@ -1,5 +1,6 @@
-// +build integration_https
-package integration_https
+// +build integrationHTTPS
+
+package integrationHTTPS
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -81,36 +82,36 @@ var _ = Describe("PAMAuth", func() {
 
 			// Edit unix credentials here according to your testing platform
 			/*
-			Context("Get policy with valid unix credentials that is also authorized", func() {
-				// Please use credentials different from those defined in Berkely db for a consistent error message
-				BeforeEach(func() {
-					username = "root"
-					password = "s"
+				Context("Get policy with valid unix credentials that is also authorized", func() {
+					// Please use credentials different from those defined in Berkely db for a consistent error message
+					BeforeEach(func() {
+						username = "root"
+						password = "s"
+					})
+					It("Should return 200 StatusOK", func() {
+						he.GET(path).
+							WithHeader("Content-Type", "application/json").
+							WithBasicAuth(username, password).
+							Expect().
+							Status(http.StatusOK)
+					})
 				})
-				It("Should return 200 StatusOK", func() {
-					he.GET(path).
-						WithHeader("Content-Type", "application/json").
-						WithBasicAuth(username, password).
-						Expect().
-						Status(http.StatusOK)
-				})
-			})
-			*/
 
-			Context("Get policy with valid unix credentials that is not authorized", func() {
-				// Please use credentials different from those defined in Berkely db for a consistent error message
-				BeforeEach(func() {
-					username = "common"
-					password = "common"
+				Context("Get policy with valid unix credentials that is not authorized", func() {
+					// Please use credentials different from those defined in Berkely db for a consistent error message
+					BeforeEach(func() {
+						username = "common"
+						password = "common"
+					})
+					It("Should return 403 StatusForbidden", func() {
+						he.GET(path).
+							WithHeader("Content-Type", "application/json").
+							WithBasicAuth(username, password).
+							Expect().
+							Status(http.StatusForbidden)
+					})
 				})
-				It("Should return 403 StatusForbidden", func() {
-					he.GET(path).
-						WithHeader("Content-Type", "application/json").
-						WithBasicAuth(username, password).
-						Expect().
-						Status(http.StatusForbidden)
-				})
-			})
+			*/
 
 			Context("Get policy with invalid unix user", func() {
 				// Please use credentials different from those defined in Berkely db for a consistent error message

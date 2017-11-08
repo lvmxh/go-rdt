@@ -1,13 +1,14 @@
-// +build integration_https
-package integration_https
+// +build integrationHTTPS
+
+package integrationHTTPS
 
 import (
 	"crypto/tls"
+	"github.com/intel/rmd/test/test_helpers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gopkg.in/gavv/httpexpect.v1"
 	"net/http"
-	"github.com/intel/rmd/test/test_helpers"
 	"os"
 	"testing"
 )
@@ -18,7 +19,7 @@ var (
 
 func Test(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Integration_HTTPS")
+	RunSpecs(t, "Integration HTTPS Suite")
 }
 
 var _ = BeforeSuite(func() {
